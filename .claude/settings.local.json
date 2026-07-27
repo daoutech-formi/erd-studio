@@ -9,7 +9,9 @@
       "Bash(git commit -q -m '백엔드 골격: Spring Boot 3.3 + JPA 엔티티/리포지토리 + 시드 적재 + 조회 API *)",
       "Bash(./gradlew test *)",
       "Bash(npm run *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(python3 -c \"import json,sys; h=json.load\\(sys.stdin\\)[0]; print\\('userName:', h['userName'], '| opKind:', h['opKind']\\)\")",
+      "Bash(git commit -q -m 'X-User 헤더 한글 이름 인코딩 수정 \\(URL 인코딩 + 서버 UTF-8 디코딩\\) *)"
     ]
   }
 }

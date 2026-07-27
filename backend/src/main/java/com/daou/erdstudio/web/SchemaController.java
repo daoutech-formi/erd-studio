@@ -47,7 +47,8 @@ public class SchemaController {
     @PutMapping("/schema")
     public Map<String, Object> replace(@RequestBody JsonNode doc,
                                        @RequestHeader(value = "X-User", defaultValue = "unknown") String user) {
-        Op op = new Op("schema.replace", user, objectMapper.createObjectNode().set("doc", doc));
+        Op op = new Op("schema.replace", UserHeader.decode(user),
+                objectMapper.createObjectNode().set("doc", doc));
         opService.apply(op);
         opBroadcaster.broadcastOp(op);
         return Map.of("ok", true,

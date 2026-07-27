@@ -40,7 +40,8 @@ public class HistoryController {
     /** 스냅샷 복원 후 schema.replace op로 전원에게 새 상태를 브로드캐스트한다. */
     @PostMapping("/{id}/restore")
     public Map<String, Object> restore(@PathVariable long id,
-                                       @RequestHeader(value = "X-User", defaultValue = "unknown") String user) {
+                                       @RequestHeader(value = "X-User", defaultValue = "unknown") String rawUser) {
+        String user = UserHeader.decode(rawUser);
         SchemaDoc doc = historyService.restore(id, user);
         Op op = new Op("schema.replace", user,
                 objectMapper.createObjectNode().set("doc", objectMapper.valueToTree(doc)));

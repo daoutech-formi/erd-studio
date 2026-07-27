@@ -15,7 +15,7 @@ export function fetchSchema(): Promise<SchemaDoc> {
 export function putSchema(doc: SchemaDoc, user: string): Promise<{ ok: boolean; tables: number; relations: number }> {
   return fetch("/api/schema", {
     method: "PUT",
-    headers: { "Content-Type": "application/json", "X-User": user },
+    headers: { "Content-Type": "application/json", "X-User": encodeURIComponent(user) },
     body: JSON.stringify(doc),
   }).then((res) => parse(res));
 }
@@ -27,6 +27,6 @@ export function fetchHistory(limit = 50): Promise<HistoryEntry[]> {
 export function restoreHistory(id: number, user: string): Promise<{ ok: boolean }> {
   return fetch(`/api/history/${id}/restore`, {
     method: "POST",
-    headers: { "X-User": user },
+    headers: { "X-User": encodeURIComponent(user) },
   }).then((res) => parse(res));
 }
