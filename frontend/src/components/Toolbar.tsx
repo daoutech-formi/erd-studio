@@ -1,4 +1,9 @@
+import { putSchema } from "../api/http";
 import { erdSocket } from "../api/socket";
+import { exportDbml } from "../exporters/dbml";
+import { exportPng, exportSvg } from "../exporters/image";
+import { exportJson, importJson } from "../exporters/json";
+import { exportSql } from "../exporters/sql";
 import { useDispatch, useStore } from "../state/schemaStore";
 import { invertOp, undoManager } from "../state/undo";
 import type { Op } from "../types";
@@ -35,6 +40,29 @@ export function Toolbar() {
     ops.forEach((op) => erdSocket.sendOp(op));
   };
 
+  const toastErr = (message: string) => dispatch({ type: "toast", toast: { message, kind: "err" } });
+
+  const doImport = () => {
+    importJson((newDoc) => {
+      if (!window.confirm("불러온 JSON으로 전체 스키마를 교체할까요? (모든 접속자에게 반영)")) {
+        return;
+      }
+      undoManager.push({
+        undo: [{ type: "schema.replace", user, payload: { doc } }],
+        redo: [{ type: "schema.replace", user, payload: { doc: newDoc } }],
+      });
+      putSchema(newDoc, user)
+        .then((r) => dispatch({
+          type: "toast",
+          toast: { message: `불러오기 완료 (테이블 ${r.tables}개, 관계 ${r.relations}개)`, kind: "ok" },
+        }))
+        .catch((e: Error) => {
+          undoManager.popLast();
+          toastErr(`불러오기 실패: ${e.message}`);
+        });
+    }, toastErr);
+  };
+
   return (
     <div className="toolbar">
       <button onClick={addTable}>＋ 테이블 추가</button>
@@ -45,6 +73,13 @@ export function Toolbar() {
       <button className={historyOpen ? "on" : ""} onClick={() => dispatch({ type: "historyOpen", on: !historyOpen })}>
         🕘 변경 이력
       </button>
+      <span className="tbsep" />
+      <button onClick={() => exportJson(doc)}>💾 JSON 저장</button>
+      <button onClick={doImport}>📂 JSON 불러오기</button>
+      <button onClick={() => exportSql(doc)}>⬇ SQL</button>
+      <button onClick={() => exportDbml(doc)}>⬇ DBML</button>
+      <button onClick={() => exportPng(toastErr)}>🖼 PNG</button>
+      <button onClick={() => exportSvg(toastErr)}>🖼 SVG</button>
       <span className="tbnote">모든 편집은 즉시 전체 접속자에게 반영되고 DB에 저장됩니다</span>
     </div>
   );
