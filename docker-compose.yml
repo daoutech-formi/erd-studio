@@ -1,44 +1,44 @@
+# app + postgres 2컨테이너 구성.
+# 실제 환경변수 값은 Coolify가 주입한다 (.env.example 참고).
 services:
   db:
     image: postgres:16-alpine
-    container_name: erd-studio-db
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-erd}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-erd}
-      POSTGRES_DB: ${POSTGRES_DB:-adcon_erd}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - erd-pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-erd} -d ${POSTGRES_DB:-adcon_erd}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 10
     restart: unless-stopped
 
-  backend:
-    build: ./backend
-    image: erd-studio-backend
-    container_name: erd-studio-backend
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment:
       PGHOST: db
       PGPORT: 5432
-      PGUSER: ${POSTGRES_USER:-erd}
-      PGPASSWORD: ${POSTGRES_PASSWORD:-erd}
-      PGDATABASE: ${POSTGRES_DB:-adcon_erd}
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
       PORT: 3000
+    ports:
+      - "${WEB_PORT:-8080}:3000"
     depends_on:
       db:
         condition: service_healthy
-    restart: unless-stopped
-
-  frontend:
-    build: ./frontend
-    image: erd-studio-frontend
-    container_name: erd-studio-frontend
-    ports:
-      - "${WEB_PORT:-8080}:80"
-    depends_on:
-      - backend
+    # /api/health 헬스체크 필수 — 실패 시 Coolify가 배포 실패로 간주
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     restart: unless-stopped
 
 volumes:

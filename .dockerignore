@@ -1,0 +1,11 @@
+# 루트 빌드 컨텍스트에서 제외 — 이미지 내부에서 새로 빌드한다
+.git
+.idea
+.claude
+**/.DS_Store
+**/node_modules
+**/dist
+backend/build
+backend/.gradle
+.env
+*.log

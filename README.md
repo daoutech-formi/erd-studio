@@ -1,14 +1,18 @@
 # ERD Studio
 
 팀이 **동시에 편집하는** DB 테이블 관계도(ERD) 뷰어/편집기.
-React + TypeScript 프론트엔드, Spring Boot + JPA 백엔드, PostgreSQL 3계층 구조이며
+React + TypeScript 프론트엔드, Spring Boot + JPA 백엔드, PostgreSQL 구조이며
 WebSocket으로 접속자 표시(presence)·소프트 락·실시간 동기화를 제공합니다.
+배포는 단일 **app** 컨테이너(Spring Boot가 정적 프론트 + REST + WebSocket을 같은 오리진에서 서빙)와
+**db**(PostgreSQL) 2컨테이너 구성이며, Coolify 헬스체크는 `/api/health`를 사용합니다.
 시드 데이터는 애드콘 쿠폰판매 서비스 스키마(107개 테이블, 122개 관계)입니다.
 
 ## 구조
 
 ```
-├── docker-compose.yml            # db + backend + frontend
+├── Dockerfile                    # 프론트(Vite) 정적 산출물 + 백엔드(jar) 단일 app 이미지
+├── docker-compose.yml            # app + db (2컨테이너)
+├── .env.example                  # 환경변수 템플릿 (실제 값은 Coolify 주입)
 ├── scripts/sim-load.mjs          # 부하 시뮬레이션 (Node 21+, 의존성 없음)
 ├── backend/                      # Spring Boot 3.3 · Java 21 · Gradle
 │   └── src/main/
@@ -35,7 +39,9 @@ docker compose up -d --build     # (구버전 CLI는 docker-compose)
 ```
 
 - 최초 기동 시 DB가 비어 있으면 시드를 자동 적재합니다. 데이터는 `erd-pgdata` 볼륨에 영속됩니다.
-- 포트 변경: `.env.example`을 `.env`로 복사한 뒤 `WEB_PORT` 수정.
+- 포트 변경: `.env.example`을 `.env`로 복사한 뒤 `WEB_PORT` 수정 (컨테이너 내부는 항상 3000).
+- **Coolify 배포**: 저장소를 연결하면 루트 `docker-compose.yml`을 사용합니다. `POSTGRES_*` 값은
+  Coolify 환경변수로 주입하고(`.env`는 커밋하지 않음), 헬스체크 경로는 `/api/health`로 지정하세요.
 
 ## 사용법
 
@@ -89,7 +95,7 @@ node scripts/sim-load.mjs --url ws://localhost:8080/ws --clients 30 --ops-per-se
 # 외부망에서
 docker compose build
 docker pull postgres:16-alpine
-docker save -o erd-studio-images.tar erd-studio-frontend erd-studio-backend postgres:16-alpine
+docker save -o erd-studio-images.tar adcon-erd-app postgres:16-alpine
 
 # 폐쇄망에서
 docker load -i erd-studio-images.tar
