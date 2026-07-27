@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: adcon-erd-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-erd}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-erd}
+      POSTGRES_DB: ${POSTGRES_DB:-adcon_erd}
+    volumes:
+      - erd-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-erd} -d ${POSTGRES_DB:-adcon_erd}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: adcon-erd-backend
+    environment:
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: ${POSTGRES_USER:-erd}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-erd}
+      PGDATABASE: ${POSTGRES_DB:-adcon_erd}
+      PORT: 3000
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: adcon-erd-frontend
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  erd-pgdata:

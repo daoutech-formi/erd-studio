@@ -1,0 +1,13 @@
+{
+  "name": "adcon-erd-backend",
+  "version": "1.0.0",
+  "description": "애드콘 ERD 스키마 저장 API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.12.0"
+  }
+}
