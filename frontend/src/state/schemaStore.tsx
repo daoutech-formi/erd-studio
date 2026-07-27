@@ -81,7 +81,8 @@ function reducer(state: State, action: Action): State {
     case "focusDomain":
       return { ...state, focusDomain: action.domain, selected: null, search: "" };
     case "editMode":
-      return { ...state, editMode: action.on, selected: null, editing: null };
+      // editing(락)은 App의 락 효과가 해제 메시지를 보낸 뒤 정리한다.
+      return { ...state, editMode: action.on, selected: null };
     case "editing":
       return { ...state, editing: action.name };
     case "presence":

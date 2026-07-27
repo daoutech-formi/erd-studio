@@ -20,6 +20,9 @@ class ErdSocket {
     this.user = user;
     this.color = color;
     this.dispatch = dispatch;
+    if (this.shouldRun) {
+      return; // StrictMode 이중 마운트 등으로 중복 연결하지 않는다.
+    }
     this.shouldRun = true;
     this.open(false);
   }
