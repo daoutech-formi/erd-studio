@@ -1,0 +1,15 @@
+server:
+  port: ${PORT:3000}
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:adcon_erd}
+    username: ${PGUSER:erd}
+    password: ${PGPASSWORD:erd}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate.jdbc.batch_size: 50
+      hibernate.order_inserts: true
