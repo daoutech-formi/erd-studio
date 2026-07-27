@@ -1,0 +1,199 @@
+/* ERD Studio — 다크 테마, 외부 폰트/리소스 없음 */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root, #app { height: 100%; }
+body {
+  background: #10141f;
+  color: #dfe4f0;
+  font-family: "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  font-size: 14px;
+  overflow: hidden;
+}
+
+#app { display: flex; flex-direction: column; }
+#body { position: relative; flex: 1; min-height: 0; }
+
+/* ---------- 헤더 ---------- */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  background: #171d2c;
+  border-bottom: 1px solid #262f45;
+  flex-wrap: wrap;
+}
+header h1 { font-size: 17px; letter-spacing: 0.3px; }
+header .sub { font-size: 12px; color: #7b8399; margin-top: 2px; }
+.controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+button {
+  background: #222b40;
+  color: #dfe4f0;
+  border: 1px solid #33405e;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+button:hover { background: #2c3752; }
+button.on { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+button.primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+button.danger { color: #ff8f8f; border-color: #5e3340; }
+button.mini { padding: 2px 7px; font-size: 11px; }
+
+#search {
+  background: #10141f;
+  border: 1px solid #33405e;
+  border-radius: 6px;
+  color: #dfe4f0;
+  padding: 6px 10px;
+  width: 210px;
+  font-size: 12px;
+}
+
+/* ---------- 접속자 ---------- */
+.presence { display: flex; align-items: center; gap: 4px; margin-left: 8px; }
+.conn-dot { width: 8px; height: 8px; border-radius: 50%; background: #e0524d; }
+.conn-dot.on { background: #37c98b; }
+.avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #0d1017;
+  border: 2px solid #171d2c;
+}
+.presence-count { font-size: 11px; color: #7b8399; margin-left: 2px; }
+
+/* ---------- 툴바 ---------- */
+.toolbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  padding-top: 8px;
+  border-top: 1px dashed #262f45;
+  flex-wrap: wrap;
+}
+.toolbar .tbsep { width: 1px; height: 18px; background: #33405e; margin: 0 4px; }
+.toolbar .tbnote { font-size: 11px; color: #66708a; margin-left: auto; }
+
+/* ---------- 캔버스 ---------- */
+#stage { position: absolute; inset: 0; cursor: grab; overflow: hidden; }
+#stage.grabbing { cursor: grabbing; }
+#svg { width: 100%; height: 100%; display: block; }
+
+.node { cursor: pointer; }
+.node text { fill: #dfe4f0; font-size: 11px; pointer-events: none; }
+.node text.key { fill: #7b8399; font-size: 9px; }
+.node.hub rect { stroke-width: 2.5; }
+.node.dim { opacity: 0.15; }
+.node.sel rect { filter: drop-shadow(0 0 6px rgba(79, 140, 255, 0.8)); }
+.node .lock-badge { font-size: 10px; font-weight: 700; }
+.domain-label { font-size: 14px; font-weight: 700; }
+
+.edge { fill: none; stroke: #33405e; stroke-width: 1; opacity: 0.55; }
+.edge.hl { stroke: #6ea8ff; stroke-width: 2; opacity: 1; }
+.edge.dim { opacity: 0.06; }
+
+.footnote {
+  position: absolute; left: 12px; bottom: 10px;
+  font-size: 11px; color: #66708a; pointer-events: none;
+}
+
+/* ---------- 범례 ---------- */
+.legend {
+  position: absolute; left: 12px; top: 12px;
+  background: rgba(23, 29, 44, 0.92);
+  border: 1px solid #262f45;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  max-height: 60%;
+  overflow-y: auto;
+}
+.legend-title { font-weight: 700; margin-bottom: 6px; }
+.legend .row { display: flex; align-items: center; gap: 6px; padding: 2px 4px; cursor: pointer; border-radius: 4px; }
+.legend .row:hover, .legend .row.on { background: #222b40; }
+.legend .sw { width: 10px; height: 10px; border-radius: 3px; }
+.legend .cnt { color: #66708a; }
+
+/* ---------- 상세/편집 패널 ---------- */
+.panel {
+  position: absolute; right: 12px; top: 12px;
+  width: 340px;
+  max-height: calc(100% - 24px);
+  overflow-y: auto;
+  background: rgba(23, 29, 44, 0.97);
+  border: 1px solid #262f45;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 12px;
+}
+.panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.panel h3 { font-size: 15px; }
+.panel .tag { display: inline-block; border-radius: 4px; padding: 2px 8px; font-size: 11px; margin-bottom: 6px; }
+.panel .desc { color: #aab2c8; margin-bottom: 4px; }
+.panel .sect { font-weight: 700; margin: 12px 0 6px; border-top: 1px solid #262f45; padding-top: 10px; }
+.panel .sect-block { margin-top: 8px; }
+.panel ul { margin: 4px 0 0 18px; color: #aab2c8; }
+.panel .hint { color: #66708a; margin-top: 10px; font-size: 11px; }
+table.cols { width: 100%; border-collapse: collapse; }
+table.cols td { border-bottom: 1px solid #1f2739; padding: 3px 4px; vertical-align: top; }
+table.cols .cn { color: #dfe4f0; white-space: nowrap; }
+table.cols .ct { color: #8ab0d0; white-space: nowrap; }
+table.cols .cc { color: #7b8399; }
+.badge {
+  display: inline-block; margin-left: 4px; padding: 0 4px;
+  border-radius: 3px; font-size: 9px; font-weight: 700;
+}
+.badge.pk { background: #3b82f6; color: #fff; }
+.badge.uk { background: #b45309; color: #fff; }
+.badge.fk { background: #4b5563; color: #fff; }
+
+/* ---------- 편집 폼 ---------- */
+.fl { display: block; color: #7b8399; font-size: 11px; margin: 10px 0 3px; }
+.fi, .ci {
+  width: 100%;
+  background: #10141f; border: 1px solid #33405e; border-radius: 5px;
+  color: #dfe4f0; padding: 5px 8px; font-size: 12px;
+}
+.crow, .rrow { display: flex; gap: 4px; margin-bottom: 4px; align-items: center; }
+.crow .cn2 { flex: 1.2; } .crow .ct2 { flex: 1; } .crow .cc2 { flex: 1.4; } .crow .cf2 { width: 76px; flex: none; }
+.rrow .rt2 { flex: 1; } .rrow .rl2 { width: 90px; flex: none; }
+select.ci { appearance: auto; }
+
+/* ---------- 이름 모달 ---------- */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(6, 9, 15, 0.75);
+  display: flex; align-items: center; justify-content: center; z-index: 50;
+}
+.modal {
+  background: #171d2c; border: 1px solid #33405e; border-radius: 10px;
+  padding: 24px; width: 320px;
+}
+.modal h2 { font-size: 16px; margin-bottom: 6px; }
+.modal p { font-size: 12px; color: #7b8399; margin-bottom: 12px; }
+.modal .fi { margin-bottom: 12px; }
+
+/* ---------- 이력 패널 ---------- */
+.history-panel {
+  position: absolute; right: 12px; top: 12px;
+  width: 380px; max-height: calc(100% - 24px); overflow-y: auto;
+  background: rgba(23, 29, 44, 0.97);
+  border: 1px solid #262f45; border-radius: 8px; padding: 14px; font-size: 12px;
+}
+.history-panel table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.history-panel td, .history-panel th {
+  border-bottom: 1px solid #1f2739; padding: 4px; text-align: left; font-size: 11px;
+}
+.history-panel th { color: #7b8399; font-weight: 400; }
+
+/* ---------- 토스트 ---------- */
+.toast {
+  position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%);
+  background: #222b40; border: 1px solid #33405e; border-radius: 8px;
+  padding: 9px 16px; font-size: 12px; z-index: 60;
+}
+.toast.ok { border-color: #2c7a56; color: #7fe0b2; }
+.toast.err { border-color: #7a2c2c; color: #ff9f9f; }
