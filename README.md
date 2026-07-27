@@ -1,85 +1,103 @@
-# 애드콘(ADCON) ERD 뷰어/편집기
+# ERD Studio
 
-애드콘 쿠폰판매 서비스의 테이블 관계도(107개 테이블, 122개 관계)를 시각화하고 편집하는 웹 앱.
-단일 HTML 파일을 프론트엔드(nginx) / 백엔드(Node.js + Express) / DB(PostgreSQL) 3계층으로 분리한 구조입니다.
+팀이 **동시에 편집하는** DB 테이블 관계도(ERD) 뷰어/편집기.
+React + TypeScript 프론트엔드, Spring Boot + JPA 백엔드, PostgreSQL 3계층 구조이며
+WebSocket으로 접속자 표시(presence)·소프트 락·실시간 동기화를 제공합니다.
+시드 데이터는 애드콘 쿠폰판매 서비스 스키마(107개 테이블, 122개 관계)입니다.
 
 ## 구조
 
 ```
-adcon-erd/
-├── docker-compose.yml        # db + backend + frontend 오케스트레이션
-├── .env.example              # 환경변수 템플릿
-├── backend/
-│   ├── Dockerfile
-│   ├── package.json          # 의존성: express, pg 두 개뿐
-│   ├── seed/schema.json      # 최초 기동 시 DB에 적재되는 시드 데이터
-│   └── src/
-│       ├── server.js         # API 서버 (GET/PUT /api/schema)
-│       └── db.js             # PostgreSQL 스키마 생성/저장/조회
-└── frontend/
-    ├── Dockerfile            # nginx 정적 서빙 + /api 리버스 프록시
-    ├── nginx.conf
-    └── public/
-        ├── index.html
-        ├── css/style.css
-        └── js/app.js         # ERD 렌더링/편집 로직 (외부 라이브러리 없음)
+├── docker-compose.yml            # db + backend + frontend
+├── scripts/sim-load.mjs          # 부하 시뮬레이션 (Node 21+, 의존성 없음)
+├── backend/                      # Spring Boot 3.3 · Java 21 · Gradle
+│   └── src/main/
+│       ├── resources/seed/schema.json      # 최초 기동 시 적재되는 시드
+│       └── java/com/daou/erdstudio/
+│           ├── domain/ repository/         # JPA 엔티티(erd_* 테이블) · 리포지토리
+│           ├── service/                    # SchemaService · OpService · History*
+│           ├── web/                        # REST 컨트롤러 + DTO(record)
+│           └── ws/                         # /ws 핸들러 · presence · 소프트 락
+└── frontend/                     # React 18 · TypeScript · Vite
+    └── src/
+        ├── api/                  # HTTP 클라이언트 · WebSocket(재접속 포함)
+        ├── state/                # useReducer 스토어 · op 반영 · Undo/Redo
+        ├── canvas/               # SVG 캔버스 · 레이아웃 · 팬줌 · 노드 드래그
+        ├── components/           # 헤더 · 접속자 · 편집 폼 · 이력 패널 등
+        └── exporters/            # JSON · SQL · DBML · PNG/SVG
 ```
 
 ## 실행
 
 ```bash
-cd adcon-erd
-docker compose up -d --build
+docker compose up -d --build     # (구버전 CLI는 docker-compose)
 # 브라우저에서 http://localhost:8080 접속
 ```
 
-- 최초 기동 시 백엔드가 `backend/seed/schema.json`을 PostgreSQL에 자동 적재합니다 (DB가 비어있을 때만).
-- 이후에는 DB에 저장된 데이터가 항상 우선입니다. 데이터는 `erd-pgdata` 볼륨에 영속됩니다.
+- 최초 기동 시 DB가 비어 있으면 시드를 자동 적재합니다. 데이터는 `erd-pgdata` 볼륨에 영속됩니다.
 - 포트 변경: `.env.example`을 `.env`로 복사한 뒤 `WEB_PORT` 수정.
 
 ## 사용법
 
-- **보기**: 노드 클릭 → 관계 강조 + 컬럼 상세 패널. 드래그 이동, 휠 확대/축소, 테이블명 검색.
-- **편집**: 우측 상단 `✏ 편집 모드` → 노드 클릭 시 편집 폼. 테이블 추가/삭제, 컬럼/관계 수정.
-- **저장**: 편집 후 `☁ 서버에 저장` 버튼 → PostgreSQL에 전체 스키마가 트랜잭션으로 반영됩니다.
-- **내보내기**: JSON(백업/공유용) / SQL(MariaDB CREATE TABLE) / DBML(dbdiagram.io, ERD Cloud import용).
+- **접속**: 최초 1회 이름 입력(1~20자) → 헤더에 접속자 배지가 실시간 표시됩니다.
+- **보기**: 노드 클릭 → 관계 강조 + 컬럼 상세. 드래그 이동, 휠 확대/축소, 테이블명·컬럼명 검색.
+- **편집**: `✏ 편집 모드` → 노드 클릭 시 편집 폼. **저장 버튼이 없습니다** — 적용 즉시 모든
+  접속자에게 반영되고 PostgreSQL에 자동 저장됩니다.
+- **동시 편집 보호**: 편집 폼을 연 테이블은 다른 사람에게 "○○님이 편집 중"으로 잠깁니다.
+  접속이 끊기면 30초 이내 자동 해제됩니다.
+- **배치**: 편집 모드에서 노드를 드래그하면 위치가 저장되어 모두에게 동일하게 보입니다.
+- **이력**: `🕘 변경 이력` → 누가 언제 무엇을 바꿨는지 조회, 원하는 시점으로 복원.
+- **Undo/Redo**: Ctrl+Z / Ctrl+Shift+Z (자신의 편집만, 최대 50단계).
+- **내보내기**: JSON(백업) / SQL(MariaDB) / DBML(dbdiagram.io) / PNG·SVG(이미지).
 
-## API
+## API·프로토콜
 
 | Method | Path | 설명 |
 |---|---|---|
 | GET | `/api/health` | 헬스체크 |
-| GET | `/api/schema` | 전체 스키마 조회 (`{domains, tables, relations, columns}`) |
-| PUT | `/api/schema` | 전체 스키마 교체 저장 (트랜잭션, 유효성 검증 포함) |
+| GET | `/api/schema` | 전체 스키마 (`tables` 행: `[name, domain, desc, hub, x, y]`) |
+| PUT | `/api/schema` | 전체 교체 (JSON 불러오기용, `X-User` 헤더) |
+| GET | `/api/history?limit=50` | 변경 이력 목록 |
+| POST | `/api/history/{id}/restore` | 해당 시점 스냅샷으로 복원 |
+| WS | `/ws` | `hello` / `op` / `lock` / `move` 송신 · `presence` / `op` / `locks` / `move` / `error` 수신 |
 
-## DB 스키마 (PostgreSQL)
+편집은 op 단위(`table.add` / `table.apply` / `table.delete` / `table.move` / `schema.replace`)로
+서버가 DB에 반영한 뒤 전원에게 브로드캐스트합니다. 이력은 최대 1,000행 보관됩니다.
 
-- `erd_domain` — 도메인 (key, name, color, sort_order)
-- `erd_table` — 테이블 (name, domain_key, description, is_hub, sort_order)
-- `erd_column` — 컬럼 (table_id FK, name, col_type, comment, flag, sort_order)
-- `erd_relation` — 관계 (child_table_id FK, parent_table_id FK, label)
+## 개발
 
-테이블 삭제 시 컬럼/관계는 `ON DELETE CASCADE`로 함께 정리됩니다.
+```bash
+# 백엔드 (PostgreSQL 필요 — 예: docker run -p 5432:5432 -e POSTGRES_USER=erd -e POSTGRES_PASSWORD=erd -e POSTGRES_DB=adcon_erd postgres:16-alpine)
+cd backend && ./gradlew bootRun     # http://localhost:3000
+cd backend && ./gradlew test        # 단위 테스트
+
+# 프론트엔드 (백엔드로 /api·/ws 프록시)
+cd frontend && npm install && npm run dev    # http://localhost:5173
+cd frontend && npx tsc --noEmit             # 타입 검사
+```
+
+## 부하 시뮬레이션
+
+```bash
+node scripts/sim-load.mjs --url ws://localhost:8080/ws --clients 30 --ops-per-sec 5 --duration 60
+# p95 지연 ≤ 1000ms, 수신 누락 0건이면 exit 0
+```
 
 ## 폐쇄망 배포
-
-인터넷이 되는 PC에서 이미지를 빌드해 tar로 옮기면 됩니다.
 
 ```bash
 # 외부망에서
 docker compose build
 docker pull postgres:16-alpine
-docker save -o adcon-erd-images.tar adcon-erd-frontend adcon-erd-backend postgres:16-alpine
+docker save -o erd-studio-images.tar erd-studio-frontend erd-studio-backend postgres:16-alpine
 
 # 폐쇄망에서
-docker load -i adcon-erd-images.tar
+docker load -i erd-studio-images.tar
 docker compose up -d   # build 없이 로드된 이미지로 기동
 ```
 
 ## 데이터 초기화
 
-시드 데이터부터 다시 시작하려면 볼륨을 지우고 재기동합니다.
-
 ```bash
-docker compose down -v && docker compose up -d
+docker compose down -v && docker compose up -d   # 시드부터 다시 시작
 ```
