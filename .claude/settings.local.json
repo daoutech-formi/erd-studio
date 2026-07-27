@@ -6,7 +6,8 @@
       "Bash(gradle wrapper *)",
       "Bash(./gradlew compileJava -q)",
       "Bash(git add *)",
-      "Bash(git commit -q -m '백엔드 골격: Spring Boot 3.3 + JPA 엔티티/리포지토리 + 시드 적재 + 조회 API *)"
+      "Bash(git commit -q -m '백엔드 골격: Spring Boot 3.3 + JPA 엔티티/리포지토리 + 시드 적재 + 조회 API *)",
+      "Bash(./gradlew test *)"
     ]
   }
 }
