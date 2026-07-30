@@ -38,14 +38,19 @@ docker compose up -d --build     # (구버전 CLI는 docker-compose)
 # 브라우저에서 http://localhost:8080 접속
 ```
 
-- 최초 기동 시 DB가 비어 있으면 시드를 자동 적재합니다. 데이터는 `erd-pgdata` 볼륨에 영속됩니다.
+- 최초 기동 시 방이 하나도 없으면 기본 방(`애드콘 ERD`)을 만들고 시드를 적재합니다.
+  데이터는 `erd-pgdata` 볼륨에 영속됩니다.
+- 기존 DB를 업그레이드하는 경우: `erd_*` 테이블에 `room_id`(NOT NULL)가 추가되고 `erd_domain`의 PK가
+  바뀌었으므로, `docker compose down -v`로 초기화하거나 `room_id`를 수동 백필해야 합니다.
 - 포트 변경: `.env.example`을 `.env`로 복사한 뒤 `WEB_PORT` 수정 (컨테이너 내부는 항상 3000).
 - **Coolify 배포**: 저장소를 연결하면 루트 `docker-compose.yml`을 사용합니다. `POSTGRES_*` 값은
   Coolify 환경변수로 주입하고(`.env`는 커밋하지 않음), 헬스체크 경로는 `/api/health`로 지정하세요.
 
 ## 사용법
 
-- **접속**: 최초 1회 이름 입력(1~20자) → 헤더에 접속자 배지가 실시간 표시됩니다.
+- **접속**: 최초 1회 이름 입력(1~20자) → 방 목록에서 방을 고르면 그 방의 ERD가 열립니다.
+- **방**: 서버 전체 최대 20개, 한 방에 동시 접속 최대 10명(같은 브라우저의 여러 탭은 1명).
+  방마다 테이블·관계·도메인·이력·락이 완전히 분리되며, 헤더의 `← 방 목록`으로 나갈 수 있습니다.
 - **보기**: 노드 클릭 → 관계 강조 + 컬럼 상세. 드래그 이동, 휠 확대/축소, 테이블명·컬럼명 검색.
 - **편집**: `✏ 편집 모드` → 노드 클릭 시 편집 폼. **저장 버튼이 없습니다** — 적용 즉시 모든
   접속자에게 반영되고 PostgreSQL에 자동 저장됩니다.
@@ -61,14 +66,23 @@ docker compose up -d --build     # (구버전 CLI는 docker-compose)
 | Method | Path | 설명 |
 |---|---|---|
 | GET | `/api/health` | 헬스체크 |
-| GET | `/api/schema` | 전체 스키마 (`tables` 행: `[name, domain, desc, hub, x, y]`) |
-| PUT | `/api/schema` | 전체 교체 (JSON 불러오기용, `X-User` 헤더) |
-| GET | `/api/history?limit=50` | 변경 이력 목록 |
-| POST | `/api/history/{id}/restore` | 해당 시점 스냅샷으로 복원 |
+| GET | `/api/rooms` | 방 목록 (`[{id, name, createdBy, createdAt, tableCount, userCount}]`) |
+| POST | `/api/rooms` | 방 생성 (`{name}` + `X-User` 헤더, 최대 20개) |
+| DELETE | `/api/rooms/{roomId}` | 방과 그 방의 모든 데이터 삭제 |
+| GET | `/api/rooms/{roomId}/schema` | 그 방의 전체 스키마 (`tables` 행: `[name, domain, desc, hub, x, y]`) |
+| PUT | `/api/rooms/{roomId}/schema` | 전체 교체 (JSON 불러오기용, `X-User` 헤더) |
+| GET | `/api/rooms/{roomId}/history?limit=50` | 변경 이력 목록 |
+| POST | `/api/rooms/{roomId}/history/{id}/restore` | 해당 시점 스냅샷으로 복원 |
+| POST | `/api/rooms/{roomId}/ddl/preview` · `/ddl/import` | DDL 임포트 미리보기 · 적용 |
 | WS | `/ws` | `hello` / `op` / `lock` / `move` 송신 · `presence` / `op` / `locks` / `move` / `error` 수신 |
 
+`hello`는 `{kind:"hello", roomId, clientKey, user, color}` 형식이며, 이 메시지로 방에 입장한 뒤에만
+`op`/`lock`/`move`가 처리됩니다. `clientKey`는 브라우저마다 localStorage에 보관하는 식별자로,
+같은 브라우저의 여러 탭은 정원·접속자 목록에서 1명으로 집계됩니다. 방 정원(10명)을 넘으면
+`{kind:"error", fatal:true}`를 보내고 연결을 끊습니다.
+
 편집은 op 단위(`table.add` / `table.apply` / `table.delete` / `table.move` / `schema.replace`)로
-서버가 DB에 반영한 뒤 전원에게 브로드캐스트합니다. 이력은 최대 1,000행 보관됩니다.
+서버가 DB에 반영한 뒤 **같은 방의** 전원에게 브로드캐스트합니다. 이력은 방마다 최대 1,000행 보관됩니다.
 
 ## 개발
 

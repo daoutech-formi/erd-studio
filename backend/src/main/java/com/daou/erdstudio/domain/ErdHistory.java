@@ -11,7 +11,7 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 
-/** 변경 이력 — op 원문과 적용 직후 전체 스키마 스냅샷(JSON)을 보관한다. */
+/** 변경 이력 — op 원문과 적용 직후 전체 스키마 스냅샷(JSON)을 방 단위로 보관한다. */
 @Entity
 @Table(name = "erd_history")
 public class ErdHistory {
@@ -19,6 +19,9 @@ public class ErdHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "room_id", nullable = false)
+    private Long roomId;
 
     @Column(name = "user_name", nullable = false)
     private String userName;
@@ -43,7 +46,8 @@ public class ErdHistory {
     protected ErdHistory() {
     }
 
-    public ErdHistory(String userName, String opKind, String target, String op, String snapshot) {
+    public ErdHistory(Long roomId, String userName, String opKind, String target, String op, String snapshot) {
+        this.roomId = roomId;
         this.userName = userName;
         this.opKind = opKind;
         this.target = target;
@@ -54,6 +58,10 @@ public class ErdHistory {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getRoomId() {
+        return roomId;
     }
 
     public String getUserName() {

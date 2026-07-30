@@ -10,7 +10,11 @@ import java.util.List;
 
 public interface ErdRelationRepository extends JpaRepository<ErdRelation, Long> {
 
-    List<ErdRelation> findAllByOrderBySortOrderAsc();
+    List<ErdRelation> findByRoomIdOrderBySortOrderAsc(Long roomId);
+
+    @Modifying
+    @Query("delete from ErdRelation r where r.roomId = :roomId")
+    void deleteByRoomId(@Param("roomId") Long roomId);
 
     @Modifying
     @Query("delete from ErdRelation r where r.childTableId = :tableId")

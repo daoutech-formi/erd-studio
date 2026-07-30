@@ -6,17 +6,21 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
-/** ERD 테이블 노드 — 기존 erd_table 테이블과 동일 매핑 + 위치 좌표(pos_x/pos_y) 추가. */
+/** ERD 테이블 노드 — 위치 좌표(pos_x/pos_y)를 함께 보관한다. 이름은 방 안에서만 유일하다. */
 @Entity
-@Table(name = "erd_table")
+@Table(name = "erd_table", uniqueConstraints = @UniqueConstraint(columnNames = {"room_id", "name"}))
 public class ErdTable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "room_id", nullable = false)
+    private Long roomId;
+
+    @Column(nullable = false)
     private String name;
 
     @Column(name = "domain_key", nullable = false)
@@ -41,8 +45,9 @@ public class ErdTable {
     protected ErdTable() {
     }
 
-    public ErdTable(String name, String domainKey, String description, boolean hub,
+    public ErdTable(Long roomId, String name, String domainKey, String description, boolean hub,
                     int sortOrder, Double posX, Double posY) {
+        this.roomId = roomId;
         this.name = name;
         this.domainKey = domainKey;
         this.description = description;
@@ -69,6 +74,10 @@ public class ErdTable {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getRoomId() {
+        return roomId;
     }
 
     public String getName() {

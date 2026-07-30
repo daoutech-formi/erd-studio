@@ -3,12 +3,14 @@ import { PresenceBar } from "./PresenceBar";
 import { SearchBox } from "./SearchBox";
 
 interface Props {
+  roomName: string;
+  onLeaveRoom: () => void;
   onReset: () => void;
   onZoom: (factor: number) => void;
 }
 
-/** 상단 헤더 — 타이틀, 검색, 줌 컨트롤, 편집 모드 토글, 접속자 목록. */
-export function Header({ onReset, onZoom }: Props) {
+/** 상단 헤더 — 방 이름, 검색, 줌 컨트롤, 편집 모드 토글, 접속자 목록. */
+export function Header({ roomName, onLeaveRoom, onReset, onZoom }: Props) {
   const { doc, error, editMode } = useStore();
   const dispatch = useDispatch();
   const subtitle = error
@@ -20,10 +22,13 @@ export function Header({ onReset, onZoom }: Props) {
   return (
     <header>
       <div>
-        <h1>ERD Studio</h1>
+        <h1>
+          ERD Studio <span className="room-name">{roomName}</span>
+        </h1>
         <div className="sub">{subtitle}</div>
       </div>
       <div className="controls">
+        <button onClick={onLeaveRoom}>← 방 목록</button>
         <SearchBox />
         <button onClick={onReset}>전체보기</button>
         <button onClick={() => onZoom(1.2)}>+</button>

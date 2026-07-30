@@ -7,7 +7,7 @@ export function PresenceBar() {
     <div className="presence" title={connected ? "실시간 연결됨" : "연결 끊김 — 재접속 중"}>
       <span className={`conn-dot${connected ? " on" : ""}`} />
       {presence.map((p) => (
-        <span key={p.id} className="avatar" style={{ background: p.color }} title={p.user}>
+        <span key={p.clientKey} className="avatar" style={{ background: p.color }} title={p.user}>
           {p.user.slice(0, 1)}
         </span>
       ))}

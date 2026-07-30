@@ -74,12 +74,12 @@ public class DdlImportService {
         this.llmClassifier = llmClassifier;
     }
 
-    /** DDL 을 파싱해 적용할 새 문서와 변경 요약을 만든다. 적용은 호출자가 op 로 수행한다. */
+    /** DDL 을 파싱해 그 방에 적용할 새 문서와 변경 요약을 만든다. 적용은 호출자가 op 로 수행한다. */
     @Transactional(readOnly = true)
-    public ImportPlan plan(String ddl, String mode) {
+    public ImportPlan plan(Long roomId, String ddl, String mode) {
         boolean replace = "replace".equalsIgnoreCase(mode);
         ParsedSchema parsed = ddlParser.parse(ddl);
-        SchemaDoc current = schemaService.loadDoc();
+        SchemaDoc current = schemaService.loadDoc(roomId);
 
         Map<String, List<Object>> currentTables = new LinkedHashMap<>();
         for (List<Object> row : current.tables()) {

@@ -30,7 +30,13 @@ export const rowBool = (row: Row, i: number): boolean => row[i] === true;
 export const rowNum = (row: Row, i: number): number | null =>
   typeof row[i] === "number" ? (row[i] as number) : null;
 
-export type OpType = "table.add" | "table.apply" | "table.delete" | "table.move" | "schema.replace";
+export type OpType =
+  | "table.add"
+  | "table.apply"
+  | "table.delete"
+  | "table.move"
+  | "domain.apply"
+  | "schema.replace";
 
 export interface Op {
   type: OpType;
@@ -38,8 +44,10 @@ export interface Op {
   payload: Record<string, unknown>;
 }
 
+/** id는 WebSocket 세션(탭) 단위, clientKey는 브라우저 단위 식별자. 접속자 목록은 clientKey로 중복 제거된다. */
 export interface ClientInfo {
   id: string;
+  clientKey: string;
   user: string;
   color: string;
 }
@@ -58,4 +66,4 @@ export type WsIncoming =
   | { kind: "op"; op: Op; seq: number }
   | { kind: "locks"; locks: Record<string, ClientInfo> }
   | { kind: "move"; table: string; x: number; y: number; id: string }
-  | { kind: "error"; message: string };
+  | { kind: "error"; message: string; fatal?: boolean };

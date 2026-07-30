@@ -1,4 +1,4 @@
-import type { Op, Row, SchemaDoc } from "../types";
+import type { DomainDef, Op, Row, SchemaDoc } from "../types";
 import { rowBool, rowNum, rowStr } from "../types";
 
 // 서버가 에코한 op를 로컬 문서에 반영하는 순수 함수.
@@ -27,9 +27,29 @@ export function applyOpToDoc(doc: SchemaDoc, op: Op): SchemaDoc {
       return applyDelete(doc, String(op.payload.name ?? ""));
     case "table.move":
       return applyMove(doc, op.payload as { name?: string; x?: number; y?: number });
+    case "domain.apply":
+      return applyDomains(doc, (op.payload.domains as Row[]) ?? []);
     case "schema.replace":
       return op.payload.doc as SchemaDoc;
   }
+}
+
+/** 도메인 목록 교체 — 사라진 도메인에 속한 테이블은 첫 도메인으로 옮긴다(서버와 동일 규칙). */
+function applyDomains(doc: SchemaDoc, rows: Row[]): SchemaDoc {
+  if (rows.length === 0) {
+    return doc;
+  }
+  const domains: Record<string, DomainDef> = {};
+  for (const r of rows) {
+    domains[rowStr(r, 0)] = { name: rowStr(r, 1), color: rowStr(r, 2) };
+  }
+  const fallback = rowStr(rows[0], 0);
+  const tables = doc.tables.map((t) =>
+    domains[rowStr(t, 1)]
+      ? t
+      : [rowStr(t, 0), fallback, rowStr(t, 2), rowBool(t, 3), rowNum(t, 4), rowNum(t, 5)],
+  );
+  return { ...doc, domains, tables };
 }
 
 function applyAdd(doc: SchemaDoc, p: TableAddPayload): SchemaDoc {

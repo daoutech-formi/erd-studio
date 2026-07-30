@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 
-/** 변경 이력 조회와 특정 시점 복원. */
+/** 방별 변경 이력 조회와 특정 시점 복원. */
 @Service
 public class HistoryService {
 
@@ -33,21 +33,21 @@ public class HistoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<HistoryEntry> list(int limit) {
+    public List<HistoryEntry> list(Long roomId, int limit) {
         int size = Math.max(1, Math.min(limit, MAX_LIST_LIMIT));
-        return historyRepository.findAllByOrderByIdDesc(PageRequest.of(0, size)).stream()
+        return historyRepository.findByRoomIdOrderByIdDesc(roomId, PageRequest.of(0, size)).stream()
                 .map(h -> new HistoryEntry(h.getId(), h.getUserName(), h.getOpKind(), h.getTarget(), h.getCreatedAt()))
                 .toList();
     }
 
-    /** 해당 이력의 스냅샷으로 전체 스키마를 되돌리고, 복원 자체를 이력으로 남긴다. */
+    /** 해당 이력의 스냅샷으로 그 방의 전체 스키마를 되돌리고, 복원 자체를 이력으로 남긴다. */
     @Transactional
-    public SchemaDoc restore(long historyId, String userName) {
-        ErdHistory history = historyRepository.findById(historyId).orElseThrow(
+    public SchemaDoc restore(Long roomId, long historyId, String userName) {
+        ErdHistory history = historyRepository.findByIdAndRoomId(historyId, roomId).orElseThrow(
                 () -> new IllegalArgumentException("이력을 찾을 수 없습니다: " + historyId));
         SchemaDoc doc = parseSnapshot(history.getSnapshot());
-        schemaService.replaceAll(doc);
-        historyRecorder.record(userName, "history.restore", "#" + historyId, Map.of("historyId", historyId));
+        schemaService.replaceAll(roomId, doc);
+        historyRecorder.record(roomId, userName, "history.restore", "#" + historyId, Map.of("historyId", historyId));
         return doc;
     }
 

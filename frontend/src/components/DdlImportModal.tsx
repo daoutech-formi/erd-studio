@@ -4,13 +4,14 @@ import { erdSocket } from "../api/socket";
 import { useDispatch } from "../state/schemaStore";
 
 interface Props {
+  roomId: number;
   onClose: () => void;
 }
 
 type Mode = "merge" | "replace";
 
-/** DDL(SQL) 붙여넣기 → 변경 미리보기 → 병합/교체 적용 모달. */
-export function DdlImportModal({ onClose }: Props) {
+/** DDL(SQL) 붙여넣기 → 변경 미리보기 → 병합/교체 적용 모달. 현재 방에만 반영된다. */
+export function DdlImportModal({ roomId, onClose }: Props) {
   const [ddl, setDdl] = useState("");
   const [mode, setMode] = useState<Mode>("merge");
   const [summary, setSummary] = useState<DdlImportSummary | null>(null);
@@ -32,7 +33,7 @@ export function DdlImportModal({ onClose }: Props) {
   const doPreview = () => {
     setBusy(true);
     setError("");
-    previewDdl(ddl, mode)
+    previewDdl(roomId, ddl, mode)
       .then(setSummary)
       .catch((e: Error) => {
         setSummary(null);
@@ -50,7 +51,7 @@ export function DdlImportModal({ onClose }: Props) {
     }
     setBusy(true);
     setError("");
-    importDdl(ddl, mode, erdSocket.currentUser())
+    importDdl(roomId, ddl, mode, erdSocket.currentUser())
       .then((r) => {
         dispatch({
           type: "toast",

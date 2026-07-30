@@ -12,14 +12,22 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** 접속 세션 보관 + 브로드캐스트 + heartbeat(15초 ping, 2회 미응답 시 종료). */
+/**
+ * 접속 세션 보관 + 방별 브로드캐스트 + heartbeat(15초 ping, 2회 미응답 시 종료).
+ * 정원과 접속자 목록은 clientKey(브라우저) 기준이므로 같은 브라우저의 여러 탭은 1명으로 센다.
+ */
 @Component
 public class SessionRegistry {
+
+    /** 방 하나에 동시 입장할 수 있는 최대 인원(서로 다른 clientKey 수). */
+    public static final int MAX_USERS_PER_ROOM = 10;
 
     private static final Logger log = LoggerFactory.getLogger(SessionRegistry.class);
     private static final long PING_INTERVAL_MS = 15_000;
@@ -30,6 +38,7 @@ public class SessionRegistry {
 
     private static final class Entry {
         final WebSocketSession session;
+        volatile Long roomId;
         volatile ClientInfo info;
         volatile long lastPong = System.currentTimeMillis();
 
@@ -47,11 +56,32 @@ public class SessionRegistry {
         entries.remove(sessionId);
     }
 
-    public void setUser(String sessionId, String user, String color) {
+    /**
+     * 방에 입장시킨다. 방의 서로 다른 clientKey 가 이미 {@value #MAX_USERS_PER_ROOM}개면 false.
+     * 자신과 같은 clientKey(같은 브라우저의 다른 탭)가 이미 있으면 정원과 무관하게 허용한다.
+     */
+    public synchronized boolean joinRoom(String sessionId, Long roomId, String clientKey, String user, String color) {
         Entry entry = entries.get(sessionId);
-        if (entry != null) {
-            entry.info = new ClientInfo(sessionId, user, color);
+        if (entry == null || roomId == null) {
+            return false;
         }
+        Set<String> otherKeys = new HashSet<>();
+        entries.forEach((id, e) -> {
+            if (!id.equals(sessionId) && e.info != null && roomId.equals(e.roomId)) {
+                otherKeys.add(e.info.clientKey());
+            }
+        });
+        if (!otherKeys.contains(clientKey) && otherKeys.size() >= MAX_USERS_PER_ROOM) {
+            return false;
+        }
+        entry.roomId = roomId;
+        entry.info = new ClientInfo(sessionId, clientKey, user, color);
+        return true;
+    }
+
+    public Long roomOf(String sessionId) {
+        Entry entry = entries.get(sessionId);
+        return entry == null ? null : entry.roomId;
     }
 
     public ClientInfo info(String sessionId) {
@@ -59,9 +89,24 @@ public class SessionRegistry {
         return entry == null ? null : entry.info;
     }
 
-    /** hello를 마친(이름이 있는) 접속자 목록. */
-    public List<ClientInfo> users() {
-        return entries.values().stream().map(e -> e.info).filter(Objects::nonNull).toList();
+    /** 해당 방에서 hello를 마친 접속자 목록 — clientKey 당 1명으로 중복을 제거한다. */
+    public List<ClientInfo> users(Long roomId) {
+        Map<String, ClientInfo> byClientKey = new LinkedHashMap<>();
+        if (roomId == null) {
+            return List.of();
+        }
+        for (Entry entry : entries.values()) {
+            ClientInfo info = entry.info;
+            if (info != null && roomId.equals(entry.roomId)) {
+                byClientKey.putIfAbsent(info.clientKey(), info);
+            }
+        }
+        return List.copyOf(byClientKey.values());
+    }
+
+    /** 방의 접속 인원 수(서로 다른 clientKey 수). */
+    public int userCount(Long roomId) {
+        return users(roomId).size();
     }
 
     public void markPong(String sessionId) {
@@ -78,13 +123,17 @@ public class SessionRegistry {
         }
     }
 
-    public void broadcast(String json) {
-        entries.values().forEach(entry -> send(entry, json));
+    public void broadcast(Long roomId, String json) {
+        entries.values().forEach(entry -> {
+            if (roomId != null && roomId.equals(entry.roomId)) {
+                send(entry, json);
+            }
+        });
     }
 
-    public void broadcastExcept(String excludeSessionId, String json) {
+    public void broadcastExcept(Long roomId, String excludeSessionId, String json) {
         entries.forEach((id, entry) -> {
-            if (!id.equals(excludeSessionId)) {
+            if (!id.equals(excludeSessionId) && roomId != null && roomId.equals(entry.roomId)) {
                 send(entry, json);
             }
         });

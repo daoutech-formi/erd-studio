@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** DB 반영이 끝난 op를 접속자 전원(발신자 포함)에게 브로드캐스트한다. */
+/** DB 반영이 끝난 op를 같은 방의 접속자 전원(발신자 포함)에게 브로드캐스트한다. */
 @Component
 public class OpBroadcaster {
 
@@ -21,11 +21,11 @@ public class OpBroadcaster {
         this.objectMapper = objectMapper;
     }
 
-    public void broadcastOp(Op op) {
+    public void broadcastOp(Long roomId, Op op) {
         try {
             String json = objectMapper.writeValueAsString(
                     Map.of("kind", "op", "op", op, "seq", seq.incrementAndGet()));
-            sessionRegistry.broadcast(json);
+            sessionRegistry.broadcast(roomId, json);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("op 직렬화 실패", e);
         }

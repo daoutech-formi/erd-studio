@@ -92,6 +92,9 @@ export function invertOp(op: Op, before: SchemaDoc, user: string): Op[] {
       }
       return [{ type: "table.move", user, payload: { name, x, y } }];
     }
+    case "domain.apply":
+      // 도메인 삭제 시 테이블 소속까지 바뀌므로 전체 스냅샷으로 되돌린다.
+      return [{ type: "schema.replace", user, payload: { doc: before } }];
     case "schema.replace":
       return [{ type: "schema.replace", user, payload: { doc: before } }];
   }

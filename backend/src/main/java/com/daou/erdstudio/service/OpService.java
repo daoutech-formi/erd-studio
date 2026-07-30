@@ -1,6 +1,7 @@
 package com.daou.erdstudio.service;
 
 import com.daou.erdstudio.domain.ErdColumn;
+import com.daou.erdstudio.domain.ErdDomain;
 import com.daou.erdstudio.domain.ErdRelation;
 import com.daou.erdstudio.domain.ErdTable;
 import com.daou.erdstudio.repository.ErdColumnRepository;
@@ -15,13 +16,27 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-/** 편집 op의 검증·DB 반영·이력 기록. 실패 시 IllegalArgumentException(한국어 메시지)을 던진다. */
+/**
+ * 편집 op의 검증·DB 반영·이력 기록. 모든 반영은 방(roomId) 범위 안에서만 이뤄진다.
+ * 실패 시 IllegalArgumentException(한국어 메시지)을 던진다.
+ */
 @Service
 public class OpService {
+
+    /** 방에 도메인이 하나도 없을 때 자동으로 만들어 주는 기본 도메인. */
+    private static final String DEFAULT_DOMAIN_KEY = "etc";
+    private static final String DEFAULT_DOMAIN_NAME = "기타";
+    private static final String DEFAULT_DOMAIN_COLOR = "#9aa0aa";
+    /** 한 방에서 만들 수 있는 도메인 최대 개수 (범례 가독성 상한). */
+    private static final int MAX_DOMAINS = 20;
 
     private final ErdDomainRepository domainRepository;
     private final ErdTableRepository tableRepository;
@@ -44,50 +59,49 @@ public class OpService {
     }
 
     @Transactional
-    public void apply(Op op) {
+    public void apply(Long roomId, Op op) {
         JsonNode p = op.payload();
         String target = switch (op.type()) {
-            case "table.add" -> applyTableAdd(p);
-            case "table.apply" -> applyTableApply(p);
-            case "table.delete" -> applyTableDelete(p);
-            case "table.move" -> applyTableMove(p);
-            case "schema.replace" -> applySchemaReplace(p);
+            case "table.add" -> applyTableAdd(roomId, p);
+            case "table.apply" -> applyTableApply(roomId, p);
+            case "table.delete" -> applyTableDelete(roomId, p);
+            case "table.move" -> applyTableMove(roomId, p);
+            case "domain.apply" -> applyDomainApply(roomId, p);
+            case "schema.replace" -> applySchemaReplace(roomId, p);
             default -> throw new IllegalArgumentException("알 수 없는 op 유형: " + op.type());
         };
-        historyRecorder.record(op.user(), op.type(), target, op);
+        historyRecorder.record(roomId, op.user(), op.type(), target, op);
     }
 
-    private String applyTableAdd(JsonNode p) {
+    private String applyTableAdd(Long roomId, JsonNode p) {
         String name = p.path("name").asText("").trim();
-        String domain = p.path("domain").asText("");
         if (name.isEmpty()) {
             throw new IllegalArgumentException("테이블명을 입력하세요.");
         }
-        if (tableRepository.existsByName(name)) {
+        if (tableRepository.existsByRoomIdAndName(roomId, name)) {
             throw new IllegalArgumentException("이미 존재하는 테이블명입니다: " + name);
         }
-        requireDomain(domain);
-        int order = (int) tableRepository.count();
-        tableRepository.save(new ErdTable(name, domain, p.path("desc").asText(""), false, order, null, null));
+        String domain = resolveDomain(roomId, p.path("domain").asText(""));
+        int order = (int) tableRepository.countByRoomId(roomId);
+        tableRepository.save(new ErdTable(roomId, name, domain, p.path("desc").asText(""), false, order, null, null));
         return name;
     }
 
-    private String applyTableApply(JsonNode p) {
+    private String applyTableApply(Long roomId, JsonNode p) {
         String oldName = p.path("oldName").asText("");
-        ErdTable table = findTable(oldName);
+        ErdTable table = findTable(roomId, oldName);
         List<Object> row = toRow(p.path("table"));
         String newName = Rows.str(row, 0).trim();
         if (newName.isEmpty()) {
             throw new IllegalArgumentException("테이블명을 입력하세요.");
         }
-        if (!newName.equals(oldName) && tableRepository.existsByName(newName)) {
+        if (!newName.equals(oldName) && tableRepository.existsByRoomIdAndName(roomId, newName)) {
             throw new IllegalArgumentException("이미 존재하는 테이블명입니다: " + newName);
         }
-        requireDomain(Rows.str(row, 1));
         table.rename(newName);
-        table.update(Rows.str(row, 1), Rows.str(row, 2), Rows.bool(row, 3));
+        table.update(resolveDomain(roomId, Rows.str(row, 1)), Rows.str(row, 2), Rows.bool(row, 3));
         replaceColumns(table, toRows(p.path("columns")));
-        replaceChildRelations(table, toRows(p.path("relations")));
+        replaceChildRelations(roomId, table, toRows(p.path("relations")));
         return newName;
     }
 
@@ -104,29 +118,29 @@ public class OpService {
         }
     }
 
-    private void replaceChildRelations(ErdTable table, List<List<Object>> rows) {
+    private void replaceChildRelations(Long roomId, ErdTable table, List<List<Object>> rows) {
         relationRepository.deleteByChildTableId(table.getId());
         int order = 0;
         for (List<Object> row : rows) {
             String parentName = Rows.str(row, 1);
-            ErdTable parent = tableRepository.findByName(parentName).orElseThrow(
+            ErdTable parent = tableRepository.findByRoomIdAndName(roomId, parentName).orElseThrow(
                     () -> new IllegalArgumentException("존재하지 않는 대상 테이블입니다: " + parentName));
-            relationRepository.save(new ErdRelation(table.getId(), parent.getId(), Rows.str(row, 2), order++));
+            relationRepository.save(new ErdRelation(roomId, table.getId(), parent.getId(), Rows.str(row, 2), order++));
         }
     }
 
-    private String applyTableDelete(JsonNode p) {
+    private String applyTableDelete(Long roomId, JsonNode p) {
         String name = p.path("name").asText("");
-        ErdTable table = findTable(name);
+        ErdTable table = findTable(roomId, name);
         columnRepository.deleteByTableId(table.getId());
         relationRepository.deleteAllInvolving(table.getId());
         tableRepository.delete(table);
         return name;
     }
 
-    private String applyTableMove(JsonNode p) {
+    private String applyTableMove(Long roomId, JsonNode p) {
         String name = p.path("name").asText("");
-        ErdTable table = findTable(name);
+        ErdTable table = findTable(roomId, name);
         if (!p.path("x").isNumber() || !p.path("y").isNumber()) {
             throw new IllegalArgumentException("좌표가 올바르지 않습니다.");
         }
@@ -134,10 +148,10 @@ public class OpService {
         return name;
     }
 
-    private String applySchemaReplace(JsonNode p) {
+    private String applySchemaReplace(Long roomId, JsonNode p) {
         SchemaDoc doc = objectMapper.convertValue(p.path("doc"), SchemaDoc.class);
         validateDoc(doc);
-        schemaService.replaceAll(doc);
+        schemaService.replaceAll(roomId, doc);
         return "전체 스키마";
     }
 
@@ -166,15 +180,101 @@ public class OpService {
         }
     }
 
-    private ErdTable findTable(String name) {
-        return tableRepository.findByName(name).orElseThrow(
+    private ErdTable findTable(Long roomId, String name) {
+        return tableRepository.findByRoomIdAndName(roomId, name).orElseThrow(
                 () -> new IllegalArgumentException("존재하지 않는 테이블입니다: " + name));
     }
 
-    private void requireDomain(String key) {
-        if (!domainRepository.existsById(key)) {
-            throw new IllegalArgumentException("존재하지 않는 도메인입니다: " + key);
+    /**
+     * 도메인 목록 전체 교체 — 추가·이름/색상 변경·삭제·순서 변경을 한 번에 반영한다.
+     * payload: {domains: [[key, name, color], ...]} (key 가 비면 새 도메인으로 보고 서버가 키를 만든다)
+     * 삭제된 도메인에 속해 있던 테이블은 목록의 첫 도메인으로 옮긴다.
+     */
+    private String applyDomainApply(Long roomId, JsonNode p) {
+        List<List<Object>> rows = toRows(p.path("domains"));
+        if (rows.isEmpty()) {
+            throw new IllegalArgumentException("도메인은 최소 1개 이상이어야 합니다.");
         }
+        if (rows.size() > MAX_DOMAINS) {
+            throw new IllegalArgumentException("도메인은 최대 " + MAX_DOMAINS + "개까지 만들 수 있습니다.");
+        }
+        List<ErdDomain> existing = domainRepository.findByRoomIdOrderBySortOrderAsc(roomId);
+        Map<String, ErdDomain> byKey = new LinkedHashMap<>();
+        existing.forEach(d -> byKey.put(d.getKey(), d));
+
+        Set<String> keptKeys = new LinkedHashSet<>();
+        List<String> orderedKeys = new ArrayList<>();
+        int order = 0;
+        for (List<Object> row : rows) {
+            String key = Rows.str(row, 0).trim();
+            String name = Rows.str(row, 1).trim();
+            String color = Rows.str(row, 2).trim();
+            if (name.isEmpty()) {
+                throw new IllegalArgumentException("도메인 이름을 입력하세요.");
+            }
+            if (color.isEmpty()) {
+                color = DEFAULT_DOMAIN_COLOR;
+            }
+            if (key.isEmpty()) {
+                key = nextDomainKey(keptKeys, byKey.keySet());
+            }
+            if (!keptKeys.add(key)) {
+                throw new IllegalArgumentException("도메인이 중복되었습니다: " + key);
+            }
+            ErdDomain found = byKey.get(key);
+            if (found != null) {
+                found.update(name, color, order);
+            } else {
+                domainRepository.save(new ErdDomain(roomId, key, name, color, order));
+            }
+            orderedKeys.add(key);
+            order++;
+        }
+
+        String fallback = orderedKeys.get(0);
+        List<ErdDomain> removed = existing.stream().filter(d -> !keptKeys.contains(d.getKey())).toList();
+        if (!removed.isEmpty()) {
+            Set<String> removedKeys = new HashSet<>();
+            removed.forEach(d -> removedKeys.add(d.getKey()));
+            for (ErdTable t : tableRepository.findByRoomIdOrderBySortOrderAsc(roomId)) {
+                if (removedKeys.contains(t.getDomainKey())) {
+                    t.update(fallback, t.getDescription(), t.isHub());
+                }
+            }
+            removed.forEach(domainRepository::delete);
+        }
+        return "도메인";
+    }
+
+    /** 새 도메인 키 생성 — d1, d2 … 중 아직 쓰이지 않은 값. */
+    private String nextDomainKey(Set<String> taken, Set<String> existing) {
+        for (int i = 1; i <= MAX_DOMAINS * 2; i++) {
+            String candidate = "d" + i;
+            if (!taken.contains(candidate) && !existing.contains(candidate)) {
+                return candidate;
+            }
+        }
+        throw new IllegalArgumentException("도메인 키를 만들 수 없습니다.");
+    }
+
+    /**
+     * 도메인 보정 — 클라이언트가 방의 도메인 키를 몰라도 되도록 서버가 정한다.
+     * 요청한 키가 있으면 그대로, 없으면 방의 첫 도메인, 방에 도메인이 하나도 없으면 기본 도메인을 만든다.
+     */
+    private String resolveDomain(Long roomId, String requested) {
+        if (!requested.isBlank() && domainRepository.existsByRoomIdAndKey(roomId, requested)) {
+            return requested;
+        }
+        return domainRepository.findByRoomIdOrderBySortOrderAsc(roomId).stream()
+                .findFirst()
+                .map(ErdDomain::getKey)
+                .orElseGet(() -> createDefaultDomain(roomId));
+    }
+
+    /** 도메인이 없는 방(구버전에서 만들어진 방 등)을 위해 '기타' 도메인을 만들어 준다. */
+    private String createDefaultDomain(Long roomId) {
+        domainRepository.save(new ErdDomain(roomId, DEFAULT_DOMAIN_KEY, DEFAULT_DOMAIN_NAME, DEFAULT_DOMAIN_COLOR, 0));
+        return DEFAULT_DOMAIN_KEY;
     }
 
     private List<Object> toRow(JsonNode node) {

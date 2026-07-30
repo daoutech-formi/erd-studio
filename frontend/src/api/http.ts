@@ -8,14 +8,45 @@ async function parse<T>(res: Response): Promise<T> {
   return body as T;
 }
 
-export function fetchSchema(): Promise<SchemaDoc> {
-  return fetch("/api/schema").then((res) => parse<SchemaDoc>(res));
+const userHeader = (user: string): Record<string, string> => ({ "X-User": encodeURIComponent(user) });
+
+export interface RoomInfo {
+  id: number;
+  name: string;
+  createdBy: string;
+  createdAt: string;
+  tableCount: number;
+  userCount: number;
 }
 
-export function putSchema(doc: SchemaDoc, user: string): Promise<{ ok: boolean; tables: number; relations: number }> {
-  return fetch("/api/schema", {
+export function fetchRooms(): Promise<RoomInfo[]> {
+  return fetch("/api/rooms").then((res) => parse<RoomInfo[]>(res));
+}
+
+export function createRoom(name: string, user: string): Promise<RoomInfo> {
+  return fetch("/api/rooms", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...userHeader(user) },
+    body: JSON.stringify({ name }),
+  }).then((res) => parse<RoomInfo>(res));
+}
+
+export function deleteRoom(roomId: number): Promise<{ ok: boolean }> {
+  return fetch(`/api/rooms/${roomId}`, { method: "DELETE" }).then((res) => parse(res));
+}
+
+export function fetchSchema(roomId: number): Promise<SchemaDoc> {
+  return fetch(`/api/rooms/${roomId}/schema`).then((res) => parse<SchemaDoc>(res));
+}
+
+export function putSchema(
+  roomId: number,
+  doc: SchemaDoc,
+  user: string,
+): Promise<{ ok: boolean; tables: number; relations: number }> {
+  return fetch(`/api/rooms/${roomId}/schema`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json", "X-User": encodeURIComponent(user) },
+    headers: { "Content-Type": "application/json", ...userHeader(user) },
     body: JSON.stringify(doc),
   }).then((res) => parse(res));
 }
@@ -32,29 +63,34 @@ export interface DdlImportSummary {
   newDomains: string[];
 }
 
-export function previewDdl(ddl: string, mode: "merge" | "replace"): Promise<DdlImportSummary> {
-  return fetch("/api/ddl/preview", {
+export function previewDdl(roomId: number, ddl: string, mode: "merge" | "replace"): Promise<DdlImportSummary> {
+  return fetch(`/api/rooms/${roomId}/ddl/preview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ddl, mode }),
   }).then((res) => parse(res));
 }
 
-export function importDdl(ddl: string, mode: "merge" | "replace", user: string): Promise<DdlImportSummary> {
-  return fetch("/api/ddl/import", {
+export function importDdl(
+  roomId: number,
+  ddl: string,
+  mode: "merge" | "replace",
+  user: string,
+): Promise<DdlImportSummary> {
+  return fetch(`/api/rooms/${roomId}/ddl/import`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-User": encodeURIComponent(user) },
+    headers: { "Content-Type": "application/json", ...userHeader(user) },
     body: JSON.stringify({ ddl, mode }),
   }).then((res) => parse(res));
 }
 
-export function fetchHistory(limit = 50): Promise<HistoryEntry[]> {
-  return fetch(`/api/history?limit=${limit}`).then((res) => parse<HistoryEntry[]>(res));
+export function fetchHistory(roomId: number, limit = 50): Promise<HistoryEntry[]> {
+  return fetch(`/api/rooms/${roomId}/history?limit=${limit}`).then((res) => parse<HistoryEntry[]>(res));
 }
 
-export function restoreHistory(id: number, user: string): Promise<{ ok: boolean }> {
-  return fetch(`/api/history/${id}/restore`, {
+export function restoreHistory(roomId: number, id: number, user: string): Promise<{ ok: boolean }> {
+  return fetch(`/api/rooms/${roomId}/history/${id}/restore`, {
     method: "POST",
-    headers: { "X-User": encodeURIComponent(user) },
+    headers: userHeader(user),
   }).then((res) => parse(res));
 }

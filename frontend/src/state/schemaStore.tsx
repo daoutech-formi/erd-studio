@@ -36,7 +36,8 @@ export type Action =
   | { type: "locks"; locks: Record<string, ClientInfo> }
   | { type: "connected"; on: boolean }
   | { type: "historyOpen"; on: boolean }
-  | { type: "toast"; toast: Toast | null };
+  | { type: "toast"; toast: Toast | null }
+  | { type: "reset" };
 
 const initialState: State = {
   doc: null,
@@ -95,6 +96,9 @@ function reducer(state: State, action: Action): State {
       return { ...state, historyOpen: action.on };
     case "toast":
       return { ...state, toast: action.toast };
+    case "reset":
+      // 방을 나갈 때 — 스키마·접속자·락 등 방에 종속된 상태를 모두 비운다.
+      return initialState;
   }
 }
 

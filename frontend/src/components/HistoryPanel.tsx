@@ -5,17 +5,21 @@ import { useDispatch } from "../state/schemaStore";
 import { undoManager } from "../state/undo";
 import type { HistoryEntry } from "../types";
 
-/** 변경 이력 목록 + 특정 시점 복원. */
-export function HistoryPanel() {
+interface Props {
+  roomId: number;
+}
+
+/** 현재 방의 변경 이력 목록 + 특정 시점 복원. */
+export function HistoryPanel({ roomId }: Props) {
   const dispatch = useDispatch();
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [error, setError] = useState("");
 
   const reload = useCallback(() => {
-    fetchHistory(50)
+    fetchHistory(roomId, 50)
       .then(setEntries)
       .catch((e: Error) => setError(e.message));
-  }, []);
+  }, [roomId]);
 
   useEffect(reload, [reload]);
 
@@ -23,7 +27,7 @@ export function HistoryPanel() {
     if (!window.confirm(`#${entry.id} (${entry.opKind} · ${entry.target}) 시점으로 복원할까요?`)) {
       return;
     }
-    restoreHistory(entry.id, erdSocket.currentUser())
+    restoreHistory(roomId, entry.id, erdSocket.currentUser())
       .then(() => {
         undoManager.clear();
         dispatch({ type: "toast", toast: { message: "복원되었습니다.", kind: "ok" } });

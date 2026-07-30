@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { erdSocket } from "../api/socket";
 import { useDispatch, useStore } from "../state/schemaStore";
 import { invertOp } from "../state/undo";
@@ -41,6 +41,20 @@ export function EditForm({ table }: { table: string }) {
   const [desc, setDesc] = useState(row ? rowStr(row, 2) : "");
   const [cols, setCols] = useState<ColDraft[]>(() => (doc ? initCols(doc, table) : []));
   const [rels, setRels] = useState<RelDraft[]>(() => (doc ? initRels(doc, table) : []));
+  /** 방금 추가한 테이블은 서버 왕복 전이라 첫 렌더에 row가 없다 — 도착하면 그때 한 번 초기화한다. */
+  const [seeded, setSeeded] = useState(Boolean(row));
+
+  useEffect(() => {
+    if (seeded || !doc || !row) {
+      return;
+    }
+    setName(rowStr(row, 0));
+    setDomain(rowStr(row, 1));
+    setDesc(rowStr(row, 2));
+    setCols(initCols(doc, table));
+    setRels(initRels(doc, table));
+    setSeeded(true);
+  }, [seeded, doc, row, table]);
 
   if (!doc || !row) {
     return null;

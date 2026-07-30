@@ -3,13 +3,16 @@
 //
 // 사용:
 //   node scripts/sim-load.mjs --url ws://localhost:8080/ws --clients 30 --ops-per-sec 5 --duration 60
+//   node scripts/sim-load.mjs --room 1        # 특정 방 지정 (기본: 첫 번째 방)
 //
 // 시험용 테이블 1개를 만들어 table.move op를 초당 N회 보내고,
 // 모든 클라이언트의 수신 왕복 지연을 측정한다.
+// 방 정원은 서로 다른 clientKey 기준 10명이므로, 모든 시뮬 클라이언트는 같은 clientKey를
+// 사용해 "한 브라우저의 여러 탭"으로 접속한다(브로드캐스트는 세션 단위라 측정에는 영향 없음).
 // 통과 기준: p95 ≤ 1000ms, 수신 누락 0건 → exit 0
 
 function parseArgs() {
-  const out = { url: "ws://localhost:8080/ws", clients: 30, opsPerSec: 5, duration: 60 };
+  const out = { url: "ws://localhost:8080/ws", clients: 30, opsPerSec: 5, duration: 60, room: 0 };
   const argv = process.argv.slice(2);
   for (let i = 0; i < argv.length; i += 2) {
     const key = argv[i].replace(/^--/, "");
@@ -18,6 +21,7 @@ function parseArgs() {
     if (key === "clients") out.clients = Number(value);
     if (key === "ops-per-sec") out.opsPerSec = Number(value);
     if (key === "duration") out.duration = Number(value);
+    if (key === "room") out.room = Number(value);
   }
   return out;
 }
@@ -25,15 +29,22 @@ function parseArgs() {
 const args = parseArgs();
 const httpBase = args.url.replace(/^ws/, "http").replace(/\/ws$/, "");
 const TEST_TABLE = `sim_load_${process.pid}`;
+const CLIENT_KEY = `sim-load-${process.pid}`;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function connect(index, sentAt, latencies, counter) {
+function connect(index, roomId, sentAt, latencies, counter) {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(args.url);
     const timeout = setTimeout(() => reject(new Error(`클라이언트 ${index} 접속 시간 초과`)), 10000);
     ws.onopen = () => {
       clearTimeout(timeout);
-      ws.send(JSON.stringify({ kind: "hello", user: `sim${String(index).padStart(2, "0")}`, color: "#4f8cff" }));
+      ws.send(JSON.stringify({
+        kind: "hello",
+        roomId,
+        clientKey: CLIENT_KEY,
+        user: `sim${String(index).padStart(2, "0")}`,
+        color: "#4f8cff",
+      }));
       resolve(ws);
     };
     ws.onerror = (e) => reject(new Error(`클라이언트 ${index} 오류: ${e.message ?? "unknown"}`));
@@ -50,15 +61,20 @@ function connect(index, sentAt, latencies, counter) {
 }
 
 async function main() {
-  const schema = await fetch(`${httpBase}/api/schema`).then((r) => r.json());
+  const rooms = await fetch(`${httpBase}/api/rooms`).then((r) => r.json());
+  if (!Array.isArray(rooms) || rooms.length === 0) {
+    throw new Error("방이 없습니다. 먼저 방을 하나 만드세요.");
+  }
+  const roomId = args.room > 0 ? args.room : rooms[0].id;
+  const schema = await fetch(`${httpBase}/api/rooms/${roomId}/schema`).then((r) => r.json());
   const domain = Object.keys(schema.domains)[0];
   const sentAt = new Map();
   const latencies = [];
   const counter = { received: 0 };
 
-  console.log(`접속 중: ${args.clients}개 클라이언트 → ${args.url}`);
+  console.log(`접속 중: ${args.clients}개 클라이언트 → ${args.url} (방 #${roomId})`);
   const clients = await Promise.all(
-    Array.from({ length: args.clients }, (_, i) => connect(i + 1, sentAt, latencies, counter)),
+    Array.from({ length: args.clients }, (_, i) => connect(i + 1, roomId, sentAt, latencies, counter)),
   );
 
   clients[0].send(JSON.stringify({

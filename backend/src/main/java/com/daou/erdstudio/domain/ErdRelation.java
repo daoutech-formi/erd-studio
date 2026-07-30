@@ -7,7 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-/** 테이블 간 참조 관계 (child → parent) — 기존 erd_relation 테이블과 동일 매핑. */
+/** 테이블 간 참조 관계 (child → parent). 방 단위로 분리된다. */
 @Entity
 @Table(name = "erd_relation")
 public class ErdRelation {
@@ -15,6 +15,9 @@ public class ErdRelation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "room_id", nullable = false)
+    private Long roomId;
 
     @Column(name = "child_table_id", nullable = false)
     private Long childTableId;
@@ -31,11 +34,16 @@ public class ErdRelation {
     protected ErdRelation() {
     }
 
-    public ErdRelation(Long childTableId, Long parentTableId, String label, int sortOrder) {
+    public ErdRelation(Long roomId, Long childTableId, Long parentTableId, String label, int sortOrder) {
+        this.roomId = roomId;
         this.childTableId = childTableId;
         this.parentTableId = parentTableId;
         this.label = label;
         this.sortOrder = sortOrder;
+    }
+
+    public Long getRoomId() {
+        return roomId;
     }
 
     public Long getChildTableId() {
