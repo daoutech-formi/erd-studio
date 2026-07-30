@@ -74,8 +74,9 @@ export function DdlImportModal({ onClose }: Props) {
         <h2>⬆ DDL 불러오기 (SQL)</h2>
         <p>
           MySQL/MariaDB의 <code>CREATE TABLE</code> DDL을 붙여넣으면 파싱해서 스키마에 반영합니다.
-          신규 테이블은 이름 접두어(예: lms_*, course_*)로 도메인이 자동 분류됩니다.
-          병합은 기존 테이블·도메인을 보존하고, 전체 교체는 도메인 구성도 DDL 기준으로 새로 만듭니다.
+          관계는 FOREIGN KEY 제약을 우선 사용하고, 없으면 컬럼명(user_no → donut_user 등)으로 추론합니다.
+          도메인은 테이블명과 COMMENT를 분석해 최대 12개로 자동 분류됩니다
+          (LLM API 키가 설정된 경우 LLM으로 분류하고, 없으면 키워드 사전 방식으로 동작).
           적용 후에도 변경 이력에서 복원할 수 있습니다.
         </p>
         <textarea

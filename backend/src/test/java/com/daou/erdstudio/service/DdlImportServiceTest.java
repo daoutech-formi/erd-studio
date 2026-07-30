@@ -27,7 +27,7 @@ class DdlImportServiceTest {
     @BeforeEach
     void seed() {
         Map<String, SchemaDoc.DomainDef> domains = new LinkedHashMap<>();
-        domains.put("user", new SchemaDoc.DomainDef("회원", "#4f8cff"));
+        domains.put("user", new SchemaDoc.DomainDef("회원/인증", "#4f8cff"));
         domains.put("stat", new SchemaDoc.DomainDef("통계/기타", "#6b7488"));
         SchemaDoc doc = new SchemaDoc(
                 domains,
@@ -43,6 +43,20 @@ class DdlImportServiceTest {
                                 List.of("id", "int", "번호", "PK"),
                                 List.of("user_no", "int", "회원번호", "FK"))));
         schemaService.replaceAll(doc);
+    }
+
+    private String domainOf(ImportPlan plan, String tableName) {
+        return plan.doc().tables().stream()
+                .filter(r -> tableName.equals(r.get(0)))
+                .map(r -> String.valueOf(r.get(1)))
+                .findFirst().orElseThrow();
+    }
+
+    private String domainKeyByName(ImportPlan plan, String domainName) {
+        return plan.doc().domains().entrySet().stream()
+                .filter(e -> e.getValue().name().equals(domainName))
+                .map(Map.Entry::getKey)
+                .findFirst().orElseThrow();
     }
 
     private static final String DDL = """
@@ -65,7 +79,6 @@ class DdlImportServiceTest {
         assertThat(plan.summary().added()).containsExactly("brand_new");
         assertThat(plan.summary().updated()).containsExactly("donut_user");
         assertThat(plan.summary().removed()).isEmpty();
-        // legacy_table 은 그대로 유지
         assertThat(plan.doc().tables()).hasSize(3);
         // donut_user 의 위치·도메인·허브 보존
         List<Object> user = plan.doc().tables().stream()
@@ -73,13 +86,12 @@ class DdlImportServiceTest {
         assertThat(user.get(1)).isEqualTo("user");
         assertThat(user.get(3)).isEqualTo(true);
         assertThat(user.get(4)).isEqualTo(100.0);
-        // 새 컬럼 반영 + 테이블 설명 갱신
         assertThat(plan.doc().columns().get("donut_user")).hasSize(3);
         assertThat(user.get(2)).isEqualTo("회원 정보 v2");
-        // 신규 테이블은 기본 도메인(stat)
-        List<Object> brandNew = plan.doc().tables().stream()
-                .filter(r -> "brand_new".equals(r.get(0))).findFirst().orElseThrow();
-        assertThat(brandNew.get(1)).isEqualTo("stat");
+        // brand_new 는 사전이 '상품/브랜드'로 확정 → 1개여도 새 도메인으로 승격된다
+        assertThat(plan.doc().domains().get(domainOf(plan, "brand_new")).name())
+                .isEqualTo("상품/브랜드");
+        assertThat(plan.summary().newDomains()).contains("상품/브랜드");
     }
 
     @Test
@@ -90,90 +102,250 @@ class DdlImportServiceTest {
     }
 
     @Test
-    void replace_DDL에_없는_테이블은_제거된다() {
+    void replace_DDL에_없는_테이블은_제거되고_사전_도메인으로_재구성된다() {
         ImportPlan plan = importService.plan(DDL, "replace");
         assertThat(plan.summary().removed()).containsExactly("legacy_table");
         assertThat(plan.doc().tables()).hasSize(2);
-        // legacy_table 이 사라지면 관련 관계도 제거
         assertThat(plan.doc().relations())
                 .noneMatch(r -> "legacy_table".equals(r.get(0)));
+        // 사전이 확정한 도메인은 1개여도 유지된다
+        assertThat(plan.doc().domains().values())
+                .extracting(SchemaDoc.DomainDef::name)
+                .contains("회원/인증", "상품/브랜드");
+        assertThat(plan.doc().tables()).allMatch(r -> r.get(1) != null);
     }
 
     @Test
-    void replace_도메인을_접두어_기준으로_재구성한다() {
-        ImportPlan plan = importService.plan(DDL, "replace");
-        // donut_user·brand_new 모두 접두어 그룹이 1개짜리 → '기타(etc)' 도메인으로 재구성
-        assertThat(plan.doc().domains()).containsOnlyKeys("etc");
-        assertThat(plan.doc().tables())
-                .allMatch(r -> "etc".equals(r.get(1)));
-        assertThat(plan.summary().newDomains()).containsExactly("etc");
-    }
-
-    @Test
-    void replace_같은_접두어_2개_이상이면_도메인으로_승격한다() {
+    void 키워드_사전으로_도메인을_자동_생성한다() {
         String ddl = """
-                CREATE TABLE `lms_user` (`user_no` int NOT NULL, PRIMARY KEY (`user_no`)) COMMENT='회원';
-                CREATE TABLE `lms_order` (`order_no` int NOT NULL, PRIMARY KEY (`order_no`)) COMMENT='주문';
-                CREATE TABLE `single_one` (`id` int NOT NULL, PRIMARY KEY (`id`)) COMMENT='단독';
+                CREATE TABLE `member_base` (`m_no` int NOT NULL, PRIMARY KEY (`m_no`)) COMMENT='회원 정보';
+                CREATE TABLE `member_login` (`l_no` int NOT NULL, PRIMARY KEY (`l_no`)) COMMENT='회원 로그인 계정';
+                CREATE TABLE `pay_main` (`p_no` int NOT NULL, PRIMARY KEY (`p_no`)) COMMENT='결제 내역';
+                CREATE TABLE `pay_cancel` (`c_no` int NOT NULL, PRIMARY KEY (`c_no`)) COMMENT='결제 환불';
                 """;
         ImportPlan plan = importService.plan(ddl, "replace");
-        assertThat(plan.doc().domains()).containsOnlyKeys("lms", "etc");
-        List<Object> lmsUser = plan.doc().tables().stream()
-                .filter(r -> "lms_user".equals(r.get(0))).findFirst().orElseThrow();
-        assertThat(lmsUser.get(1)).isEqualTo("lms");
-        List<Object> single = plan.doc().tables().stream()
-                .filter(r -> "single_one".equals(r.get(0))).findFirst().orElseThrow();
-        assertThat(single.get(1)).isEqualTo("etc");
+        // 사전 도메인명으로 생성된다
+        assertThat(plan.doc().domains().values())
+                .extracting(SchemaDoc.DomainDef::name)
+                .contains("회원/인증", "결제/정산");
+        assertThat(domainOf(plan, "member_base")).isEqualTo(domainKeyByName(plan, "회원/인증"));
+        assertThat(domainOf(plan, "member_login")).isEqualTo(domainKeyByName(plan, "회원/인증"));
+        assertThat(domainOf(plan, "pay_main")).isEqualTo(domainKeyByName(plan, "결제/정산"));
+        assertThat(plan.summary().newDomains()).contains("회원/인증", "결제/정산");
     }
 
     @Test
-    void merge_같은_접두어_신규_테이블은_새_도메인으로_묶인다() {
+    void 통계_테이블은_통계_도메인으로_모인다() {
         String ddl = """
-                CREATE TABLE `quiz_master` (`quiz_no` int NOT NULL, PRIMARY KEY (`quiz_no`)) COMMENT='퀴즈';
-                CREATE TABLE `quiz_item` (`item_no` int NOT NULL, PRIMARY KEY (`item_no`)) COMMENT='문항';
+                CREATE TABLE `donut_monthly_stat` (`s_no` int NOT NULL, PRIMARY KEY (`s_no`)) COMMENT='회원 월별 스냅샷 통계 정보';
+                CREATE TABLE `donut_static_sales_status` (`d` char(8) NOT NULL, PRIMARY KEY (`d`)) COMMENT='판매현황 통계';
+                CREATE TABLE `donut_static_point_status` (`p` char(8) NOT NULL, PRIMARY KEY (`p`)) COMMENT='포인트 적립 현황 통계';
+                """;
+        ImportPlan plan = importService.plan(ddl, "replace");
+        String statKey = domainKeyByName(plan, "통계");
+        assertThat(domainOf(plan, "donut_monthly_stat")).isEqualTo(statKey);
+        assertThat(domainOf(plan, "donut_static_sales_status")).isEqualTo(statKey);
+        assertThat(domainOf(plan, "donut_static_point_status")).isEqualTo(statKey);
+    }
+
+    @Test
+    void 도메인은_최대_12개로_제한된다() {
+        StringBuilder ddl = new StringBuilder();
+        // 서로 다른 토픽 20종 x 2개 = 40 테이블
+        String[] comments = {"회원 정보", "결제 내역", "주문 배송", "상품 브랜드", "쿠폰 상품권",
+                "포인트 적립금", "메시지 발송", "메일함", "메신저 채팅", "전자결재 기안",
+                "근태 출퇴근", "회계 전표", "게시판 공지", "일정 예약", "문서 파일",
+                "주소록 연락처", "AI 프롬프트", "노코드 폼", "통계 집계", "로그 이력"};
+        for (int i = 0; i < comments.length; i++) {
+            for (int j = 0; j < 2; j++) {
+                ddl.append(String.format(
+                        "CREATE TABLE `t%d_%d` (`id%d_%d` int NOT NULL, PRIMARY KEY (`id%d_%d`)) COMMENT='%s';%n",
+                        i, j, i, j, i, j, comments[i]));
+            }
+        }
+        ImportPlan plan = importService.plan(ddl.toString(), "replace");
+        assertThat(plan.doc().domains()).hasSizeLessThanOrEqualTo(12);
+        // 초과분은 기타로 병합되어 미배치 테이블이 없다
+        assertThat(plan.doc().tables()).allMatch(r -> r.get(1) != null);
+    }
+
+    @Test
+    void 코멘트가_없어도_테이블명_키워드로_분류한다() {
+        String ddl = """
+                CREATE TABLE `roulette_master` (`r_no` int NOT NULL, PRIMARY KEY (`r_no`));
+                CREATE TABLE `roulette_apply` (`a_no` int NOT NULL, PRIMARY KEY (`a_no`));
+                """;
+        ImportPlan plan = importService.plan(ddl, "replace");
+        // 테이블명 roulette → 사전의 프로모션/이벤트
+        String key = domainKeyByName(plan, "프로모션/이벤트");
+        assertThat(domainOf(plan, "roulette_master")).isEqualTo(key);
+        assertThat(domainOf(plan, "roulette_apply")).isEqualTo(key);
+    }
+
+    @Test
+    void 일반어뿐인_코멘트는_테이블명으로_분류한다() {
+        String ddl = """
+                CREATE TABLE `coupon_master` (`c_no` int NOT NULL, PRIMARY KEY (`c_no`)) COMMENT='정보 관리';
+                CREATE TABLE `coupon_issue` (`i_no` int NOT NULL, PRIMARY KEY (`i_no`)) COMMENT='내역';
+                """;
+        ImportPlan plan = importService.plan(ddl, "replace");
+        // 코멘트는 일반어뿐이지만 테이블명 coupon 이 사전에 매칭된다
+        assertThat(plan.doc().domains().values())
+                .extracting(SchemaDoc.DomainDef::name)
+                .contains("쿠폰/상품권");
+    }
+
+    @Test
+    void 사전에_없는_토픽은_테이블명_토큰으로_분류한다() {
+        String ddl = """
+                CREATE TABLE `widgetx_conf` (`w_no` int NOT NULL, PRIMARY KEY (`w_no`)) COMMENT='';
+                CREATE TABLE `widgetx_data` (`d_no` int NOT NULL, PRIMARY KEY (`d_no`)) COMMENT='';
+                """;
+        ImportPlan plan = importService.plan(ddl, "replace");
+        assertThat(plan.doc().domains().values())
+                .extracting(SchemaDoc.DomainDef::name)
+                .contains("widgetx");
+    }
+
+    @Test
+    void 단독_테이블은_FK_이웃_도메인에_흡수된다() {
+        String ddl = """
+                CREATE TABLE `billing` (
+                  `billing_no` int NOT NULL, PRIMARY KEY (`billing_no`)
+                ) COMMENT='수납';
+                CREATE TABLE `billing_item` (
+                  `item_no` int NOT NULL,
+                  `billing_no` int NOT NULL,
+                  PRIMARY KEY (`item_no`),
+                  CONSTRAINT `fk_i_b` FOREIGN KEY (`billing_no`) REFERENCES `billing` (`billing_no`)
+                ) COMMENT='수납 항목';
+                CREATE TABLE `receipt_print` (
+                  `print_no` int NOT NULL,
+                  `billing_no` int NOT NULL,
+                  PRIMARY KEY (`print_no`),
+                  CONSTRAINT `fk_r_b` FOREIGN KEY (`billing_no`) REFERENCES `billing` (`billing_no`)
+                ) COMMENT='영수증 출력';
+                """;
+        ImportPlan plan = importService.plan(ddl, "replace");
+        String billingDomain = domainOf(plan, "billing");
+        // 영수증(단독 토픽)은 FK 이웃인 수납 도메인으로 흡수
+        assertThat(domainOf(plan, "receipt_print")).isEqualTo(billingDomain);
+        assertThat(plan.doc().domains().get(billingDomain).name()).isEqualTo("수납");
+    }
+
+    @Test
+    void merge_토픽이_기존_도메인명과_겹치면_그_도메인을_따른다() {
+        String ddl = """
+                CREATE TABLE `extra_member` (`e_no` int NOT NULL, PRIMARY KEY (`e_no`)) COMMENT='회원 부가';
                 """;
         ImportPlan plan = importService.plan(ddl, "merge");
-        assertThat(plan.doc().domains()).containsKey("quiz");
-        assertThat(plan.summary().newDomains()).containsExactly("quiz");
-        assertThat(plan.doc().tables())
-                .filteredOn(r -> String.valueOf(r.get(0)).startsWith("quiz_"))
-                .allMatch(r -> "quiz".equals(r.get(1)));
-        // 기존 도메인은 그대로 유지
-        assertThat(plan.doc().domains()).containsKeys("user", "stat");
-    }
-
-    @Test
-    void 도메인명은_대표_테이블_코멘트의_한글을_사용한다() {
-        String ddl = """
-                CREATE TABLE `treatment` (`treat_no` int NOT NULL, PRIMARY KEY (`treat_no`)) COMMENT='진료 기록 (외래/입원)';
-                CREATE TABLE `treatment_test` (`test_no` int NOT NULL, PRIMARY KEY (`test_no`)) COMMENT='검사';
-                """;
-        ImportPlan plan = importService.plan(ddl, "replace");
-        // 대표 테이블(treatment) 코멘트에서 괄호 앞부분만 사용
-        assertThat(plan.doc().domains().get("treatment").name()).isEqualTo("진료 기록");
-    }
-
-    @Test
-    void 대표_테이블이_없으면_사전으로_한글_도메인명을_만든다() {
-        String ddl = """
-                CREATE TABLE `lms_user` (`user_no` int NOT NULL, PRIMARY KEY (`user_no`)) COMMENT='회원';
-                CREATE TABLE `lms_order` (`order_no` int NOT NULL, PRIMARY KEY (`order_no`)) COMMENT='주문';
-                """;
-        ImportPlan plan = importService.plan(ddl, "replace");
-        assertThat(plan.doc().domains().get("lms").name()).isEqualTo("학습관리");
-    }
-
-    @Test
-    void merge_기존_테이블과_같은_접두어면_그_도메인을_따른다() {
-        // 기존 donut_user 가 user 도메인 → 신규 donut_extra 도 user 도메인
-        String ddl = """
-                CREATE TABLE `donut_extra` (`extra_no` int NOT NULL, PRIMARY KEY (`extra_no`)) COMMENT='부가';
-                """;
-        ImportPlan plan = importService.plan(ddl, "merge");
-        List<Object> extra = plan.doc().tables().stream()
-                .filter(r -> "donut_extra".equals(r.get(0))).findFirst().orElseThrow();
-        assertThat(extra.get(1)).isEqualTo("user");
+        // 토픽 '회원' ↔ 기존 도메인명 '회원/인증' 매칭
+        assertThat(domainOf(plan, "extra_member")).isEqualTo("user");
         assertThat(plan.summary().newDomains()).isEmpty();
+    }
+
+    @Test
+    void FK가_없으면_컬럼명으로_관계를_추론한다() {
+        String ddl = """
+                CREATE TABLE `donut_user` (
+                  `user_no` int NOT NULL COMMENT '회원번호',
+                  PRIMARY KEY (`user_no`)
+                ) COMMENT='회원';
+                CREATE TABLE `donut_goods` (
+                  `goods_no` int NOT NULL COMMENT '상품번호',
+                  PRIMARY KEY (`goods_no`)
+                ) COMMENT='상품';
+                CREATE TABLE `donut_cart` (
+                  `cart_no` int NOT NULL,
+                  `user_no` int NOT NULL COMMENT '회원번호',
+                  `goods_no` int NOT NULL COMMENT '상품번호',
+                  PRIMARY KEY (`cart_no`)
+                ) COMMENT='장바구니';
+                """;
+        ImportPlan plan = importService.plan(ddl, "replace");
+        assertThat(plan.doc().relations())
+                .anyMatch(r -> "donut_cart".equals(r.get(0)) && "donut_user".equals(r.get(1)))
+                .anyMatch(r -> "donut_cart".equals(r.get(0)) && "donut_goods".equals(r.get(1)));
+        // 추론된 참조 컬럼에는 FK 플래그가 붙는다
+        assertThat(plan.doc().columns().get("donut_cart"))
+                .anyMatch(c -> "user_no".equals(c.get(0)) && String.valueOf(c.get(3)).contains("FK"));
+    }
+
+    @Test
+    void 접미사_컬럼은_라벨을_붙여_관계를_추론한다() {
+        String ddl = """
+                CREATE TABLE `donut_goods` (
+                  `goods_no` int NOT NULL, PRIMARY KEY (`goods_no`)
+                ) COMMENT='상품';
+                CREATE TABLE `donut_event_goods` (
+                  `content_no` int NOT NULL,
+                  `b2c_goods_no` int DEFAULT NULL COMMENT 'B2C 상품번호',
+                  PRIMARY KEY (`content_no`)
+                ) COMMENT='상품 이벤트';
+                """;
+        ImportPlan plan = importService.plan(ddl, "replace");
+        assertThat(plan.doc().relations())
+                .anyMatch(r -> "donut_event_goods".equals(r.get(0)) && "donut_goods".equals(r.get(1))
+                        && r.size() > 2 && "b2c_goods_no".equals(r.get(2)));
+    }
+
+    @Test
+    void 자기_PK가_다른_테이블을_참조하는_경우도_추론한다() {
+        String ddl = """
+                CREATE TABLE `donut_content` (
+                  `content_no` int NOT NULL, PRIMARY KEY (`content_no`)
+                ) COMMENT='컨텐츠';
+                CREATE TABLE `donut_event_goods` (
+                  `content_no` int NOT NULL COMMENT '컨텐츠번호',
+                  PRIMARY KEY (`content_no`)
+                ) COMMENT='상품 이벤트';
+                """;
+        ImportPlan plan = importService.plan(ddl, "replace");
+        assertThat(plan.doc().relations())
+                .anyMatch(r -> "donut_event_goods".equals(r.get(0)) && "donut_content".equals(r.get(1)));
+    }
+
+    @Test
+    void 모호한_generic_PK명은_잘못_연결하지_않는다() {
+        String ddl = """
+                CREATE TABLE `donut_point_history` (
+                  `history_no` int NOT NULL, PRIMARY KEY (`history_no`)
+                ) COMMENT='포인트 내역';
+                CREATE TABLE `kmc_auth_history` (
+                  `history_no` int NOT NULL, PRIMARY KEY (`history_no`)
+                ) COMMENT='인증 이력';
+                CREATE TABLE `donut_point_use` (
+                  `use_no` int NOT NULL,
+                  `history_no` int NOT NULL COMMENT '변동내역 번호',
+                  PRIMARY KEY (`use_no`)
+                ) COMMENT='포인트 사용';
+                """;
+        ImportPlan plan = importService.plan(ddl, "replace");
+        assertThat(plan.doc().relations())
+                .anyMatch(r -> "donut_point_use".equals(r.get(0)) && "donut_point_history".equals(r.get(1)));
+        assertThat(plan.doc().relations())
+                .noneMatch(r -> "donut_point_history".equals(r.get(0)) && "kmc_auth_history".equals(r.get(1)))
+                .noneMatch(r -> "kmc_auth_history".equals(r.get(0)) && "donut_point_history".equals(r.get(1)));
+    }
+
+    @Test
+    void FK제약이_있으면_그대로_사용한다() {
+        String ddl = """
+                CREATE TABLE `donut_user` (
+                  `user_no` int NOT NULL, PRIMARY KEY (`user_no`)
+                ) COMMENT='회원';
+                CREATE TABLE `donut_bill` (
+                  `bill_no` int NOT NULL,
+                  `user_no` int NOT NULL,
+                  PRIMARY KEY (`bill_no`),
+                  CONSTRAINT `fk_b_u` FOREIGN KEY (`user_no`) REFERENCES `donut_user` (`user_no`)
+                ) COMMENT='결제';
+                """;
+        ImportPlan plan = importService.plan(ddl, "replace");
+        long count = plan.doc().relations().stream()
+                .filter(r -> "donut_bill".equals(r.get(0)) && "donut_user".equals(r.get(1)))
+                .count();
+        assertThat(count).isEqualTo(1);
     }
 
     @Test
@@ -188,6 +360,6 @@ class DdlImportServiceTest {
         ImportPlan plan = importService.plan(ddl, "merge");
         List<List<Object>> cols = plan.doc().columns().get("legacy_table");
         List<Object> userNo = cols.stream().filter(c -> "user_no".equals(c.get(0))).findFirst().orElseThrow();
-        assertThat(userNo.get(3)).isEqualTo("FK");
+        assertThat(String.valueOf(userNo.get(3))).contains("FK");
     }
 }

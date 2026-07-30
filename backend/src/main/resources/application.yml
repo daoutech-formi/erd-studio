@@ -13,3 +13,13 @@ spring:
     properties:
       hibernate.jdbc.batch_size: 50
       hibernate.order_inserts: true
+
+# DDL 임포트 시 도메인 자동 분류
+#  - api-key 가 비어 있으면 키워드 사전 + 가중치 방식으로 동작한다(기본).
+#  - 키를 주입하면 LLM 으로 일괄 분류하고, 호출 실패 시 사전 방식으로 자동 폴백한다.
+anthropic:
+  api-key: ${ANTHROPIC_API_KEY:}
+  model: ${ANTHROPIC_MODEL:claude-haiku-4-5-20251001}
+
+erd:
+  max-domains: ${ERD_MAX_DOMAINS:12}
