@@ -3,10 +3,11 @@
 services:
   db:
     image: postgres:16-alpine
+    # 값 미주입 시 postgres가 기동 거부(빈 비밀번호)로 즉시 종료하므로 기본값 필수
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-erd}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-adcon_erd}
     volumes:
       - erd-pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -23,9 +24,9 @@ services:
     environment:
       PGHOST: db
       PGPORT: 5432
-      PGUSER: ${POSTGRES_USER}
-      PGPASSWORD: ${POSTGRES_PASSWORD}
-      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: ${POSTGRES_USER:-erd}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      PGDATABASE: ${POSTGRES_DB:-adcon_erd}
       PORT: 3000
     ports:
       - "${WEB_PORT:-8080}:3000"
