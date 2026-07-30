@@ -31,8 +31,12 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:-change-me}
       PGDATABASE: ${POSTGRES_DB:-erd_studio}
       PORT: 3000
-    ports:
-      - "${WEB_PORT:-8080}:3000"
+      # Coolify 매직 변수: app 서비스 3000 포트에 도메인 자동 할당 (배포 후 링크 생성)
+      SERVICE_FQDN_APP_3000: ""
+    # 호스트 포트 publish 금지 — Coolify 프록시(FQDN)로만 노출해 포트 충돌 방지.
+    # 로컬 개발 포트는 docker-compose.override.yml 에서 열린다 (Coolify는 -f 로 이 파일만 사용).
+    expose:
+      - "3000"
     depends_on:
       db:
         condition: service_healthy

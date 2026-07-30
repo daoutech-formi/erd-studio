@@ -1,0 +1,6 @@
+# 로컬 개발 전용 — docker compose up 이 자동으로 병합한다.
+# Coolify 배포는 -f docker-compose.yml 로 파일을 명시하므로 이 파일을 읽지 않는다.
+services:
+  app:
+    ports:
+      - "${WEB_PORT:-8080}:3000"
