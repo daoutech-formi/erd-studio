@@ -73,7 +73,7 @@ docker compose up -d --build     # (구버전 CLI는 docker-compose)
 ## 개발
 
 ```bash
-# 백엔드 (PostgreSQL 필요 — 예: docker run -p 5432:5432 -e POSTGRES_USER=erd -e POSTGRES_PASSWORD=erd -e POSTGRES_DB=adcon_erd postgres:16-alpine)
+# 백엔드 (PostgreSQL 필요 — 예: docker run -p 5432:5432 -e POSTGRES_USER=erd -e POSTGRES_PASSWORD=erd -e POSTGRES_DB=erd_studio postgres:16-alpine)
 cd backend && ./gradlew bootRun     # http://localhost:3000
 cd backend && ./gradlew test        # 단위 테스트
 
@@ -95,7 +95,7 @@ node scripts/sim-load.mjs --url ws://localhost:8080/ws --clients 30 --ops-per-se
 # 외부망에서
 docker compose build
 docker pull postgres:16-alpine
-docker save -o erd-studio-images.tar adcon-erd-app postgres:16-alpine
+docker save -o erd-studio-images.tar erd-studio-app postgres:16-alpine
 
 # 폐쇄망에서
 docker load -i erd-studio-images.tar

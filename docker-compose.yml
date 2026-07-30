@@ -1,5 +1,8 @@
 # app + postgres 2컨테이너 구성.
 # 실제 환경변수 값은 Coolify가 주입한다 (.env.example 참고).
+# 프로젝트명 고정 — 디렉토리명과 무관하게 이미지가 erd-studio-app 으로 생성된다.
+name: erd-studio
+
 services:
   db:
     image: postgres:16-alpine
@@ -7,7 +10,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-erd}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
-      POSTGRES_DB: ${POSTGRES_DB:-adcon_erd}
+      POSTGRES_DB: ${POSTGRES_DB:-erd_studio}
     volumes:
       - erd-pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -26,7 +29,7 @@ services:
       PGPORT: 5432
       PGUSER: ${POSTGRES_USER:-erd}
       PGPASSWORD: ${POSTGRES_PASSWORD:-change-me}
-      PGDATABASE: ${POSTGRES_DB:-adcon_erd}
+      PGDATABASE: ${POSTGRES_DB:-erd_studio}
       PORT: 3000
     ports:
       - "${WEB_PORT:-8080}:3000"

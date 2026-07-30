@@ -11,7 +11,18 @@
       "Bash(npm run *)",
       "Bash(node *)",
       "Bash(python3 -c \"import json,sys; h=json.load\\(sys.stdin\\)[0]; print\\('userName:', h['userName'], '| opKind:', h['opKind']\\)\")",
-      "Bash(git commit -q -m 'X-User 헤더 한글 이름 인코딩 수정 \\(URL 인코딩 + 서버 UTF-8 디코딩\\) *)"
+      "Bash(git commit -q -m 'X-User 헤더 한글 이름 인코딩 수정 \\(URL 인코딩 + 서버 UTF-8 디코딩\\) *)",
+      "Bash(git credential-osxkeychain *)",
+      "Bash(GIT_CURL_VERBOSE=0 git ls-remote origin)",
+      "Bash(docker rm *)",
+      "Bash(docker-compose up *)",
+      "Bash(docker compose *)",
+      "Bash(docker-compose version *)",
+      "Bash(docker-compose --env-file /dev/null config)",
+      "Bash(git -C /Users/formi/adcon-erd add -A)",
+      "Bash(git -C /Users/formi/adcon-erd status --short)",
+      "Bash(git -C /Users/formi/adcon-erd commit -m '서비스명 erd-studio 통일: DB명 erd_studio, compose 프로젝트명 고정 *)",
+      "Bash(git -C /Users/formi/adcon-erd push origin main)"
     ]
   }
 }
