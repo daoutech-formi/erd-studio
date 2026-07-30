@@ -20,6 +20,34 @@ export function putSchema(doc: SchemaDoc, user: string): Promise<{ ok: boolean; 
   }).then((res) => parse(res));
 }
 
+export interface DdlImportSummary {
+  ok: boolean;
+  tables: number;
+  relations: number;
+  added: string[];
+  updated: string[];
+  removed: string[];
+  unchanged: number;
+  newRelations: number;
+  newDomains: string[];
+}
+
+export function previewDdl(ddl: string, mode: "merge" | "replace"): Promise<DdlImportSummary> {
+  return fetch("/api/ddl/preview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ddl, mode }),
+  }).then((res) => parse(res));
+}
+
+export function importDdl(ddl: string, mode: "merge" | "replace", user: string): Promise<DdlImportSummary> {
+  return fetch("/api/ddl/import", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-User": encodeURIComponent(user) },
+    body: JSON.stringify({ ddl, mode }),
+  }).then((res) => parse(res));
+}
+
 export function fetchHistory(limit = 50): Promise<HistoryEntry[]> {
   return fetch(`/api/history?limit=${limit}`).then((res) => parse<HistoryEntry[]>(res));
 }

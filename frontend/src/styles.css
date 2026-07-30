@@ -189,6 +189,16 @@ select.ci { appearance: auto; }
 }
 .history-panel th { color: #7b8399; font-weight: 400; }
 
+/* ---------- DDL 임포트 미리보기 ---------- */
+.ddl-preview {
+  margin-top: 10px; padding: 10px 12px; font-size: 12px; line-height: 1.7;
+  background: #10151f; border: 1px solid #262f45; border-radius: 8px;
+}
+.ddl-preview .add { color: #7fe0b2; }
+.ddl-preview .upd { color: #ffd479; }
+.ddl-preview .del { color: #ff9f9f; }
+.ddl-preview .keep { color: #7b8399; }
+
 /* ---------- 토스트 ---------- */
 .toast {
   position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%);

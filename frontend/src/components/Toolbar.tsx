@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { putSchema } from "../api/http";
 import { erdSocket } from "../api/socket";
 import { exportDbml } from "../exporters/dbml";
@@ -8,11 +9,13 @@ import { useDispatch, useStore } from "../state/schemaStore";
 import { invertOp, undoManager } from "../state/undo";
 import type { Op } from "../types";
 import { rowStr } from "../types";
+import { DdlImportModal } from "./DdlImportModal";
 
 /** 편집 모드 툴바 — 테이블 추가, Undo/Redo, 변경 이력. */
 export function Toolbar() {
   const { doc, historyOpen } = useStore();
   const dispatch = useDispatch();
+  const [ddlOpen, setDdlOpen] = useState(false);
   if (!doc) {
     return null;
   }
@@ -76,11 +79,13 @@ export function Toolbar() {
       <span className="tbsep" />
       <button onClick={() => exportJson(doc)}>💾 JSON 저장</button>
       <button onClick={doImport}>📂 JSON 불러오기</button>
+      <button onClick={() => setDdlOpen(true)}>⬆ DDL 불러오기</button>
       <button onClick={() => exportSql(doc)}>⬇ SQL</button>
       <button onClick={() => exportDbml(doc)}>⬇ DBML</button>
       <button onClick={() => exportPng(toastErr)}>🖼 PNG</button>
       <button onClick={() => exportSvg(toastErr)}>🖼 SVG</button>
       <span className="tbnote">모든 편집은 즉시 전체 접속자에게 반영되고 DB에 저장됩니다</span>
+      {ddlOpen && <DdlImportModal onClose={() => setDdlOpen(false)} />}
     </div>
   );
 }
