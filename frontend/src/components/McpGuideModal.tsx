@@ -4,19 +4,51 @@ interface Props {
   onClose: () => void;
 }
 
+/**
+ * 클립보드 복사 — HTTP(비보안 컨텍스트)에서는 navigator.clipboard 가 없으므로
+ * 임시 textarea + execCommand 폴백으로 동작시킨다.
+ */
+async function copyText(text: string): Promise<boolean> {
+  if (window.isSecureContext && navigator.clipboard) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // 권한 거부 등 — 아래 폴백 시도
+    }
+  }
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  let ok = false;
+  try {
+    ok = document.execCommand("copy");
+  } catch {
+    ok = false;
+  }
+  document.body.removeChild(ta);
+  return ok;
+}
+
 /** 등록 명령 등 복사 가능한 코드 한 줄. */
 function CodeRow({ code }: { code: string }) {
-  const [copied, setCopied] = useState(false);
+  const [state, setState] = useState<"idle" | "ok" | "fail">("idle");
   const copy = () => {
-    navigator.clipboard.writeText(code).then(() => {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
+    copyText(code).then((ok) => {
+      setState(ok ? "ok" : "fail");
+      window.setTimeout(() => setState("idle"), 1500);
     });
   };
   return (
     <div className="mcp-code">
       <code>{code}</code>
-      <button className="mini" onClick={copy}>{copied ? "복사됨 ✓" : "복사"}</button>
+      <button className="mini" onClick={copy}>
+        {state === "ok" ? "복사됨 ✓" : state === "fail" ? "복사 실패" : "복사"}
+      </button>
     </div>
   );
 }
