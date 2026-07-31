@@ -79,7 +79,14 @@ export function RoomList({ user, notice, onEnter }: Props) {
           </div>
         </div>
         <div className="room-header-right">
-          <button onClick={() => setMcpOpen(true)}>🔗 MCP 연결</button>
+          <span
+            className="tooltip-wrap"
+            data-tip={"더 정확한 도메인 분류와 관계 추출이 필요하다면 Claude를 연결해 보세요. "
+              + "DDL 임포트부터 의미 기반 도메인 분류까지 대화 한 문장으로 처리됩니다. "
+              + "(Claude Code 사용자 한정 · 최초 1회 등록)"}
+          >
+            <button onClick={() => setMcpOpen(true)}>🔗 MCP 연결</button>
+          </span>
           <span className="room-count">{rooms.length} / {MAX_ROOMS} 방</span>
         </div>
       </header>

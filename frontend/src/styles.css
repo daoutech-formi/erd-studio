@@ -223,6 +223,19 @@ select.ci { appearance: auto; }
 }
 .room-header-right button:hover { background: #2b3550; }
 
+/* ---------- 툴팁 ---------- */
+.tooltip-wrap { position: relative; display: inline-flex; }
+.tooltip-wrap::after {
+  content: attr(data-tip);
+  position: absolute; top: calc(100% + 8px); right: 0; width: 280px;
+  background: #222b40; border: 1px solid #33405e; color: #dfe5f1;
+  font-size: 11px; line-height: 1.7; padding: 9px 12px; border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  opacity: 0; visibility: hidden; transition: opacity 0.15s;
+  pointer-events: none; z-index: 40; white-space: normal; text-align: left;
+}
+.tooltip-wrap:hover::after { opacity: 1; visibility: visible; }
+
 /* ---------- MCP 연결 안내 ---------- */
 .mcp-guide { width: 620px; max-width: 94vw; max-height: 88vh; overflow-y: auto; }
 .mcp-guide p { font-size: 12px; color: #97a1b8; line-height: 1.7; }

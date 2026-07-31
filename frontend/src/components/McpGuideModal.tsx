@@ -84,14 +84,60 @@ export function McpGuideModal({ onClose }: Props) {
   return (
     <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal mcp-guide">
-        <h2>🔗 MCP 연결</h2>
+        <h2>🔗 Claude 연결 (MCP)</h2>
         <p>
-          이 서버는 MCP(SSE)로도 노출됩니다. Claude Code에 연결하면 <b>구독 라이선스의 Claude가
-          DDL 의미 분석·도메인 분류를 수행</b>하고 도구 호출로 방에 직접 반영합니다 (API 키 불필요).
-          반영 결과는 접속 중인 모든 브라우저에 실시간 전파됩니다.
+          Claude를 이 ERD Studio에 연결하면, 터미널에서 Claude와 대화하는 것만으로
+          <b> DDL 임포트·도메인 자동 분류·스키마 정리</b>를 시킬 수 있습니다.
+          예를 들어 <i>"이 DDL 파일을 임포트하고 도메인을 의미 기반으로 분류해줘"</i> 라고 말하면
+          Claude가 알아서 처리하고, 결과는 접속 중인 모든 팀원 화면에 실시간 반영됩니다.
+          (개인 Claude 라이선스로 동작 — 별도 API 키 불필요)
         </p>
 
-        <div className="mcp-sect">서버 정보</div>
+        <div className="mcp-sect">준비물</div>
+        <p className="mcp-note">
+          ① <b>Claude Code</b>가 설치되어 있어야 합니다 — 터미널(cmd/PowerShell)에
+          <code> claude</code> 를 입력했을 때 실행되면 준비된 것입니다.
+          ② 사내망에 연결된 PC여야 합니다.
+          ③ Claude 앱(Desktop)이 아니라 <b>터미널의 Claude Code</b>로 사용합니다
+          — Desktop 커넥터는 사내망 서버에 접속할 수 없습니다.
+        </p>
+
+        <div className="mcp-sect">STEP 1 — 연결 등록 (최초 1회)</div>
+        <p className="mcp-note">
+          터미널을 열고 아래 명령을 실행합니다. <b>어느 폴더에서 실행해도 상관없습니다</b> —
+          이 명령은 폴더와 무관한 사용자 설정이며, <code>--scope user</code> 덕분에
+          등록 후에는 어떤 폴더에서 Claude를 열어도 연결이 유지됩니다.
+        </p>
+        <CodeRow code={addCommand} />
+
+        <div className="mcp-sect">STEP 2 — 연결 확인</div>
+        <p className="mcp-note">
+          아래 명령을 실행해서 <code>erd-studio … ✓ Connected</code> 가 보이면 성공입니다.
+          (Connected 가 아니면 사내망 연결과 서버 상태를 확인하세요)
+        </p>
+        <CodeRow code="claude mcp list" />
+
+        <div className="mcp-sect">STEP 3 — 사용하기</div>
+        <p className="mcp-note">
+          <b>DDL 파일을 사용할 경우</b>, 그 파일이 있는 폴더로 이동해서 Claude를 실행하세요.
+          대화 중 <code>@파일명</code> 참조가 <b>Claude를 실행한 폴더 기준</b>이기 때문입니다.
+          (<code>@</code> 를 입력하면 폴더 안 파일이 자동완성으로 뜹니다)
+        </p>
+        <CodeRow code={"cd D:\\작업폴더\\ddl파일있는곳"} />
+        <CodeRow code="claude" />
+        <p className="mcp-note">
+          Claude가 열리면 아래 예시처럼 <b>그냥 말하면 됩니다.</b> 도구 이름을 외울 필요 없이
+          Claude가 알아서 적절한 기능을 호출합니다. 파일 없이 DDL 내용을 대화에 직접
+          붙여넣어도 됩니다.
+        </p>
+        {PROMPTS.map(([label, prompt]) => (
+          <div key={label}>
+            <div className="mcp-hint">{label}</div>
+            <CodeRow code={prompt} />
+          </div>
+        ))}
+
+        <div className="mcp-sect">참고 — 서버 정보와 제공 기능</div>
         <table className="mcp-table">
           <tbody>
             <tr><th>서버 이름</th><td>erd-studio</td></tr>
@@ -99,45 +145,25 @@ export function McpGuideModal({ onClose }: Props) {
             <tr><th>SSE 엔드포인트</th><td><code>{endpoint}</code></td></tr>
           </tbody>
         </table>
-
-        <div className="mcp-sect">Claude Code (CLI) 연결 — 터미널에서 실행</div>
-        <CodeRow code={addCommand} />
-        <div className="mcp-hint">연결 확인:</div>
-        <CodeRow code="claude mcp list" />
-        <p className="mcp-note">
-          인증 토큰이 설정된 서버라면 명령 뒤에 <code>--header "Authorization: Bearer &lt;토큰&gt;"</code> 을
-          붙입니다. Claude Desktop의 원격 커넥터는 Anthropic 클라우드를 경유해 사내망 서버에 접속할 수
-          없으므로 <b>Claude Code CLI</b>를 사용하세요.
-        </p>
-
-        <div className="mcp-sect">제공 tool</div>
-        <table className="mcp-table">
+        <table className="mcp-table" style={{ marginTop: 8 }}>
           <tbody>
             {TOOLS.map(([name, desc]) => (
               <tr key={name}><th><code>{name}</code></th><td>{desc}</td></tr>
             ))}
           </tbody>
         </table>
-
-        <div className="mcp-sect">질의 예시 — Claude Code 대화에 붙여넣기</div>
-        {PROMPTS.map(([label, prompt]) => (
-          <div key={label}>
-            <div className="mcp-hint">{label}</div>
-            <CodeRow code={prompt} />
-          </div>
-        ))}
         <p className="mcp-note">
-          <code>@파일</code> 참조는 Claude Code를 실행한 폴더 기준입니다. DDL 파일이 있는 폴더에서
-          <code>claude</code> 를 실행하면 자동완성으로 파일을 고를 수 있습니다.
+          인증 토큰이 설정된 서버라면 STEP 1 명령 뒤에
+          <code> --header "Authorization: Bearer &lt;토큰&gt;"</code> 을 붙입니다.
         </p>
 
         <div className="mcp-sect">연결 해제 (삭제)</div>
-        <CodeRow code="claude mcp remove erd-studio" />
         <p className="mcp-note">
-          등록을 삭제해도 서버의 ERD 데이터에는 영향이 없습니다. 삭제 후 목록에서 사라졌는지는
-          <code> claude mcp list</code> 로 확인합니다. 다른 이름으로 등록했다면 그 이름으로,
-          여러 스코프에 중복 등록했다면 <code>--scope user</code> 등 스코프를 붙여 각각 삭제합니다.
+          더 이상 사용하지 않을 때 아래 명령으로 등록을 삭제합니다. 역시 아무 폴더에서나 실행하면
+          되고, <b>서버의 ERD 데이터에는 영향이 없습니다.</b> 삭제 후 <code>claude mcp list</code> 로
+          목록에서 사라졌는지 확인하세요.
         </p>
+        <CodeRow code="claude mcp remove erd-studio" />
 
         <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
           <button className="mini" onClick={onClose}>닫기</button>
