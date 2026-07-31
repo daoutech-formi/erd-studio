@@ -505,7 +505,8 @@ public class DdlImportService {
             List<List<Object>> childCols = columns.getOrDefault(child, List.of());
             for (List<Object> c : childCols) {
                 String colName = Rows.str(c, 0);
-                if (!colName.endsWith("_no") && !colName.endsWith("_id")) {
+                String colLower = colName.toLowerCase(Locale.ROOT); // 대문자 스키마(USER_NO 등) 대응
+                if (!colLower.endsWith("_no") && !colLower.endsWith("_id")) {
                     continue;
                 }
                 String parent;
@@ -515,10 +516,11 @@ public class DdlImportService {
                     boolean ownPk = colName.equals(pkOf.get(child));
                     parent = pickParent(child, colName, owners, ownPk);
                 } else {
-                    // 접미사 매칭: b2c_goods_no → goods_no (가장 긴 PK 명 우선)
+                    // 접미사 매칭: b2c_goods_no → goods_no (가장 긴 PK 명 우선, 대소문자 무시)
                     String bestPk = null;
                     for (String pk : pkOwners.keySet()) {
-                        if (colName.endsWith("_" + pk) && (bestPk == null || pk.length() > bestPk.length())) {
+                        if (colLower.endsWith("_" + pk.toLowerCase(Locale.ROOT))
+                                && (bestPk == null || pk.length() > bestPk.length())) {
                             bestPk = pk;
                         }
                     }
@@ -557,7 +559,8 @@ public class DdlImportService {
             boolean exact = o.equals(stem);
             boolean canonical = canonicalForm.matcher(o).matches();
             int common = commonTokenCount(o, child.toLowerCase(Locale.ROOT));
-            boolean firstTokenIsStem = common >= 1 && o.split("_")[0].equals(stem);
+            // 부모 이름이 어간으로 시작하면 허용 — USER_MAIN(user_no), pick_order(pick_no) 등
+            boolean firstTokenIsStem = o.split("_")[0].equals(stem);
             if (!(exact || canonical || common >= 2 || firstTokenIsStem)) {
                 continue;
             }

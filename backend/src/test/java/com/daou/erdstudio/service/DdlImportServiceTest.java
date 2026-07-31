@@ -337,6 +337,32 @@ class DdlImportServiceTest {
     }
 
     @Test
+    void 대문자_스키마도_컬럼명으로_관계를_추론한다() {
+        String ddl = """
+                CREATE TABLE `USER_MAIN` (
+                  `USER_NO` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '유저 번호',
+                  PRIMARY KEY (`USER_NO`)
+                ) COMMENT='유저 정보';
+                CREATE TABLE `ADDRESS_BOOK_GROUP` (
+                  `ADDRESS_BOOK_GROUP_NO` bigint(20) unsigned NOT NULL COMMENT '주소록 그룹 번호',
+                  `USER_NO` bigint(20) unsigned NOT NULL COMMENT '유저 번호',
+                  PRIMARY KEY (`ADDRESS_BOOK_GROUP_NO`)
+                ) COMMENT='주소록 그룹';
+                CREATE TABLE `ADDRESS_BOOK` (
+                  `ADDRESS_BOOK_NO` bigint(20) unsigned NOT NULL COMMENT '주소록 번호',
+                  `ADDRESS_BOOK_GROUP_NO` bigint(20) unsigned NOT NULL COMMENT '주소록 그룹 번호',
+                  `USER_NO` bigint(20) unsigned NOT NULL COMMENT '유저 번호',
+                  PRIMARY KEY (`ADDRESS_BOOK_NO`)
+                ) COMMENT='주소록';
+                """;
+        ImportPlan plan = importService.plan(roomId, ddl, "replace");
+        assertThat(plan.doc().relations())
+                .anyMatch(r -> "ADDRESS_BOOK".equals(r.get(0)) && "ADDRESS_BOOK_GROUP".equals(r.get(1)))
+                .anyMatch(r -> "ADDRESS_BOOK".equals(r.get(0)) && "USER_MAIN".equals(r.get(1)))
+                .anyMatch(r -> "ADDRESS_BOOK_GROUP".equals(r.get(0)) && "USER_MAIN".equals(r.get(1)));
+    }
+
+    @Test
     void FK제약이_있으면_그대로_사용한다() {
         String ddl = """
                 CREATE TABLE `donut_user` (

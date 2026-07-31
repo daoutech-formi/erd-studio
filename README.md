@@ -121,3 +121,47 @@ docker compose up -d   # build 없이 로드된 이미지로 기동
 ```bash
 docker compose down -v && docker compose up -d   # 시드부터 다시 시작
 ```
+
+## MCP 연결
+
+백엔드가 MCP 서버(SSE)를 함께 노출한다. Claude Code에서 연결하면 **구독 라이선스의 Claude가
+DDL 의미 분석·도메인 분류를 수행**하고, 도구 호출로 방에 직접 반영할 수 있다 (API 키 불필요).
+반영 결과는 접속 중인 브라우저 전원에게 WebSocket으로 실시간 전파된다.
+
+```bash
+# 등록 (도메인은 배포 주소로 교체)
+claude mcp add --transport sse erd-studio http://<erd-studio 도메인>/sse
+
+# 연결 확인
+claude mcp list
+
+# 연결 해제 (삭제) — 서버의 ERD 데이터에는 영향 없음
+claude mcp remove erd-studio
+```
+
+`ERD_MCP_TOKEN` 환경변수를 설정하면 등록 시
+`--header "Authorization: Bearer <토큰>"` 을 붙여야 한다(선택, 미설정 시 사내망 개방).
+
+> Claude Desktop(Cowork)의 원격 커넥터는 Anthropic 클라우드를 경유하므로 폐쇄망 LAN 서버에는
+> 연결되지 않는다 — **Claude Code CLI**를 사용한다. (CLI는 로컬 머신에서 서버로 직접 접속)
+
+### 제공 tool
+
+| tool | 설명 |
+|---|---|
+| `list_rooms` | ERD 방 목록 조회 (id·이름·테이블 수) |
+| `create_room` | 방 생성 (전체 최대 20개) |
+| `get_schema` | 방의 전체 스키마 문서 조회 |
+| `replace_schema` | 스키마 문서 전체 교체 — 도메인 재구성·테이블 재배치용 |
+| `preview_ddl` | DDL 파싱 후 변경 요약 미리보기 (반영 없음) |
+| `import_ddl` | DDL 을 방에 적용 (merge/replace) |
+
+### 사용 예 (Claude Code 대화)
+
+```
+> 이 DDL 파일을 '애드콘 ERD' 방에 임포트하고,
+  도메인은 테이블 의미를 분석해서 다시 분류해줘. @create-tables.sql
+```
+
+Claude가 `list_rooms` → `import_ddl` → `get_schema` → (의미 분류) → `replace_schema`
+순으로 도구를 호출해 분류까지 마친다.

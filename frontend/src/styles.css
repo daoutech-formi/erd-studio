@@ -216,6 +216,31 @@ select.ci { appearance: auto; }
 .room-header h1 { font-size: 20px; letter-spacing: 0.3px; }
 .room-header .sub { font-size: 12px; color: #7b8399; margin-top: 4px; max-width: 640px; line-height: 1.6; }
 .room-count { font-size: 12px; color: #7b8399; white-space: nowrap; }
+.room-header-right { display: flex; align-items: center; gap: 12px; }
+.room-header-right button {
+  background: #222b40; border: 1px solid #33405e; color: #dfe5f1;
+  padding: 7px 12px; border-radius: 7px; font-size: 12px; cursor: pointer;
+}
+.room-header-right button:hover { background: #2b3550; }
+
+/* ---------- MCP 연결 안내 ---------- */
+.mcp-guide { width: 620px; max-width: 94vw; max-height: 88vh; overflow-y: auto; }
+.mcp-guide p { font-size: 12px; color: #97a1b8; line-height: 1.7; }
+.mcp-sect { margin-top: 14px; margin-bottom: 6px; font-weight: 700; font-size: 13px; color: #dfe5f1; }
+.mcp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.mcp-table th {
+  text-align: left; font-weight: 400; color: #7b8399; padding: 6px 8px;
+  border-bottom: 1px solid #1f2739; width: 140px; vertical-align: top; white-space: nowrap;
+}
+.mcp-table td { padding: 6px 8px; border-bottom: 1px solid #1f2739; color: #dfe5f1; word-break: break-all; }
+.mcp-table code, .mcp-guide code { font-family: Consolas, monospace; font-size: 11px; color: #7fd3a8; }
+.mcp-code {
+  display: flex; align-items: center; gap: 8px; margin: 6px 0;
+  background: #10151f; border: 1px solid #262f45; border-radius: 7px; padding: 8px 10px;
+}
+.mcp-code code { flex: 1; overflow-x: auto; white-space: nowrap; }
+.mcp-hint { font-size: 11px; color: #7b8399; margin-top: 8px; }
+.mcp-note { font-size: 11px; color: #7b8399; margin-top: 8px; line-height: 1.7; }
 
 .room-notice, .room-error {
   border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 14px;

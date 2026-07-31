@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.Map;
 
@@ -19,6 +20,17 @@ public class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> badRequest(IllegalArgumentException e) {
         return Map.of("error", e.getMessage());
+    }
+
+    /**
+     * 없는 경로 요청 — 구버전 번들을 띄워 둔 브라우저 탭이 옛 API(/api/schema 등)를 부르는 경우가
+     * 대부분이라 스택트레이스 없이 한 줄만 남긴다. (해당 탭을 새로고침하면 사라진다)
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String, String> notFound(NoResourceFoundException e) {
+        log.warn("존재하지 않는 경로 요청: /{}", e.getResourcePath());
+        return Map.of("error", "존재하지 않는 API 입니다. 화면을 새로고침해 주세요.");
     }
 
     @ExceptionHandler(Exception.class)

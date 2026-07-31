@@ -8,6 +8,9 @@ export default defineConfig({
     proxy: {
       "/api": "http://localhost:3000",
       "/ws": { target: "ws://localhost:3000", ws: true },
+      // MCP (SSE) — 개발 중에도 화면 주소로 MCP 등록이 가능하도록 백엔드로 넘긴다.
+      "/sse": "http://localhost:3000",
+      "/message": "http://localhost:3000",
     },
   },
 });

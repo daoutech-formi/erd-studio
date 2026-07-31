@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { createRoom, deleteRoom, fetchRooms, type RoomInfo } from "../api/http";
 import type { UserInfo } from "../state/user";
+import { McpGuideModal } from "./McpGuideModal";
 
 const MAX_ROOMS = 20;
 const MAX_USERS_PER_ROOM = 10;
@@ -19,6 +20,7 @@ export function RoomList({ user, notice, onEnter }: Props) {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [mcpOpen, setMcpOpen] = useState(false);
 
   const load = useCallback(() => {
     fetchRooms()
@@ -76,7 +78,10 @@ export function RoomList({ user, notice, onEnter }: Props) {
             동시 접속할 수 있습니다.
           </div>
         </div>
-        <span className="room-count">{rooms.length} / {MAX_ROOMS} 방</span>
+        <div className="room-header-right">
+          <button onClick={() => setMcpOpen(true)}>🔗 MCP 연결</button>
+          <span className="room-count">{rooms.length} / {MAX_ROOMS} 방</span>
+        </div>
       </header>
 
       {notice && <div className="room-notice">{notice}</div>}
@@ -137,6 +142,7 @@ export function RoomList({ user, notice, onEnter }: Props) {
           ))}
         </div>
       )}
+      {mcpOpen && <McpGuideModal onClose={() => setMcpOpen(false)} />}
     </div>
   );
 }
