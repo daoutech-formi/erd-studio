@@ -74,7 +74,7 @@ export function DdlImportModal({ roomId, onClose }: Props) {
       <div className="modal" style={{ width: 560, maxWidth: "94vw" }}>
         <h2>⬆ DDL 불러오기 (SQL)</h2>
         <p>
-          MySQL/MariaDB의 <code>CREATE TABLE</code> DDL을 붙여넣으면 파싱해서 스키마에 반영합니다.
+          MySQL/MariaDB 또는 PostgreSQL의 <code>CREATE TABLE</code> DDL을 붙여넣으면 파싱해서 스키마에 반영합니다.
           관계는 FOREIGN KEY 제약을 우선 사용하고, 없으면 컬럼명(user_no → donut_user 등)으로 추론합니다.
           도메인은 테이블명과 COMMENT를 분석해 최대 12개로 자동 분류됩니다
           (LLM API 키가 설정된 경우 LLM으로 분류하고, 없으면 키워드 사전 방식으로 동작).

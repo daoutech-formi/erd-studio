@@ -76,6 +76,52 @@ class DdlParserTest {
         assertThat(schema.relations().get(0).parent()).isEqualTo("donut_user");
     }
 
+    private static final String PG_SAMPLE = """
+            CREATE TABLE public.users (
+                user_no bigserial NOT NULL,
+                email character varying(100) UNIQUE,
+                score double precision,
+                created_at timestamp with time zone DEFAULT now()
+            );
+
+            CREATE TABLE public.orders (
+                order_no serial PRIMARY KEY,
+                user_no bigint REFERENCES public.users (user_no),
+                memo text
+            );
+
+            ALTER TABLE ONLY public.users
+                ADD CONSTRAINT users_pkey PRIMARY KEY (user_no);
+            ALTER TABLE ONLY public.orders
+                ADD CONSTRAINT orders_user_fk FOREIGN KEY (user_no) REFERENCES public.users (user_no);
+
+            COMMENT ON TABLE public.users IS '회원 정보';
+            COMMENT ON COLUMN public.users.email IS '이메일';
+            """;
+
+    @Test
+    void PostgreSQL_DDL_을_파싱한다() {
+        ParsedSchema schema = parser.parse(PG_SAMPLE);
+        assertThat(schema.tables()).extracting(ParsedTable::name).containsExactly("users", "orders");
+
+        ParsedTable users = schema.tables().get(0);
+        assertThat(users.comment()).isEqualTo("회원 정보");
+        assertThat(users.columns()).extracting(ParsedColumn::colType)
+                .containsExactly("bigint", "varchar(100)", "double", "timestamptz");
+        assertThat(users.columns().get(0).flags()).containsExactly("PK"); // ALTER TABLE ONLY … PRIMARY KEY
+        assertThat(users.columns().get(1).flags()).containsExactly("UK"); // 인라인 UNIQUE
+        assertThat(users.columns().get(1).comment()).isEqualTo("이메일"); // COMMENT ON COLUMN
+
+        ParsedTable orders = schema.tables().get(1);
+        assertThat(orders.columns().get(0).flags()).containsExactly("PK"); // 인라인 PRIMARY KEY (serial)
+        assertThat(orders.columns().get(1).flags()).contains("FK");
+
+        // 인라인 REFERENCES + ALTER FK 가 같은 관계 → 1건으로 dedupe
+        assertThat(schema.relations()).hasSize(1);
+        assertThat(schema.relations().get(0).child()).isEqualTo("orders");
+        assertThat(schema.relations().get(0).parent()).isEqualTo("users");
+    }
+
     @Test
     void CREATE_TABLE_이_없으면_거부한다() {
         assertThatThrownBy(() -> parser.parse("SELECT 1;"))
