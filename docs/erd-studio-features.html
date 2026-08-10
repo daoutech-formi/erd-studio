@@ -90,7 +90,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
   <h1>ERD Studio 기능 명세서</h1>
   <p class="lede">2026년 8월 10일 기준, 코드베이스에서 확인한 전체 구현 기능 목록입니다. 팀이 동시에 편집하는 DB 테이블 관계도(ERD) 뷰어/편집기 — React + Spring Boot + PostgreSQL, 셀프호스팅.</p>
   <div class="stats">
-    <div class="stat"><b>v1.2</b><span>현재 버전 (MCP 연동)</span></div>
+    <div class="stat"><b>v1.3</b><span>현재 버전 (Tier 1 반영)</span></div>
     <div class="stat"><b>6</b><span>기능 카테고리</span></div>
     <div class="stat"><b>12</b><span>REST 엔드포인트</span></div>
     <div class="stat"><b>6</b><span>MCP 도구</span></div>
@@ -98,7 +98,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
   </div>
   <div class="docnav">
     <a href="erd-studio-version-history.html">→ 버전 진화 히스토리</a>
-    <a href="erd-market-research-20260810.html">→ 시장조사 리포트</a>
+    <a href="erd-market-research.html">→ 시장조사 리포트</a>
   </div>
 </header>
 
@@ -109,7 +109,10 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
     <div class="entity">
       <div class="entity-head"><span class="dot"></span>캔버스 · 뷰어</div>
       <ul>
-        <li>SVG 자체 렌더링 + 베지어 관계선 <small>외부 다이어그램 라이브러리 없음, 107테이블에서 동작</small></li>
+        <li>SVG 자체 렌더링 + 베지어 관계선 <small>외부 다이어그램 라이브러리 없음, 107테이블에서 동작, 관계선은 노드 경계 앵커에서 시작</small></li>
+        <li>관계 카디널리티 표기 (IE 까마귀발) <small>N:1(기본) · 1:1 · N:M — 엣지 양끝 마커, 상세 패널에도 표기</small></li>
+        <li>미니맵 <small>도메인 색상 축소 뷰 + 현재 뷰포트 표시 + 클릭/드래그 이동</small></li>
+        <li>다크/라이트 테마 <small>☀/🌙 토글, localStorage 유지, 내보내기 이미지에도 테마 색 반영</small></li>
         <li>도메인 그리드 자동 레이아웃 <small>도메인별 5열 배치, 저장 좌표가 있으면 우선</small></li>
         <li>드래그 팬 / 휠 줌 / 줌 버튼 / 전체보기 리셋 <small>rAF transform 조작 — 줌 중 리렌더 없음</small></li>
         <li>노드 클릭 → 관계 강조 <small>인접 테이블 외 자동 dim 처리</small></li>
@@ -134,7 +137,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
       <div class="entity-head"><span class="dot"></span>편집 · 모델링</div>
       <ul>
         <li>편집 모드 토글 <small>보기/편집 분리로 실수 방지</small></li>
-        <li>테이블 편집 폼 <small>이름·도메인·설명·컬럼(타입/설명/PK/UK/FK)·참조관계(대상+라벨)</small></li>
+        <li>테이블 편집 폼 <small>이름·도메인·설명·컬럼(타입/설명/PK/UK/FK)·참조관계(대상+카디널리티+라벨)</small></li>
         <li>테이블 추가/삭제 <small>삭제 시 관련 관계 함께 정리</small></li>
         <li>도메인 관리 <small>추가·이름·색상·순서 변경, 최대 20개, 삭제 시 소속 테이블 자동 이동</small></li>
         <li>노드 배치 저장 <small>드래그 위치가 방 전원에게 동일하게 유지</small></li>
@@ -144,7 +147,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
     <div class="entity">
       <div class="entity-head"><span class="dot"></span>임포트 · AI</div>
       <ul>
-        <li>MySQL/MariaDB DDL 임포트 <small>텍스트 붙여넣기 또는 .sql 파일, 주석·백틱·UNSIGNED·COMMENT 파싱</small></li>
+        <li>MySQL/MariaDB/PostgreSQL DDL 임포트 <small>텍스트 붙여넣기 또는 .sql 파일 — 주석·백틱·UNSIGNED·COMMENT, PG 스키마 접두어·ALTER ONLY PK·COMMENT ON·serial/다단어 타입·인라인 REFERENCES 파싱</small></li>
         <li>변경 미리보기 → merge/replace 선택 <small>추가/변경/삭제/신규 도메인·관계 요약 후 적용</small></li>
         <li>FK 없는 스키마 관계 자동 추론 <small>컬럼명 일치·접미사 매칭·공통 토큰 점수로 부모 테이블 선정</small></li>
         <li>도메인 자동 분류 — 키워드 사전 <small>약 30개 도메인 규칙, 3단계 가중치, FK 이웃 다수결 보정</small></li>
@@ -164,8 +167,9 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
     <div class="entity">
       <div class="entity-head"><span class="dot"></span>내보내기 · 방 · 운영</div>
       <ul>
-        <li>내보내기 4계열 <small>SQL(MySQL/MariaDB, FK·COMMENT 포함) · DBML(dbdiagram.io 호환) · PNG(2x)/SVG · JSON 백업</small></li>
+        <li>내보내기 5계열 <small>SQL(MySQL/MariaDB · PostgreSQL 방언 선택, FK·COMMENT 포함) · DBML(dbdiagram.io 호환) · PNG(2x)/SVG · PDF(인쇄 창 기반) · JSON 백업</small></li>
         <li>JSON 불러오기 <small>전체 교체, undo 가능</small></li>
+        <li>방 딥링크 + 읽기전용 공유 링크 <small>해시 라우팅 #/room/:id?view=readonly — 게스트는 이름 입력 없이 입장, 편집 UI 숨김, 헤더 🔗 공유 버튼으로 복사</small></li>
         <li>방(Room) 멀티 워크스페이스 <small>최대 20방 × 동시 10명, 데이터·이력·락 완전 분리</small></li>
         <li>방 목록 실시간 현황 <small>5초 폴링, 테이블 수·접속자 수 배지</small></li>
         <li>계정 없는 접속 <small>이름만 입력(1~20자), 이름 해시로 사용자 색상 자동 배정</small></li>
@@ -175,7 +179,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
   </div>
   <div class="callout">
     <h3>차별화 포인트</h3>
-    <p>주요 상용/오픈소스 ERD 도구 6종과 비교했을 때, <b>MCP 서버 내장</b>, <b>FK 없는 스키마의 관계 자동 추론</b>, <b>LLM 도메인 자동 분류</b>는 ERD Studio에만 있는 기능입니다. 실시간 동시편집 + 편집 잠금 조합은 drawSQL이 월 $59 플랜에 제공하는 수준입니다. 상세 비교는 <a href="erd-market-research-20260810.html">시장조사 리포트</a>를 참고하세요.</p>
+    <p>주요 상용/오픈소스 ERD 도구 6종과 비교했을 때, <b>MCP 서버 내장</b>, <b>FK 없는 스키마의 관계 자동 추론</b>, <b>LLM 도메인 자동 분류</b>는 ERD Studio에만 있는 기능입니다. 실시간 동시편집 + 편집 잠금 조합은 drawSQL이 월 $59 플랜에 제공하는 수준입니다. 상세 비교는 <a href="erd-market-research.html">시장조사 리포트</a>를 참고하세요.</p>
   </div>
 </section>
 
@@ -238,7 +242,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
 <footer>
   기준일 2026-08-10 · 코드베이스 전수 조사 기반 · 관련 문서:
   <a href="erd-studio-version-history.html">버전 진화 히스토리</a> ·
-  <a href="erd-market-research-20260810.html">시장조사 리포트</a>
+  <a href="erd-market-research.html">시장조사 리포트</a>
 </footer>
 </div>
 </body>

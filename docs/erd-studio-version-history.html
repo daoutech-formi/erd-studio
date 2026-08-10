@@ -93,17 +93,30 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
   <h1>ERD Studio 진화의 기록</h1>
   <p class="lede">단일 HTML 파일 뷰어에서 시작해, 2주 만에 실시간 협업 · AI 분류 · MCP 연동을 갖춘 팀 도구가 되기까지 — git 커밋으로 재구성한 타임라인입니다. 최신이 위에 옵니다.</p>
   <div class="stats">
-    <div class="stat"><b>4</b><span>메이저 마일스톤</span></div>
+    <div class="stat"><b>5</b><span>메이저 마일스톤</span></div>
     <div class="stat"><b>22</b><span>기능 커밋</span></div>
-    <div class="stat"><b>15일</b><span>v1.0 → v1.2 (7/27~7/31)</span></div>
+    <div class="stat"><b>15일</b><span>v1.0 → v1.3 (7/27~8/10)</span></div>
   </div>
   <div class="docnav">
-    <a href="erd-studio-features-20260810.html">→ 현재 기능 명세서</a>
-    <a href="erd-market-research-20260810.html">→ 시장조사 리포트</a>
+    <a href="erd-studio-features.html">→ 현재 기능 명세서</a>
+    <a href="erd-market-research.html">→ 시장조사 리포트</a>
   </div>
 </header>
 
 <div class="timeline">
+
+  <div class="release milestone">
+    <div class="rel-head"><span class="ver">v1.3</span><h2>테이블 스테이크 완성 — 시장조사 Tier 1 반영</h2><span class="rel-date">2026-08-10</span></div>
+    <p class="rel-summary">시장조사 리포트의 Tier 1 로드맵(경쟁 서비스 대부분이 갖춘 기본기) 5종을 한 번에 반영했습니다. 링크 한 줄로 리뷰를 요청하고, 카디널리티가 보이고, PostgreSQL 스키마가 들어오고 나갑니다.</p>
+    <div class="rel-card"><ul>
+      <li><span class="sha">미커밋</span><span><b>방 딥링크 + 읽기전용 공유 링크</b><small>해시 라우팅 <span class="mono">#/room/:id?view=readonly</span> — 게스트는 이름 입력 없이 입장, 편집 UI 숨김, 헤더 🔗 공유 버튼으로 링크 복사(HTTP 폴백 포함)</small></span></li>
+      <li><span class="sha">미커밋</span><span><b>관계 카디널리티 표기 (IE 까마귀발)</b><small>관계별 N:1(기본)/1:1/N:M — DB 저장·실시간 동기화, 엣지가 노드 경계 앵커에서 시작해 마커 방향 정확</small></span></li>
+      <li><span class="sha">미커밋</span><span><b>PostgreSQL 방언 지원</b><small>파서: 스키마 접두어·ALTER ONLY PK·COMMENT ON·serial/다단어 타입·인라인 REFERENCES / 내보내기: SQL·MySQL / SQL·PG 선택</small></span></li>
+      <li><span class="sha">미커밋</span><span><b>미니맵</b><small>도메인 색상 축소 뷰 + 현재 뷰포트 표시 + 클릭/드래그 이동 — 107테이블 방에서 길 잃지 않기</small></span></li>
+      <li><span class="sha">미커밋</span><span><b>라이트 테마 + PDF 내보내기</b><small>CSS 토큰화 + ☀/🌙 토글(localStorage 유지), PNG/SVG도 테마 색 반영, 인쇄 창 기반 PDF(외부 라이브러리 없음)</small></span></li>
+    </ul></div>
+    <div class="feat-tags"><span class="feat-tag new">+ 공유 링크</span><span class="feat-tag new">+ 딥링크</span><span class="feat-tag new">+ 카디널리티</span><span class="feat-tag new">+ PostgreSQL 방언</span><span class="feat-tag new">+ 미니맵</span><span class="feat-tag new">+ 라이트 테마</span><span class="feat-tag new">+ PDF</span></div>
+  </div>
 
   <div class="release milestone">
     <div class="rel-head"><span class="ver">v1.2</span><h2>MCP 연동 — AI 에이전트가 팀원이 되다</h2><span class="rel-date">2026-07-31</span></div>
@@ -167,8 +180,9 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
 
 <footer>
   git 커밋 히스토리 기반 재구성 (2026-08-10) · 임시 커밋(167ce33 → 2e6747b 원복)과 문서 커밋은 제외 ·
-  관련 문서: <a href="erd-studio-features-20260810.html">현재 기능 명세서</a> ·
-  <a href="erd-market-research-20260810.html">시장조사 리포트</a>
+  v1.3은 작업 트리 기준 — 커밋 후 SHA를 채워 주세요 ·
+  관련 문서: <a href="erd-studio-features.html">현재 기능 명세서</a> ·
+  <a href="erd-market-research.html">시장조사 리포트</a>
 </footer>
 </div>
 </body>
