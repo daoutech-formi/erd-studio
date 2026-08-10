@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ERD Studio 경쟁력 분석 리포트</title>
+<style>
+:root{
+  --bg:#F4F8F9; --surface:#FFFFFF; --surface2:#EBF1F4; --text:#18242E; --muted:#5C6D7A;
+  --line:#D8E2E8; --accent:#0B7285; --accent-ink:#095C6B; --accent-soft:rgba(11,114,133,.09);
+  --gold:#A66A12; --gold-soft:rgba(183,121,31,.12);
+  --good:#2B8A3E; --warn:#C4690A; --none:#93A2AD;
+  --shadow:0 1px 2px rgba(24,36,46,.05), 0 4px 16px rgba(24,36,46,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0C1318; --surface:#131D26; --surface2:#1A2733; --text:#E2ECF2; --muted:#8DA0AD;
+    --line:#25333F; --accent:#43BFB4; --accent-ink:#7BD8CF; --accent-soft:rgba(67,191,180,.12);
+    --gold:#E0A64C; --gold-soft:rgba(224,166,76,.14);
+    --good:#63C374; --warn:#EFA34E; --none:#5F7280;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C1318; --surface:#131D26; --surface2:#1A2733; --text:#E2ECF2; --muted:#8DA0AD;
+  --line:#25333F; --accent:#43BFB4; --accent-ink:#7BD8CF; --accent-soft:rgba(67,191,180,.12);
+  --gold:#E0A64C; --gold-soft:rgba(224,166,76,.14);
+  --good:#63C374; --warn:#EFA34E; --none:#5F7280;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+}
+:root[data-theme="light"]{
+  --bg:#F4F8F9; --surface:#FFFFFF; --surface2:#EBF1F4; --text:#18242E; --muted:#5C6D7A;
+  --line:#D8E2E8; --accent:#0B7285; --accent-ink:#095C6B; --accent-soft:rgba(11,114,133,.09);
+  --gold:#A66A12; --gold-soft:rgba(183,121,31,.12);
+  --good:#2B8A3E; --warn:#C4690A; --none:#93A2AD;
+  --shadow:0 1px 2px rgba(24,36,46,.05), 0 4px 16px rgba(24,36,46,.05);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",-apple-system,sans-serif;
+  font-size:15px; line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace; font-size:.86em}
+.wrap{max-width:1060px; margin:0 auto; padding:0 24px 96px}
+a{color:var(--accent); text-decoration:none; border-bottom:1px solid transparent}
+a:hover{border-bottom-color:var(--accent)}
+a:focus-visible, button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* ---------- header ---------- */
+header{padding:64px 0 40px; border-bottom:1px solid var(--line); margin-bottom:48px}
+.eyebrow{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:10px}
+.eyebrow svg{flex:none}
+h1{font-size:clamp(26px,4.5vw,38px); line-height:1.25; margin:0 0 12px; font-weight:800; letter-spacing:-.01em; text-wrap:balance}
+.lede{color:var(--muted); max-width:640px; margin:0 0 28px; font-size:16px}
+.stats{display:flex; flex-wrap:wrap; gap:10px}
+.stat{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:10px 16px; box-shadow:var(--shadow)}
+.stat b{display:block; font-size:20px; font-variant-numeric:tabular-nums; color:var(--accent-ink)}
+.stat span{font-size:12px; color:var(--muted)}
+
+/* ---------- sections ---------- */
+section{margin-bottom:64px}
+h2{font-size:22px; font-weight:800; letter-spacing:-.01em; margin:0 0 6px; text-wrap:balance}
+.sec-num{color:var(--accent); font-variant-numeric:tabular-nums; margin-right:8px}
+.sec-desc{color:var(--muted); margin:0 0 24px; max-width:680px}
+h3{font-size:16px; font-weight:700; margin:32px 0 12px}
+
+/* ---------- TL;DR ---------- */
+.tldr{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px}
+.tldr-card{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:20px 22px; box-shadow:var(--shadow)}
+.tldr-card h4{margin:0 0 10px; font-size:13px; letter-spacing:.08em; text-transform:uppercase}
+.tldr-card.strong h4{color:var(--good)} .tldr-card.gap h4{color:var(--warn)} .tldr-card.next h4{color:var(--gold)}
+.tldr-card ul{margin:0; padding-left:18px}
+.tldr-card li{margin-bottom:6px}
+.tldr-card li:last-child{margin-bottom:0}
+
+/* ---------- entity cards (기능 인벤토리) ---------- */
+.entity-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:16px}
+.entity{background:var(--surface); border:1px solid var(--line); border-radius:10px; overflow:hidden; box-shadow:var(--shadow)}
+.entity-head{display:flex; align-items:center; gap:9px; padding:11px 16px; background:var(--surface2); border-bottom:1px solid var(--line); font-weight:700; font-size:14px}
+.entity-head .dot{width:9px; height:9px; border-radius:50%; background:var(--accent); flex:none}
+.entity ul{margin:0; padding:12px 16px 14px 16px; list-style:none}
+.entity li{padding:5px 0 5px 16px; position:relative; font-size:13.5px; border-bottom:1px dashed var(--line)}
+.entity li:last-child{border-bottom:none}
+.entity li::before{content:""; position:absolute; left:0; top:13px; width:7px; height:7px; border-radius:2px; background:var(--accent-soft); border:1.5px solid var(--accent)}
+.entity li small{color:var(--muted); display:block; font-size:12px}
+
+/* ---------- 경쟁 서비스 ---------- */
+.svc-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px}
+.svc{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:18px 20px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:8px}
+.svc-top{display:flex; align-items:baseline; justify-content:space-between; gap:8px; flex-wrap:wrap}
+.svc h4{margin:0; font-size:16px; font-weight:800}
+.price{font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums}
+.svc .tag{align-self:flex-start; font-size:11.5px; font-weight:700; color:var(--accent-ink); background:var(--accent-soft); border-radius:99px; padding:2px 10px}
+.svc p{margin:0; font-size:13.5px; color:var(--muted)}
+.svc .sig{font-size:13.5px; color:var(--text); margin:0}
+.svc .sig b{color:var(--accent-ink)}
+
+/* ---------- matrix ---------- */
+.matrix-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--surface); box-shadow:var(--shadow)}
+table.matrix{border-collapse:collapse; width:100%; min-width:860px; font-size:13px}
+.matrix th,.matrix td{padding:8px 10px; border-bottom:1px solid var(--line); text-align:center; white-space:nowrap}
+.matrix thead th{background:var(--surface2); font-size:12.5px; position:sticky; top:0}
+.matrix thead th:first-child{text-align:left}
+.matrix tbody th{text-align:left; font-weight:600; font-size:13px; background:var(--surface); position:sticky; left:0; min-width:180px; white-space:normal}
+.matrix tbody tr:last-child th, .matrix tbody tr:last-child td{border-bottom:none}
+.matrix .grp td,.matrix .grp th{background:var(--accent-soft); color:var(--accent-ink); font-size:11.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; text-align:left; padding:6px 10px}
+.matrix col.me{background:var(--gold-soft)}
+.y{color:var(--good); font-weight:800}
+.p{color:var(--warn); font-weight:800}
+.n{color:var(--none)}
+.legend{display:flex; gap:18px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); margin-top:10px}
+.legend b{font-weight:800}
+
+/* ---------- roadmap ---------- */
+.tier{background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:10px; padding:22px 24px; margin-bottom:20px; box-shadow:var(--shadow)}
+.tier.t1{border-left-color:var(--good)}
+.tier.t2{border-left-color:var(--gold)}
+.tier.t3{border-left-color:var(--none)}
+.tier-head{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:4px}
+.tier-head h3{margin:0; font-size:17px}
+.tier-head .when{font-size:12.5px; color:var(--muted)}
+.tier > p{margin:0 0 16px; color:var(--muted); font-size:13.5px}
+.reco{border-top:1px dashed var(--line); padding:14px 0}
+.reco:last-child{padding-bottom:2px}
+.reco-head{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:5px}
+.reco-head b{font-size:14.5px}
+.badge{font-size:11px; font-weight:700; border-radius:99px; padding:2px 9px; white-space:nowrap}
+.badge.e1{background:var(--accent-soft); color:var(--accent-ink)}
+.badge.e2{background:var(--gold-soft); color:var(--gold)}
+.badge.e3{background:var(--surface2); color:var(--muted)}
+.reco p{margin:0; font-size:13.5px; color:var(--muted)}
+.reco p b{color:var(--text); font-weight:600}
+.reco .why{margin-top:4px}
+.reco .why em{font-style:normal; color:var(--accent-ink); font-weight:600}
+
+/* ---------- unique callout ---------- */
+.callout{background:linear-gradient(135deg,var(--accent-soft),transparent 70%); border:1px solid var(--line); border-radius:12px; padding:24px 26px; margin-top:24px}
+.callout h3{margin:0 0 8px; font-size:16px; color:var(--accent-ink)}
+.callout p{margin:0; font-size:14px; max-width:720px}
+
+/* ---------- conclusion ---------- */
+.conclusion{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:28px 30px; box-shadow:var(--shadow)}
+.conclusion p{margin:0 0 14px; max-width:72ch}
+.conclusion p:last-child{margin-bottom:0}
+footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font-size:12px; color:var(--muted)}
+footer a{font-size:12px}
+@media (max-width:640px){ header{padding-top:40px} .matrix tbody th{position:static} }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">
+    <svg width="34" height="14" viewBox="0 0 34 14" fill="none" aria-hidden="true">
+      <line x1="7" y1="7" x2="27" y2="7" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="27" y1="7" x2="33" y2="1.5" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="27" y1="7" x2="33" y2="7" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="27" y1="7" x2="33" y2="12.5" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="4" y1="2" x2="4" y2="12" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="0.75" y1="7" x2="7" y2="7" stroke="currentColor" stroke-width="1.5"/>
+    </svg>
+    ERD Studio · 경쟁력 분석
+  </div>
+  <h1>ERD Studio 기능 분석 &amp; 경쟁 서비스 비교 리포트</h1>
+  <p class="lede">코드베이스 전수 조사로 확인한 현재 기능과, ERDCloud·dbdiagram.io·drawSQL·ChartDB·Liam ERD 등 시장의 주요 도구를 비교해 다음에 만들 기능의 우선순위를 제안합니다.</p>
+  <div class="stats">
+    <div class="stat"><b>40+</b><span>구현 확인 기능</span></div>
+    <div class="stat"><b>6</b><span>비교 대상 서비스</span></div>
+    <div class="stat"><b>24</b><span>비교 매트릭스 항목</span></div>
+    <div class="stat"><b>13</b><span>추천 기능 (3단계)</span></div>
+    <div class="stat"><b>2026.08</b><span>조사 기준</span></div>
+  </div>
+</header>
+
+<!-- ================= TL;DR ================= -->
+<section>
+  <h2><span class="sec-num">0</span>세 줄 요약</h2>
+  <p class="sec-desc">협업 엔진과 AI 연동은 이미 상용 서비스급이고, 부족한 것은 대부분 "보여주고 나눠주는" 표면 기능입니다.</p>
+  <div class="tldr">
+    <div class="tldr-card strong">
+      <h4>이미 강한 것</h4>
+      <ul>
+        <li><b>실시간 동시편집 엔진</b> — 소프트 락, presence, 드래그 중계, Undo/Redo까지. drawSQL은 이걸 월 $59 플랜에 넣습니다.</li>
+        <li><b>MCP 서버 내장</b> — 조사한 6개 경쟁 서비스 중 어디에도 없는 기능. AI-네이티브 포지션의 핵심 자산.</li>
+        <li><b>DDL 임포트 + 관계 자동 추론 + LLM 도메인 분류</b> — FK 없는 실무 스키마를 알아서 정리해주는 조합은 희소.</li>
+      </ul>
+    </div>
+    <div class="tldr-card gap">
+      <h4>비어 있는 것</h4>
+      <ul>
+        <li><b>공유 링크/딥링크 없음</b> — URL로 특정 방을 열 수 없어 "이거 봐" 한 마디가 안 됨. 웹 도구의 테이블 스테이크.</li>
+        <li><b>카디널리티 표기 없음</b> — 관계선이 방향·배수 없는 곡선 하나뿐. ERD 도구로서 표기법(IE/까마귀발)은 기본기.</li>
+        <li><b>MySQL 외 방언, PDF, 미니맵, 다크/라이트 전환</b> — 경쟁 서비스 대부분이 갖춘 기본 편의 기능.</li>
+      </ul>
+    </div>
+    <div class="tldr-card next">
+      <h4>최우선 3가지</h4>
+      <ul>
+        <li><b>① 방 딥링크 + 읽기전용 공유 링크</b> — 도입 장벽이 가장 낮고 확산 효과가 가장 큼.</li>
+        <li><b>② 관계 카디널리티 표기</b> — "ERD처럼 보이게" 만드는 최소 요건.</li>
+        <li><b>③ AI 스키마 리뷰</b> — Anthropic API 연동이 이미 있어 저비용으로 drawSQL 유료 기능을 따라잡는 차별화.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 현재 기능 ================= -->
+<section>
+  <h2><span class="sec-num">1</span>ERD Studio 현재 기능 인벤토리</h2>
+  <p class="sec-desc">README가 아니라 코드에서 직접 확인한 목록입니다. 각 카드는 실제 소스 디렉터리 단위와 대응합니다.</p>
+  <div class="entity-grid">
+    <div class="entity">
+      <div class="entity-head"><span class="dot"></span>캔버스 · 뷰어</div>
+      <ul>
+        <li>SVG 렌더링 + 베지어 관계선 <small>라이브러리 없는 자체 구현, 107테이블 시드에서 동작</small></li>
+        <li>도메인 그리드 자동 레이아웃 <small>저장된 좌표가 있으면 우선 적용</small></li>
+        <li>드래그 팬 / 휠 줌 / 전체보기 리셋 <small>rAF transform 조작으로 리렌더 없음</small></li>
+        <li>노드 클릭 → 관계 강조 + 상세 패널 <small>PK·UK·FK 배지, 참조/피참조 목록</small></li>
+        <li>테이블·컬럼·설명 검색, 도메인 필터 <small>매칭 외 노드 dim 처리</small></li>
+        <li>허브 테이블 강조 표시</li>
+      </ul>
+    </div>
+    <div class="entity">
+      <div class="entity-head"><span class="dot"></span>실시간 협업</div>
+      <ul>
+        <li>WebSocket 동시편집 <small>저장 버튼 없이 즉시 반영·자동 저장</small></li>
+        <li>접속자 아바타 + 탭 중복 제거 presence</li>
+        <li>테이블 단위 소프트 락 <small>"○○님이 편집 중" 배지, 끊기면 30초 내 자동 해제</small></li>
+        <li>드래그 위치 실시간 중계 <small>50ms 스로틀, mouseup 시 확정</small></li>
+        <li>Undo/Redo 50단계 <small>역연산 기반, 자기 편집만, Ctrl+Z</small></li>
+        <li>2초 간격 자동 재접속 + 전체 재동기화</li>
+      </ul>
+    </div>
+    <div class="entity">
+      <div class="entity-head"><span class="dot"></span>편집 · 모델링</div>
+      <ul>
+        <li>테이블/컬럼/관계 편집 폼 <small>PK·UK·FK 플래그, 관계 라벨</small></li>
+        <li>도메인 관리 <small>추가·색상·순서 변경, 최대 20개</small></li>
+        <li>노드 배치 저장 <small>모두에게 동일하게 보임</small></li>
+        <li>변경 이력 50건 조회 + 시점 복원 <small>op마다 전체 스냅샷 저장(방당 1,000개)</small></li>
+      </ul>
+    </div>
+    <div class="entity">
+      <div class="entity-head"><span class="dot"></span>임포트 · AI</div>
+      <ul>
+        <li>MySQL/MariaDB DDL 임포트 <small>미리보기 → merge/replace 선택</small></li>
+        <li>FK 없는 스키마 관계 자동 추론 <small>컬럼명·접미사·토큰 점수 기반</small></li>
+        <li>도메인 자동 분류 2종 <small>30개 규칙 사전 + Claude(Haiku) LLM 분류, 실패 시 자동 폴백</small></li>
+        <li>MCP 서버 (SSE·JSON-RPC) <small>도구 6종: 방 목록/생성, 스키마 조회/교체, DDL 미리보기/적용</small></li>
+        <li>MCP 연결 가이드 모달 <small>등록 명령 자동 생성, Bearer 토큰 인증 옵션</small></li>
+      </ul>
+    </div>
+    <div class="entity">
+      <div class="entity-head"><span class="dot"></span>내보내기 · 불러오기</div>
+      <ul>
+        <li>SQL (MySQL/MariaDB) <small>FK 제약·컬럼 COMMENT 포함</small></li>
+        <li>DBML <small>dbdiagram.io / ERDCloud로 이주 가능</small></li>
+        <li>PNG (2x) · 독립 실행형 SVG</li>
+        <li>JSON 백업 / 불러오기 <small>전체 교체, undo 가능</small></li>
+      </ul>
+    </div>
+    <div class="entity">
+      <div class="entity-head"><span class="dot"></span>방 · 운영</div>
+      <ul>
+        <li>방 분리 워크스페이스 <small>최대 20방 × 동시 10명, 데이터·이력·락 완전 분리</small></li>
+        <li>방 목록 5초 폴링 <small>테이블 수·접속자 수 배지</small></li>
+        <li>이름만으로 접속 <small>계정·로그인 없음, localStorage 저장</small></li>
+        <li>Docker 2컨테이너 셀프호스팅 <small>Coolify 배포, /api/health 헬스체크</small></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 경쟁 서비스 ================= -->
+<section>
+  <h2><span class="sec-num">2</span>경쟁 서비스 한눈에 보기</h2>
+  <p class="sec-desc">2025–2026년 기준 웹 조사 결과입니다. 시장은 ① AI 어시스턴트 ② diagram-as-code ③ Git/CI 통합 문서화 ④ 오픈소스 셀프호스팅, 네 축으로 수렴하고 있습니다.</p>
+  <div class="svc-grid">
+    <div class="svc">
+      <div class="svc-top"><h4>ERDCloud</h4><span class="price">완전 무료 (광고)</span></div>
+      <span class="tag">한국 사실상 표준</span>
+      <p class="sig"><b>실시간 동시편집 + 실시간 코멘트</b>를 무료로 제공. 퍼블릭/프라이빗/팀 공유 3단계, SQL 임포트, PDF·PNG·SVG 내보내기.</p>
+      <p>약점: AI·버전 관리·임베드·다크모드 전부 부재. 부트캠프·사이드 프로젝트 수요를 "무료 협업" 하나로 장악.</p>
+    </div>
+    <div class="svc">
+      <div class="svc-top"><h4>dbdiagram.io</h4><span class="price">무료 ~ $14/월+</span></div>
+      <span class="tag">Diagram-as-code 원조</span>
+      <p class="sig"><b>DBML 코드로 작성</b> + <b>AI Assistant</b>(자연어 스키마 생성·diff 미리보기·방언 간 변환). 버전 히스토리, 비밀번호 공유, 임베드, 다크모드, dbdocs 문서 사이트 연동.</p>
+      <p>Rails·Django 스키마 임포트, PostgreSQL·MySQL·SQL Server 내보내기.</p>
+    </div>
+    <div class="svc">
+      <div class="svc-top"><h4>drawSQL</h4><span class="price">무료(15테이블) ~ $179/월</span></div>
+      <span class="tag">팀 리뷰 워크플로</span>
+      <p class="sig"><b>캔버스 디스커션 스레드</b>(PR 리뷰처럼 스키마 리뷰) + <b>AI 스키마 리뷰</b>(누락 인덱스 진단). 라이브 커서 멀티플레이어는 $59 플랜부터.</p>
+      <p>팀 권한(admin/editor/viewer), 버전 히스토리, 200+ 템플릿, Laravel 마이그레이션 출력, 임베드.</p>
+    </div>
+    <div class="svc">
+      <div class="svc-top"><h4>ChartDB</h4><span class="price">오픈소스 + 무료~$19/월</span></div>
+      <span class="tag">최다 방언 · GitHub ★20k</span>
+      <p class="sig"><b>Smart Query 1개 붙여넣기로 15초 임포트</b>(DB 크리덴셜 불필요). PostgreSQL·MySQL·MSSQL·SQLite·Oracle·Snowflake·BigQuery 등 최광폭 지원.</p>
+      <p>AI DDL 방언 변환, DB Sync, 자동저장+diff 히스토리, 임베드, DBML 에디터, 셀프호스팅.</p>
+    </div>
+    <div class="svc">
+      <div class="svc-top"><h4>Liam ERD</h4><span class="price">오픈소스 (Apache-2.0)</span></div>
+      <span class="tag">Git/CI 통합 문서화</span>
+      <p class="sig"><b>GitHub URL 앞에 접두어만 붙이면 ERD 렌더링</b>, CLI로 정적 사이트 생성 → CI/CD 통합. Rails·Prisma·Drizzle 스키마 지원.</p>
+      <p>읽기 전용 특화(편집 불가). 자동 레이아웃, ⌘K 커맨드 팔레트, 100+ 테이블 성능.</p>
+    </div>
+    <div class="svc">
+      <div class="svc-top"><h4>DBeaver · DataGrip</h4><span class="price">무료/유료 IDE</span></div>
+      <span class="tag">라이브 DB 시각화</span>
+      <p class="sig">접속 중인 DB를 <b>자동 리버스 엔지니어링</b>해 ERD로. DBeaver PRO는 ERD→DB 포워드 엔지니어링도 지원.</p>
+      <p>설계 도구가 아닌 보조 기능. 공유 링크·협업·코멘트 없음 — 웹 협업 도구와는 다른 영역.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 비교 매트릭스 ================= -->
+<section>
+  <h2><span class="sec-num">3</span>기능 비교 매트릭스</h2>
+  <p class="sec-desc">ERD Studio 열이 강조되어 있습니다. 협업·AI 구간은 이미 상위권이고, 공백은 "공유·표기·방언" 구간에 몰려 있습니다.</p>
+  <div class="matrix-scroll">
+    <table class="matrix">
+      <colgroup><col><col class="me"><col><col><col><col><col></colgroup>
+      <thead>
+        <tr>
+          <th>기능</th><th>ERD Studio</th><th>ERDCloud</th><th>dbdiagram</th><th>drawSQL</th><th>ChartDB</th><th>Liam ERD</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="grp"><th colspan="7">협업</th></tr>
+        <tr><th>실시간 동시편집</th><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="p">◐ $59~</td><td class="p">◐ 유료</td><td class="n">—</td></tr>
+        <tr><th>편집 잠금 / 라이브 커서</th><td class="y">● 소프트 락</td><td class="n">—</td><td class="n">—</td><td class="y">● 커서</td><td class="n">—</td><td class="n">—</td></tr>
+        <tr><th>코멘트 / 리뷰 스레드</th><td class="n">—</td><td class="y">●</td><td class="p">◐ 노트</td><td class="y">● 스레드</td><td class="p">◐ 노트</td><td class="n">—</td></tr>
+        <tr><th>변경 이력 / 복원</th><td class="y">●</td><td class="n">—</td><td class="y">●</td><td class="p">◐ 유료</td><td class="y">●</td><td class="n">—</td></tr>
+        <tr><th>이력 diff 뷰</th><td class="n">—</td><td class="n">—</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="n">—</td></tr>
+        <tr><th>권한 (admin/editor/viewer)</th><td class="n">—</td><td class="p">◐ 공개범위</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="n">—</td></tr>
+        <tr class="grp"><th colspan="7">공유 · 접근</th></tr>
+        <tr><th>공유 링크 / 딥링크</th><td class="n">—</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td></tr>
+        <tr><th>임베드 (iframe)</th><td class="n">—</td><td class="n">—</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="p">◐ 정적</td></tr>
+        <tr><th>계정 없이 사용</th><td class="y">●</td><td class="n">—</td><td class="p">◐</td><td class="y">●</td><td class="y">●</td><td class="y">●</td></tr>
+        <tr><th>셀프호스팅</th><td class="y">●</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="y">●</td><td class="y">●</td></tr>
+        <tr class="grp"><th colspan="7">임포트 · 내보내기</th></tr>
+        <tr><th>SQL DDL 임포트</th><td class="p">◐ MySQL만</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">● 10방언+</td><td class="y">●</td></tr>
+        <tr><th>FK 없는 관계 자동 추론</th><td class="y">●</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
+        <tr><th>ORM 스키마 (Rails·Prisma 등)</th><td class="n">—</td><td class="n">—</td><td class="y">●</td><td class="p">◐ 출력만</td><td class="n">—</td><td class="y">●</td></tr>
+        <tr><th>SQL 내보내기</th><td class="p">◐ MySQL만</td><td class="y">●</td><td class="y">● 3방언</td><td class="y">●</td><td class="y">● AI 변환</td><td class="n">—</td></tr>
+        <tr><th>이미지 (PNG/SVG)</th><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="n">—</td></tr>
+        <tr><th>PDF 내보내기</th><td class="n">—</td><td class="y">●</td><td class="y">●</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
+        <tr><th>DBML</th><td class="p">◐ 출력만</td><td class="p">◐ 임포트</td><td class="y">● 네이티브</td><td class="n">—</td><td class="y">●</td><td class="n">—</td></tr>
+        <tr class="grp"><th colspan="7">AI · 자동화</th></tr>
+        <tr><th>AI 자연어 → 스키마</th><td class="p">◐ MCP 경유</td><td class="n">—</td><td class="y">●</td><td class="p">◐ 유료</td><td class="y">●</td><td class="n">—</td></tr>
+        <tr><th>AI 스키마 리뷰 / 진단</th><td class="n">—</td><td class="n">—</td><td class="p">◐ 최적화</td><td class="y">● 유료</td><td class="n">—</td><td class="n">—</td></tr>
+        <tr><th>AI 도메인 자동 분류</th><td class="y">●</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
+        <tr><th>MCP 서버</th><td class="y">● 도구 6종</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
+        <tr class="grp"><th colspan="7">뷰어 품질</th></tr>
+        <tr><th>카디널리티 표기 (까마귀발 등)</th><td class="n">—</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td></tr>
+        <tr><th>미니맵</th><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="y">●</td><td class="p">◐ 축소뷰</td></tr>
+        <tr><th>다크 / 라이트 테마 전환</th><td class="n">— 다크 고정</td><td class="n">—</td><td class="y">●</td><td class="n">—</td><td class="y">●</td><td class="y">●</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="legend"><span><b class="y">●</b> 지원</span><span><b class="p">◐</b> 부분 지원 / 유료 / 조건부</span><span><b class="n">—</b> 미지원</span></div>
+
+  <div class="callout">
+    <h3>ERD Studio만 가진 것 — 지킬 자산</h3>
+    <p><b>MCP 서버 내장</b>은 조사한 어떤 경쟁 서비스에도 없습니다. Claude Code에서 "이 DDL 반영해줘" 한 마디로 방 전원의 화면이 실시간으로 바뀌는 경험은 dbdiagram의 AI Assistant보다 한 단계 위의 워크플로입니다. <b>FK 없는 스키마의 관계 자동 추론</b>과 <b>LLM 도메인 자동 분류</b>도 조사 범위에서 유일했습니다. 아래 로드맵은 이 세 가지를 깎아먹지 않고 증폭하는 방향으로 짰습니다.</p>
+  </div>
+</section>
+
+<!-- ================= 로드맵 ================= -->
+<section>
+  <h2><span class="sec-num">4</span>추천 기능 로드맵</h2>
+  <p class="sec-desc">우선순위 = (경쟁 필수도 × 확산 효과) ÷ 구현 비용. 난이도는 실제 코드 구조(스냅샷 이력, LLM 연동, op 프로토콜이 이미 있음)를 기준으로 추정했습니다.</p>
+
+  <div class="tier t1">
+    <div class="tier-head"><h3>Tier 1 — 테이블 스테이크 메우기</h3><span class="when">단기 · 각 1주 내외</span></div>
+    <p>경쟁 서비스 대부분이 갖춘 기본기. 없으면 "왜 ERDCloud 안 쓰고 이걸 써?"라는 질문에 답이 궁해지는 항목들입니다.</p>
+    <div class="reco">
+      <div class="reco-head"><b>1. 방 딥링크 + 읽기전용 공유 링크</b><span class="badge e1">난이도 하~중</span><span class="badge e2">확산 효과 최대</span></div>
+      <p>현재 SPA 단일 화면이라 URL로 특정 방을 열 수 없습니다. <span class="mono">/room/:id</span> 라우팅과 <span class="mono">?view=readonly</span> 파라미터만 있어도 슬랙에 링크 한 줄로 리뷰 요청이 가능해집니다.</p>
+      <p class="why"><em>근거</em> — 조사한 웹 기반 5개 서비스 전부 지원. 사내 확산(위키·PR 설명에 링크 첨부)의 전제 조건.</p>
+    </div>
+    <div class="reco">
+      <div class="reco-head"><b>2. 관계 카디널리티 표기 (까마귀발/IE)</b><span class="badge e1">난이도 하</span></div>
+      <p>관계선이 방향·배수 정보 없는 베지어 곡선 하나입니다. FK 구조상 child→parent가 이미 N:1이므로, SVG 마커만 추가해도 기본 표기가 가능하고, 관계 편집 폼에 1:1/1:N 선택지를 더하면 완성됩니다.</p>
+      <p class="why"><em>근거</em> — 비교 6개 서비스 중 미지원은 ERD Studio뿐. "ERD 도구"라는 이름값의 최소 요건.</p>
+    </div>
+    <div class="reco">
+      <div class="reco-head"><b>3. PostgreSQL 방언 지원 (임포트 + 내보내기)</b><span class="badge e2">난이도 중</span></div>
+      <p>DDL 파서와 SQL 내보내기가 MySQL/MariaDB 전용입니다. 백엔드 스택이 PostgreSQL인 조직에서 자기 DB 스키마를 못 불러오는 건 아이러니한 공백. 파서에 방언 분기, 내보내기에 방언 선택 드롭다운을 추가합니다.</p>
+      <p class="why"><em>근거</em> — MySQL·PostgreSQL 동시 지원은 전 서비스 공통의 최소 공통분모.</p>
+    </div>
+    <div class="reco">
+      <div class="reco-head"><b>4. 미니맵</b><span class="badge e2">난이도 중</span></div>
+      <p>107개 테이블 시드에서 현재 위치를 잃기 쉽습니다. 노드 좌표는 이미 상태에 있으므로 축소 사각형 + 뷰포트 표시 + 클릭 이동만 구현하면 됩니다.</p>
+      <p class="why"><em>근거</em> — ChartDB 지원, Liam도 축소 뷰 제공. 대형 스키마가 주 사용례인 이 프로젝트에 특히 유효.</p>
+    </div>
+    <div class="reco">
+      <div class="reco-head"><b>5. 라이트 테마 + PDF 내보내기</b><span class="badge e1">난이도 하</span></div>
+      <p>다크 고정 UI에 CSS 토큰화로 라이트 테마를 추가하고, 기존 SVG 내보내기 파이프라인을 인쇄용으로 확장해 PDF를 지원합니다. 문서·출력물 수요(설계 리뷰 회의)에 대응.</p>
+      <p class="why"><em>근거</em> — PDF는 ERDCloud·dbdiagram 지원, 테마 전환은 dbdiagram·ChartDB·Liam 지원.</p>
+    </div>
+  </div>
+
+  <div class="tier t2">
+    <div class="tier-head"><h3>Tier 2 — 차별화 굳히기</h3><span class="when">중기 · 각 2~4주</span></div>
+    <p>이미 보유한 자산(Anthropic API 연동, 스냅샷 이력, op 프로토콜, MCP)을 지렛대로 쓰는 항목들. 비용 대비 차별화 효과가 가장 큰 구간입니다.</p>
+    <div class="reco">
+      <div class="reco-head"><b>6. AI 스키마 리뷰</b><span class="badge e2">난이도 중</span><span class="badge e2">차별화 핵심</span></div>
+      <p>누락 인덱스, FK 없는 참조 컬럼, 네이밍 불일치, 타입 불일치(같은 <span class="mono">user_no</span>가 테이블마다 다른 타입) 진단. LLM 도메인 분류기가 쓰는 Anthropic API 호출 경로를 그대로 재활용할 수 있어 인프라 비용이 사실상 0입니다.</p>
+      <p class="why"><em>근거</em> — drawSQL이 유료(월 $19+) 간판 기능으로 파는 것을 사내 무료로 제공. ERDCloud엔 없는 기능.</p>
+    </div>
+    <div class="reco">
+      <div class="reco-head"><b>7. 이력 diff 뷰어</b><span class="badge e1">난이도 하~중</span></div>
+      <p>서버가 이미 op마다 전체 스키마 스냅샷을 저장하므로(방당 1,000개) 백엔드 작업이 거의 없습니다. 두 시점을 골라 추가/변경/삭제 테이블·컬럼을 나란히 보여주는 프론트 UI만 만들면 됩니다. DDL 임포트 미리보기의 diff 요약 로직도 재활용 가능.</p>
+      <p class="why"><em>근거</em> — dbdiagram·drawSQL·ChartDB 모두 제공. "누가 뭘 바꿨지?"는 협업 도구의 핵심 질문.</p>
+    </div>
+    <div class="reco">
+      <div class="reco-head"><b>8. 캔버스 코멘트 / 스티키 노트</b><span class="badge e2">난이도 중</span></div>
+      <p>테이블에 다는 리뷰 스레드와 캔버스 자유 배치 메모. 기존 op 프로토콜에 <span class="mono">note.add</span>/<span class="mono">comment.add</span> 연산을 추가하면 실시간 동기화·이력·undo가 공짜로 따라옵니다.</p>
+      <p class="why"><em>근거</em> — ERDCloud(실시간 댓글)·drawSQL(디스커션 스레드)의 협업 승부처. 설계 리뷰 문화와 직결.</p>
+    </div>
+    <div class="reco">
+      <div class="reco-head"><b>9. 웹 UI 내장 AI 어시스턴트 (자연어 → 스키마)</b><span class="badge e2">난이도 중</span></div>
+      <p>MCP로는 이미 가능하지만 Claude Code 사용자로 한정됩니다. 사이드 패널 채팅에서 "주문·배송 테이블 추가해줘" → 변경안 diff 미리보기 → 적용 흐름을 만들면 비개발 직군까지 커버합니다. 기존 <span class="mono">preview/import</span> 경로를 그대로 사용.</p>
+      <p class="why"><em>근거</em> — dbdiagram AI Assistant·ChartDB가 주력으로 내세우는 2025~26년 표준 기능.</p>
+    </div>
+    <div class="reco">
+      <div class="reco-head"><b>10. Smart Query식 라이브 스키마 임포트</b><span class="badge e1">난이도 하~중</span></div>
+      <p>ChartDB 방식: DB에 직접 연결하는 대신, 제공된 조회 쿼리 1개를 실행해 나온 JSON을 붙여넣으면 스키마가 임포트됩니다. 크리덴셜을 서버에 저장하지 않아 보안 부담 없이 "살아있는 DB → ERD" 경험을 제공합니다.</p>
+      <p class="why"><em>근거</em> — ChartDB ★20k의 핵심 훅. DDL 덤프보다 훨씬 낮은 사용자 마찰.</p>
+    </div>
+  </div>
+
+  <div class="tier t3">
+    <div class="tier-head"><h3>Tier 3 — 장기 과제</h3><span class="when">장기 · 수요 확인 후</span></div>
+    <p>가치는 있지만 비용이 크거나, 사내 도구라는 포지션에선 수요 검증이 먼저인 항목들.</p>
+    <div class="reco">
+      <div class="reco-head"><b>11. 권한 모델 (방 생성자 = 관리자, editor/viewer)</b><span class="badge e3">난이도 상</span></div>
+      <p>현재 누구나 모든 방을 편집·삭제할 수 있습니다. 사내망에선 당장 문제가 아니지만, 읽기전용 링크(항목 1)를 넘어서는 보호가 필요해지는 시점 — 특히 방 삭제 — 에 대비해야 합니다. 사내 SSO 연동까지 가면 인증 스택 도입이 필요.</p>
+    </div>
+    <div class="reco">
+      <div class="reco-head"><b>12. 임베드 + DBML 임포트</b><span class="badge e3">난이도 중</span></div>
+      <p>읽기전용 뷰(항목 1)가 생기면 iframe 임베드는 그 연장선입니다. 위키·노션에 살아있는 ERD를 심을 수 있게 됩니다. DBML은 현재 출력만 가능한데 임포트를 더하면 dbdiagram 사용자 유입 경로가 열립니다.</p>
+    </div>
+    <div class="reco">
+      <div class="reco-head"><b>13. 멀티 인스턴스 확장</b><span class="badge e3">난이도 상</span></div>
+      <p>락·세션·presence가 서버 메모리 전용이라 단일 인스턴스 전제입니다(코드 주석에도 명시). 사용자가 늘어 수평 확장이 필요해지면 Redis pub/sub 등으로 브로드캐스트·락을 외부화해야 합니다. 20방 × 10명 상한을 올리는 것과 함께 검토.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 결론 ================= -->
+<section>
+  <h2><span class="sec-num">5</span>포지셔닝 결론</h2>
+  <div class="conclusion">
+    <p><b>ERD Studio의 경쟁 상대는 기능 목록이 아니라 "그냥 ERDCloud 쓰자"는 관성입니다.</b> ERDCloud는 무료 실시간 협업 하나로 한국 시장을 잡았지만, 데이터가 외부 클라우드에 올라가고 AI·버전 관리·임베드가 전부 공백입니다. ERD Studio는 이미 사내망 셀프호스팅 + 동급 이상의 협업 엔진을 갖췄으므로, <b>Tier 1(공유 링크·카디널리티·방언)만 메워도 "사내 데이터는 사내 도구로"라는 전환 논리가 완성됩니다.</b></p>
+    <p>그 다음 승부처는 AI입니다. 시장이 자연어 스키마 생성과 AI 리뷰로 수렴하는 가운데, ERD Studio는 유일하게 MCP 서버를 내장해 에이전트 워크플로에 먼저 도착해 있습니다. Anthropic API 연동도 이미 코드에 있으므로, <b>AI 스키마 리뷰(항목 6)와 내장 어시스턴트(항목 9)는 경쟁사가 유료로 파는 기능을 낮은 비용으로 확보하는 지름길</b>입니다.</p>
+    <p>요약하면 — 단기에는 기본기 5개로 이탈 명분을 없애고, 중기에는 이미 가진 AI·이력 자산을 UI로 노출해 차별화를 굳히고, 권한·확장은 수요가 증명된 뒤에 갑니다.</p>
+  </div>
+  <footer>
+    조사 방법: 프로젝트 코드베이스 전수 탐색(2026-08-10) + 웹 리서치. 경쟁 서비스 정보 출처 —
+    <a href="https://www.erdcloud.com/">erdcloud.com</a> ·
+    <a href="https://docs.dbdiagram.io/">docs.dbdiagram.io</a> ·
+    <a href="https://drawsql.app/features">drawsql.app</a> ·
+    <a href="https://chartdb.io/">chartdb.io</a> ·
+    <a href="https://github.com/liam-hq/liam">github.com/liam-hq/liam</a> ·
+    <a href="https://www.dbvis.com/thetable/best-sql-clients-for-er-diagrams-modeling-2025/">dbvis.com (2025 비교)</a>.
+    가격·기능은 조사 시점 기준이며 변동될 수 있습니다.
+  </footer>
+</section>
+</div>
+</body>
+</html>
