@@ -15,12 +15,13 @@ export function DetailPanel() {
     return null;
   }
   const domain = doc.domains[rowStr(row, 1)];
+  const cardOf = (r: (typeof doc.relations)[number]) => rowStr(r, 3) || "N:1";
   const parents = doc.relations
     .filter((r) => rowStr(r, 0) === selected)
-    .map((r) => rowStr(r, 1) + (rowStr(r, 2) ? ` (${rowStr(r, 2)})` : ""));
+    .map((r) => `${rowStr(r, 1)} · ${cardOf(r)}` + (rowStr(r, 2) ? ` (${rowStr(r, 2)})` : ""));
   const children = doc.relations
     .filter((r) => rowStr(r, 1) === selected)
-    .map((r) => rowStr(r, 0) + (rowStr(r, 2) ? ` (${rowStr(r, 2)})` : ""));
+    .map((r) => `${rowStr(r, 0)} · ${cardOf(r)}` + (rowStr(r, 2) ? ` (${rowStr(r, 2)})` : ""));
   const cols = doc.columns[selected];
 
   return (

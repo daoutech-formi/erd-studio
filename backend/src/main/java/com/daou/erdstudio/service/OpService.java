@@ -125,7 +125,8 @@ public class OpService {
             String parentName = Rows.str(row, 1);
             ErdTable parent = tableRepository.findByRoomIdAndName(roomId, parentName).orElseThrow(
                     () -> new IllegalArgumentException("존재하지 않는 대상 테이블입니다: " + parentName));
-            relationRepository.save(new ErdRelation(roomId, table.getId(), parent.getId(), Rows.str(row, 2), order++));
+            relationRepository.save(new ErdRelation(roomId, table.getId(), parent.getId(),
+                    Rows.str(row, 2), Rows.str(row, 3), order++));
         }
     }
 

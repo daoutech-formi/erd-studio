@@ -66,7 +66,14 @@ public class SchemaService {
             if (child == null || parent == null) {
                 continue;
             }
-            rows.add(r.getLabel().isEmpty() ? List.of(child, parent) : List.of(child, parent, r.getLabel()));
+            // [child, parent, label?, cardinality?] — 뒤쪽 빈 값은 생략해 문서를 가볍게 유지한다.
+            if (!r.getCardinality().isEmpty()) {
+                rows.add(List.of(child, parent, r.getLabel(), r.getCardinality()));
+            } else if (!r.getLabel().isEmpty()) {
+                rows.add(List.of(child, parent, r.getLabel()));
+            } else {
+                rows.add(List.of(child, parent));
+            }
         }
         return rows;
     }
@@ -163,7 +170,7 @@ public class SchemaService {
             if (childId == null || parentId == null) {
                 continue;
             }
-            entities.add(new ErdRelation(roomId, childId, parentId, Rows.str(row, 2), i));
+            entities.add(new ErdRelation(roomId, childId, parentId, Rows.str(row, 2), Rows.str(row, 3), i));
         }
         relationRepository.saveAll(entities);
     }

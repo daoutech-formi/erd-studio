@@ -17,7 +17,15 @@ interface ColDraft {
 interface RelDraft {
   target: string;
   label: string;
+  cardinality: string;
 }
+
+/** 카디널리티 선택지 — 값이 비면 기본(N:1)으로 저장돼 문서가 가볍게 유지된다. */
+const CARDINALITIES: Array<[string, string]> = [
+  ["", "N:1 (기본)"],
+  ["1:1", "1:1"],
+  ["N:M", "N:M"],
+];
 
 function initCols(doc: SchemaDoc, table: string): ColDraft[] {
   return (doc.columns[table] ?? []).map((c) => ({
@@ -28,7 +36,7 @@ function initCols(doc: SchemaDoc, table: string): ColDraft[] {
 function initRels(doc: SchemaDoc, table: string): RelDraft[] {
   return doc.relations
     .filter((r) => rowStr(r, 0) === table)
-    .map((r) => ({ target: rowStr(r, 1), label: rowStr(r, 2) }));
+    .map((r) => ({ target: rowStr(r, 1), label: rowStr(r, 2), cardinality: rowStr(r, 3) }));
 }
 
 /** 편집 모드에서 락을 잡은 테이블의 이름/도메인/설명/컬럼/관계를 고친다. */
@@ -86,7 +94,7 @@ export function EditForm({ table }: { table: string }) {
         table: [newName, domain, desc.trim(), rowBool(row, 3)] as Row,
         columns: cols.filter((c) => c.name.trim())
           .map((c) => [c.name.trim(), c.type.trim() || "varchar(50)", c.comment.trim(), c.flag] as Row),
-        relations: rels.map((r) => [newName, r.target, r.label.trim()] as Row),
+        relations: rels.map((r) => [newName, r.target, r.label.trim(), r.cardinality] as Row),
       },
     };
     erdSocket.sendEditOp(op, invertOp(op, doc, user));
@@ -144,7 +152,7 @@ export function EditForm({ table }: { table: string }) {
       ))}
 
       <div className="sect">
-        참조 관계 (이 테이블 → 대상) <button className="mini" onClick={() => setRels([...rels, { target: otherTables[0] ?? table, label: "" }])}>+ 추가</button>
+        참조 관계 (이 테이블 → 대상) <button className="mini" onClick={() => setRels([...rels, { target: otherTables[0] ?? table, label: "", cardinality: "" }])}>+ 추가</button>
       </div>
       {rels.length === 0 && <div className="hint">없음</div>}
       {rels.map((r, i) => (
@@ -152,6 +160,9 @@ export function EditForm({ table }: { table: string }) {
           <span style={{ color: "#7b8399" }}>→</span>
           <select className="ci rt2" value={r.target} onChange={(e) => setRel(i, { target: e.target.value })}>
             {otherTables.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <select className="ci rc2" value={r.cardinality} onChange={(e) => setRel(i, { cardinality: e.target.value })}>
+            {CARDINALITIES.map(([v, text]) => <option key={v} value={v}>{text}</option>)}
           </select>
           <input className="ci rl2" value={r.label} placeholder="라벨(선택)" onChange={(e) => setRel(i, { label: e.target.value })} />
           <button className="mini danger" onClick={() => setRels(rels.filter((_, j) => j !== i))}>×</button>

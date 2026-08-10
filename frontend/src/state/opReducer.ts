@@ -76,10 +76,10 @@ function applyTableApply(doc: SchemaDoc, p: TableApplyPayload): SchemaDoc {
   let relations = doc.relations.filter((r) => rowStr(r, 0) !== p.oldName);
   if (newName !== p.oldName) {
     relations = relations.map((r) =>
-      rowStr(r, 1) === p.oldName ? [rowStr(r, 0), newName, rowStr(r, 2)] : r,
+      rowStr(r, 1) === p.oldName ? [rowStr(r, 0), newName, rowStr(r, 2), rowStr(r, 3)] : r,
     );
   }
-  relations = [...relations, ...p.relations.map((r) => [newName, rowStr(r, 1), rowStr(r, 2)] as Row)];
+  relations = [...relations, ...p.relations.map((r) => [newName, rowStr(r, 1), rowStr(r, 2), rowStr(r, 3)] as Row)];
   return { ...doc, tables, columns, relations };
 }
 

@@ -8,7 +8,7 @@ export interface DomainDef {
 /**
  * 스키마 문서의 배열 행. 서버와 동일한 포맷을 사용한다.
  * tables:    [name, domainKey, description, hub?, posX?, posY?]
- * relations: [childName, parentName, label?]
+ * relations: [childName, parentName, label?, cardinality?] (cardinality: N:1(기본)/1:1/N:M)
  * columns:   [name, colType, comment, flag?]
  */
 export type Row = (string | number | boolean | null)[];
