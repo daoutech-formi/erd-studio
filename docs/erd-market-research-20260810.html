@@ -132,7 +132,7 @@ footer a{font-size:12px}
     ERD Studio · 시장조사
   </div>
   <h1>ERD 도구 시장조사 &amp; 경쟁력 분석 리포트</h1>
-  <p class="lede">ERDCloud · dbdiagram.io · drawSQL · ChartDB · Liam ERD · IDE 내장 도구를 조사하고, ERD Studio가 어디에 서 있는지와 다음에 만들 기능의 우선순위를 제안합니다. ERD Studio의 현재 기능은 <a href="erd-studio-features-20260810.html">기능 명세서</a>에 분리 정리했습니다.</p>
+  <p class="lede">ERDCloud · dbdiagram.io · drawSQL · ChartDB · Liam ERD · IDE 내장 도구를 조사하고, ERD Studio가 어디에 서 있는지와 다음에 만들 기능의 우선순위를 제안합니다. ERD Studio의 현재 기능은 <a href="erd-studio-features-20260810.html">기능 명세서</a>에, 자체 구축 경위는 <a href="erd-studio-report.html">구축 배경 리포트</a>에 분리 정리했습니다.</p>
   <div class="stats">
     <div class="stat"><b>6</b><span>조사 대상 서비스</span></div>
     <div class="stat"><b>24</b><span>비교 매트릭스 항목</span></div>
@@ -142,6 +142,7 @@ footer a{font-size:12px}
   <div class="docnav">
     <a href="erd-studio-features-20260810.html">→ 현재 기능 명세서</a>
     <a href="erd-studio-version-history.html">→ 버전 진화 히스토리</a>
+    <a href="erd-studio-report.html">→ 구축 배경 · ERDCloud 비교</a>
   </div>
 </header>
 
@@ -178,9 +179,42 @@ footer a{font-size:12px}
   </div>
 </section>
 
+<!-- ================= 구축 배경 ================= -->
+<section>
+  <h2><span class="sec-num">1</span>구축 배경 — ERDCloud에서 출발한 이유</h2>
+  <p class="sec-desc">ERD Studio는 기존에 쓰던 ERDCloud가 사내 조건(FK 제약 없는 운영 DDL · 대규모 테이블 · 다인 동시 편집)에서 드러낸 한계를 메우기 위해 자체 구축했습니다. 항목별 1:1 상세 비교는 <a href="erd-studio-report.html">구축 배경 · ERDCloud 비교 리포트</a>에 정리되어 있습니다.</p>
+  <div class="tldr">
+    <div class="tldr-card gap">
+      <h4>기능·UI 한계 — 구축의 직접 계기</h4>
+      <ul>
+        <li><b>관계도 가독성 부족</b> — 테이블이 많아지면 선이 뒤엉켜 특정 테이블 중심의 관계 파악이 어려움</li>
+        <li><b>DDL 임포트 시 관계 미표시</b> — FK 제약이 없는 운영 DDL(사내 대부분)은 관계선이 전혀 그려지지 않음</li>
+        <li><b>도메인(업무 영역) 분류 부재</b> — 테이블을 업무 의미 단위로 묶어 보는 기능이 없음</li>
+        <li><b>편집 동선 불편 · 속도 저하</b> — 테이블/컬럼/관계를 각각 따로 등록, 확대·축소 시 지연 체감</li>
+      </ul>
+    </div>
+    <div class="tldr-card gap">
+      <h4>공동편집 한계</h4>
+      <ul>
+        <li><b>편집 중인 테이블 표시 없음</b> — 같은 테이블을 동시에 수정하다 서로의 작업을 덮어쓸 위험</li>
+        <li><b>누가 편집 중인지 알 수 없음</b> — 작업 조율이 안 되어 중복·충돌 작업 발생</li>
+        <li><b>실시간 접속자 목록 부재</b> — 지금 누가 함께 보고 있는지 확인 불가</li>
+      </ul>
+    </div>
+    <div class="tldr-card trend">
+      <h4>자체 구축의 핵심 계기</h4>
+      <ul>
+        <li><b>도메인 단위로 한눈에 보는 스키마</b> — DDL만 올리면 테이블명·코멘트 의미를 분석해 회원/주문/결제 등 업무 도메인별 자동 분류·색상 구분</li>
+        <li><b>테이블 중심의 관계 탐색</b> — 테이블 선택 시 참조(→)·역참조(←) 강조, FK 제약이 없어도 컬럼명 규칙(<span class="mono">user_no</span> → USER)으로 관계 자동 추론</li>
+        <li><b>공동편집 안정성</b> — 테이블 단위 편집 락 + 편집 중 사용자 표시 + 실시간 접속자 목록</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
 <!-- ================= 경쟁 서비스 ================= -->
 <section>
-  <h2><span class="sec-num">1</span>경쟁 서비스 한눈에 보기</h2>
+  <h2><span class="sec-num">2</span>경쟁 서비스 한눈에 보기</h2>
   <p class="sec-desc">2025–2026년 기준 웹 조사 결과입니다.</p>
   <div class="svc-grid">
     <div class="svc">
@@ -224,7 +258,7 @@ footer a{font-size:12px}
 
 <!-- ================= 비교 매트릭스 ================= -->
 <section>
-  <h2><span class="sec-num">2</span>기능 비교 매트릭스</h2>
+  <h2><span class="sec-num">3</span>기능 비교 매트릭스</h2>
   <p class="sec-desc">ERD Studio 열이 강조되어 있습니다. 협업·AI 구간은 이미 상위권이고, 공백은 "공유·표기·방언" 구간에 몰려 있습니다.</p>
   <div class="matrix-scroll">
     <table class="matrix">
@@ -277,7 +311,7 @@ footer a{font-size:12px}
 
 <!-- ================= 로드맵 ================= -->
 <section>
-  <h2><span class="sec-num">3</span>추천 기능 로드맵</h2>
+  <h2><span class="sec-num">4</span>추천 기능 로드맵</h2>
   <p class="sec-desc">우선순위 = (경쟁 필수도 × 확산 효과) ÷ 구현 비용. 난이도는 실제 코드 구조(스냅샷 이력, LLM 연동, op 프로토콜이 이미 있음)를 기준으로 추정했습니다.</p>
 
   <div class="tier t1">
@@ -360,7 +394,7 @@ footer a{font-size:12px}
 
 <!-- ================= 결론 ================= -->
 <section>
-  <h2><span class="sec-num">4</span>포지셔닝 결론</h2>
+  <h2><span class="sec-num">5</span>포지셔닝 결론</h2>
   <div class="conclusion">
     <p><b>ERD Studio의 경쟁 상대는 기능 목록이 아니라 "그냥 ERDCloud 쓰자"는 관성입니다.</b> ERDCloud는 무료 실시간 협업 하나로 한국 시장을 잡았지만, 데이터가 외부 클라우드에 올라가고 AI·버전 관리·임베드가 전부 공백입니다. ERD Studio는 이미 사내망 셀프호스팅 + 동급 이상의 협업 엔진을 갖췄으므로, <b>Tier 1(공유 링크·카디널리티·방언)만 메워도 "사내 데이터는 사내 도구로"라는 전환 논리가 완성됩니다.</b></p>
     <p>그 다음 승부처는 AI입니다. 시장이 자연어 스키마 생성과 AI 리뷰로 수렴하는 가운데, ERD Studio는 유일하게 MCP 서버를 내장해 에이전트 워크플로에 먼저 도착해 있습니다. Anthropic API 연동도 이미 코드에 있으므로, <b>AI 스키마 리뷰(항목 6)와 내장 어시스턴트(항목 9)는 경쟁사가 유료로 파는 기능을 낮은 비용으로 확보하는 지름길</b>입니다.</p>
@@ -376,7 +410,8 @@ footer a{font-size:12px}
     <a href="https://www.dbvis.com/thetable/best-sql-clients-for-er-diagrams-modeling-2025/">dbvis.com (2025 비교)</a>.
     가격·기능은 조사 시점 기준이며 변동될 수 있습니다. 관련 문서:
     <a href="erd-studio-features-20260810.html">현재 기능 명세서</a> ·
-    <a href="erd-studio-version-history.html">버전 진화 히스토리</a>
+    <a href="erd-studio-version-history.html">버전 진화 히스토리</a> ·
+    <a href="erd-studio-report.html">구축 배경 · ERDCloud 비교</a>
   </footer>
 </section>
 </div>
