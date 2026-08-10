@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ERD Studio 버전 진화 히스토리</title>
+<style>
+:root{
+  --bg:#F4F8F9; --surface:#FFFFFF; --surface2:#EBF1F4; --text:#18242E; --muted:#5C6D7A;
+  --line:#D8E2E8; --accent:#0B7285; --accent-ink:#095C6B; --accent-soft:rgba(11,114,133,.09);
+  --gold:#A66A12; --gold-soft:rgba(183,121,31,.12); --good:#2B8A3E;
+  --shadow:0 1px 2px rgba(24,36,46,.05), 0 4px 16px rgba(24,36,46,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0C1318; --surface:#131D26; --surface2:#1A2733; --text:#E2ECF2; --muted:#8DA0AD;
+    --line:#25333F; --accent:#43BFB4; --accent-ink:#7BD8CF; --accent-soft:rgba(67,191,180,.12);
+    --gold:#E0A64C; --gold-soft:rgba(224,166,76,.14); --good:#63C374;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C1318; --surface:#131D26; --surface2:#1A2733; --text:#E2ECF2; --muted:#8DA0AD;
+  --line:#25333F; --accent:#43BFB4; --accent-ink:#7BD8CF; --accent-soft:rgba(67,191,180,.12);
+  --gold:#E0A64C; --gold-soft:rgba(224,166,76,.14); --good:#63C374;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+}
+:root[data-theme="light"]{
+  --bg:#F4F8F9; --surface:#FFFFFF; --surface2:#EBF1F4; --text:#18242E; --muted:#5C6D7A;
+  --line:#D8E2E8; --accent:#0B7285; --accent-ink:#095C6B; --accent-soft:rgba(11,114,133,.09);
+  --gold:#A66A12; --gold-soft:rgba(183,121,31,.12); --good:#2B8A3E;
+  --shadow:0 1px 2px rgba(24,36,46,.05), 0 4px 16px rgba(24,36,46,.05);
+}
+*{box-sizing:border-box}
+body{margin:0; background:var(--bg); color:var(--text);
+  font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",-apple-system,sans-serif;
+  font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:.86em}
+.wrap{max-width:900px; margin:0 auto; padding:0 24px 96px}
+a{color:var(--accent); text-decoration:none; border-bottom:1px solid transparent}
+a:hover{border-bottom-color:var(--accent)}
+header{padding:64px 0 40px; border-bottom:1px solid var(--line); margin-bottom:48px}
+.eyebrow{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:10px}
+h1{font-size:clamp(26px,4.5vw,38px); line-height:1.25; margin:0 0 12px; font-weight:800; letter-spacing:-.01em; text-wrap:balance}
+.lede{color:var(--muted); max-width:640px; margin:0 0 28px; font-size:16px}
+.stats{display:flex; flex-wrap:wrap; gap:10px}
+.stat{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:10px 16px; box-shadow:var(--shadow)}
+.stat b{display:block; font-size:20px; font-variant-numeric:tabular-nums; color:var(--accent-ink)}
+.stat span{font-size:12px; color:var(--muted)}
+.docnav{display:flex; gap:14px; flex-wrap:wrap; margin-top:20px; font-size:13px}
+
+/* timeline */
+.timeline{position:relative; padding-left:34px}
+.timeline::before{content:""; position:absolute; left:9px; top:6px; bottom:6px; width:2px; background:var(--line)}
+.release{position:relative; margin-bottom:36px}
+.release::before{content:""; position:absolute; left:-32px; top:8px; width:14px; height:14px; border-radius:50%;
+  background:var(--surface); border:3px solid var(--accent)}
+.release.milestone::before{border-color:var(--gold); width:16px; height:16px; left:-33px; top:7px}
+.rel-head{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:4px}
+.ver{font-size:15px; font-weight:800; background:var(--accent-soft); color:var(--accent-ink); border-radius:8px; padding:3px 12px; font-variant-numeric:tabular-nums}
+.release.milestone .ver{background:var(--gold-soft); color:var(--gold)}
+.rel-head h2{margin:0; font-size:18px; font-weight:800; letter-spacing:-.01em}
+.rel-date{font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums}
+.rel-summary{color:var(--muted); font-size:13.5px; margin:2px 0 14px; max-width:640px}
+.rel-card{background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); overflow:hidden}
+.rel-card ul{margin:0; padding:6px 18px; list-style:none}
+.rel-card li{display:flex; gap:12px; align-items:baseline; padding:9px 0; border-bottom:1px dashed var(--line); font-size:13.5px}
+.rel-card li:last-child{border-bottom:none}
+.rel-card .sha{font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:11.5px; color:var(--muted);
+  background:var(--surface2); border-radius:5px; padding:1px 7px; flex:none}
+.rel-card li b{font-weight:700}
+.rel-card li small{color:var(--muted); display:block; font-size:12.5px}
+.feat-tags{display:flex; gap:6px; flex-wrap:wrap; margin-top:12px}
+.feat-tag{font-size:11.5px; font-weight:700; border-radius:99px; padding:3px 11px; background:var(--accent-soft); color:var(--accent-ink)}
+.release.milestone .feat-tag.new{background:var(--gold-soft); color:var(--gold)}
+footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font-size:12px; color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">
+    <svg width="34" height="14" viewBox="0 0 34 14" fill="none" aria-hidden="true">
+      <line x1="7" y1="7" x2="27" y2="7" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="27" y1="7" x2="33" y2="1.5" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="27" y1="7" x2="33" y2="7" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="27" y1="7" x2="33" y2="12.5" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="4" y1="2" x2="4" y2="12" stroke="currentColor" stroke-width="1.5"/>
+      <line x1="0.75" y1="7" x2="7" y2="7" stroke="currentColor" stroke-width="1.5"/>
+    </svg>
+    ERD Studio · 버전 히스토리
+  </div>
+  <h1>ERD Studio 진화의 기록</h1>
+  <p class="lede">단일 HTML 파일 뷰어에서 시작해, 2주 만에 실시간 협업 · AI 분류 · MCP 연동을 갖춘 팀 도구가 되기까지 — git 커밋으로 재구성한 타임라인입니다. 최신이 위에 옵니다.</p>
+  <div class="stats">
+    <div class="stat"><b>4</b><span>메이저 마일스톤</span></div>
+    <div class="stat"><b>22</b><span>기능 커밋</span></div>
+    <div class="stat"><b>15일</b><span>v1.0 → v1.2 (7/27~7/31)</span></div>
+  </div>
+  <div class="docnav">
+    <a href="erd-studio-features-20260810.html">→ 현재 기능 명세서</a>
+    <a href="erd-market-research-20260810.html">→ 시장조사 리포트</a>
+  </div>
+</header>
+
+<div class="timeline">
+
+  <div class="release milestone">
+    <div class="rel-head"><span class="ver">v1.2</span><h2>MCP 연동 — AI 에이전트가 팀원이 되다</h2><span class="rel-date">2026-07-31</span></div>
+    <p class="rel-summary">Claude Code 등 MCP 클라이언트가 ERD를 직접 조회·수정할 수 있게 됐습니다. AI가 DDL을 반영하면 접속 중인 모든 브라우저에 실시간으로 그려집니다. 조사한 상용/오픈소스 ERD 도구 6종 중 유일한 기능입니다.</p>
+    <div class="rel-card"><ul>
+      <li><span class="sha">eaf7a18</span><span><b>MCP 서버 + 연결 가이드</b><small>SSE + JSON-RPC 2.0, 도구 6종(방 목록/생성 · 스키마 조회/교체 · DDL 미리보기/적용), Bearer 토큰 인증 옵션, 등록 명령 자동 생성 가이드 모달</small></span></li>
+      <li><span class="sha">5c8ac2d</span><span><b>가이드 복사 기능 수정</b><small>HTTP(비보안 컨텍스트) 환경에서도 클립보드 복사 동작하도록 폴백 추가</small></span></li>
+      <li><span class="sha">be80e52</span><span><b>MCP 가이드 개선</b><small>더 쉬운 STEP별 안내로 재구성</small></span></li>
+    </ul></div>
+    <div class="feat-tags"><span class="feat-tag new">+ MCP 서버</span><span class="feat-tag new">+ AI 도구 6종</span><span class="feat-tag new">+ 연결 가이드</span></div>
+  </div>
+
+  <div class="release milestone">
+    <div class="rel-head"><span class="ver">v1.1</span><h2>DDL 임포트 · AI 도메인 분류 · 멀티 룸</h2><span class="rel-date">2026-07-30</span></div>
+    <p class="rel-summary">기존 DB의 DDL을 붙여넣으면 ERD가 자동으로 만들어지고, 테이블이 도메인별로 알아서 분류됩니다. 방(Room) 개념이 생겨 여러 프로젝트의 ERD를 분리 운영할 수 있게 됐습니다.</p>
+    <div class="rel-card"><ul>
+      <li><span class="sha">8e3c39c</span><span><b>DDL 업로드 + 도메인 분리</b><small>MySQL/MariaDB DDL 파서, 변경 미리보기 → merge/replace 적용, FK 없는 스키마의 관계 자동 추론</small></span></li>
+      <li><span class="sha">81d053c</span><span><b>도메인 자동 분류 이중화</b><small>약 30개 규칙의 키워드 사전 분류 + Claude LLM 일괄 분류(실패 시 사전 방식 자동 폴백)</small></span></li>
+      <li><span class="sha">7f39e3c</span><span><b>방(Room) 관리</b><small>최대 20방 × 동시 10명, 방마다 테이블·관계·도메인·이력·락 완전 분리, 방 목록 실시간 현황</small></span></li>
+    </ul></div>
+    <div class="feat-tags"><span class="feat-tag new">+ DDL 임포트</span><span class="feat-tag new">+ 관계 자동 추론</span><span class="feat-tag new">+ AI 도메인 분류</span><span class="feat-tag new">+ 멀티 룸</span></div>
+  </div>
+
+  <div class="release">
+    <div class="rel-head"><span class="ver">v1.0.1</span><h2>배포 안정화</h2><span class="rel-date">2026-07-30</span></div>
+    <p class="rel-summary">Coolify 운영 환경에서 발견된 배포 문제들을 정리했습니다.</p>
+    <div class="rel-card"><ul>
+      <li><span class="sha">9a8cd17</span><span><b>compose 환경변수 기본값</b><small>Coolify 미주입 시 postgres 기동 실패 방지</small></span></li>
+      <li><span class="sha">9948072</span><span><b>서비스명 통일</b><small>DB명 erd_studio, compose 프로젝트명 고정</small></span></li>
+      <li><span class="sha">8c462bd</span><span><b>Coolify FQDN 라우팅 전환</b><small>호스트 포트 publish 제거, 로컬 포트는 override 파일로 분리</small></span></li>
+    </ul></div>
+  </div>
+
+  <div class="release milestone">
+    <div class="rel-head"><span class="ver">v1.0</span><h2>풀 재작성 — 실시간 협업 ERD의 탄생</h2><span class="rel-date">2026-07-27</span></div>
+    <p class="rel-summary">하루 만에 Express/순수 JS 구현을 Spring Boot + React + TypeScript로 전면 재작성. "저장 버튼 없는" 실시간 동시편집, 소프트 락, 변경 이력, Undo/Redo, 내보내기 4종까지 — 현재 아키텍처의 뼈대가 이날 완성됐습니다.</p>
+    <div class="rel-card"><ul>
+      <li><span class="sha">679cf02</span><span><b>백엔드 골격</b><small>Spring Boot 3.3 + JPA 엔티티/리포지토리 + 시드 적재 + 조회 API</small></span></li>
+      <li><span class="sha">4f31346</span><span><b>협업 엔진</b><small>op 서비스 + WebSocket presence/소프트 락/heartbeat + 변경 이력</small></span></li>
+      <li><span class="sha">9045b8b</span><span><b>단위 테스트 21개</b><small>H2 인메모리 — op 검증·적용, 이력 상한·복원, 시드 적재</small></span></li>
+      <li><span class="sha">fe80af8</span><span><b>프론트 골격</b><small>React + TS 캔버스, SVG 읽기 전용 렌더링</small></span></li>
+      <li><span class="sha">8b653cd</span><span><b>프론트 협업</b><small>WebSocket 동기화 + presence/소프트 락 + 드래그 중계 + 이력 + Undo/Redo</small></span></li>
+      <li><span class="sha">196c4a9</span><span><b>내보내기 4종</b><small>JSON/SQL/DBML/PNG·SVG + JSON 불러오기</small></span></li>
+      <li><span class="sha">b081316</span><span><b>배포 구성</b><small>multi-stage Docker + nginx /ws 프록시 + 부하 시뮬레이션 스크립트</small></span></li>
+      <li><span class="sha">e997e82</span><span><b>한글 이름 인코딩 수정</b><small>X-User 헤더 URL 인코딩 + 서버 UTF-8 디코딩</small></span></li>
+      <li><span class="sha">ed990c2</span><span><b>Coolify 단일 이미지 통합</b><small>정적 프론트 + REST + WebSocket을 같은 오리진에서 서빙, app+db 2컨테이너</small></span></li>
+    </ul></div>
+    <div class="feat-tags"><span class="feat-tag new">+ 실시간 동시편집</span><span class="feat-tag new">+ 소프트 락</span><span class="feat-tag new">+ presence</span><span class="feat-tag new">+ 변경 이력·복원</span><span class="feat-tag new">+ Undo/Redo</span><span class="feat-tag new">+ 내보내기 4종</span><span class="feat-tag new">+ Docker 배포</span></div>
+  </div>
+
+  <div class="release">
+    <div class="rel-head"><span class="ver">v0</span><h2>원본 — 단일 HTML에서 3계층으로</h2><span class="rel-date">~2026-07-27 이전</span></div>
+    <p class="rel-summary">애드콘 쿠폰판매 서비스의 스키마(107테이블 · 122관계)를 시각화하려고 만든 단일 HTML 파일이 시작점. 이후 nginx / Node.js(Express) / PostgreSQL 3계층으로 분리됐습니다. 협업 기능은 없었습니다 — 마지막 저장이 이전 저장을 덮어쓰는 구조.</p>
+    <div class="rel-card"><ul>
+      <li><span class="sha">0380ca9</span><span><b>원본 보존 커밋</b><small>Express + pg 의존성 단 2개, GET/PUT /api/schema 전체 저장 방식, 외부 라이브러리 없는 SVG 렌더링/편집</small></span></li>
+      <li><span class="sha">53c5807</span><span><b>구 소스 제거</b><small>재작성 시작 — 시드를 resources/seed로 이동</small></span></li>
+    </ul></div>
+  </div>
+
+</div>
+
+<footer>
+  git 커밋 히스토리 기반 재구성 (2026-08-10) · 임시 커밋(167ce33 → 2e6747b 원복)과 문서 커밋은 제외 ·
+  관련 문서: <a href="erd-studio-features-20260810.html">현재 기능 명세서</a> ·
+  <a href="erd-market-research-20260810.html">시장조사 리포트</a>
+</footer>
+</div>
+</body>
+</html>
