@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ERD Studio 경쟁력 분석 리포트</title>
+<title>ERD 도구 시장조사 리포트 (2026-08-10)</title>
 <style>
 :root{
   --bg:#F4F8F9; --surface:#FFFFFF; --surface2:#EBF1F4; --text:#18242E; --muted:#5C6D7A;
@@ -36,57 +36,33 @@
   --shadow:0 1px 2px rgba(24,36,46,.05), 0 4px 16px rgba(24,36,46,.05);
 }
 *{box-sizing:border-box}
-body{
-  margin:0; background:var(--bg); color:var(--text);
+body{margin:0; background:var(--bg); color:var(--text);
   font-family:"Apple SD Gothic Neo","Pretendard","Noto Sans KR","Malgun Gothic",-apple-system,sans-serif;
-  font-size:15px; line-height:1.65;
-  -webkit-font-smoothing:antialiased;
-}
-.mono{font-family:ui-monospace,"SF Mono","JetBrains Mono",Menlo,monospace; font-size:.86em}
+  font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace; font-size:.86em}
 .wrap{max-width:1060px; margin:0 auto; padding:0 24px 96px}
 a{color:var(--accent); text-decoration:none; border-bottom:1px solid transparent}
 a:hover{border-bottom-color:var(--accent)}
-a:focus-visible, button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
-
-/* ---------- header ---------- */
 header{padding:64px 0 40px; border-bottom:1px solid var(--line); margin-bottom:48px}
 .eyebrow{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:10px}
-.eyebrow svg{flex:none}
 h1{font-size:clamp(26px,4.5vw,38px); line-height:1.25; margin:0 0 12px; font-weight:800; letter-spacing:-.01em; text-wrap:balance}
 .lede{color:var(--muted); max-width:640px; margin:0 0 28px; font-size:16px}
 .stats{display:flex; flex-wrap:wrap; gap:10px}
 .stat{background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:10px 16px; box-shadow:var(--shadow)}
 .stat b{display:block; font-size:20px; font-variant-numeric:tabular-nums; color:var(--accent-ink)}
 .stat span{font-size:12px; color:var(--muted)}
-
-/* ---------- sections ---------- */
+.docnav{display:flex; gap:14px; flex-wrap:wrap; margin-top:20px; font-size:13px}
 section{margin-bottom:64px}
-h2{font-size:22px; font-weight:800; letter-spacing:-.01em; margin:0 0 6px; text-wrap:balance}
+h2{font-size:22px; font-weight:800; letter-spacing:-.01em; margin:0 0 6px}
 .sec-num{color:var(--accent); font-variant-numeric:tabular-nums; margin-right:8px}
 .sec-desc{color:var(--muted); margin:0 0 24px; max-width:680px}
-h3{font-size:16px; font-weight:700; margin:32px 0 12px}
-
-/* ---------- TL;DR ---------- */
 .tldr{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px}
 .tldr-card{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:20px 22px; box-shadow:var(--shadow)}
 .tldr-card h4{margin:0 0 10px; font-size:13px; letter-spacing:.08em; text-transform:uppercase}
-.tldr-card.strong h4{color:var(--good)} .tldr-card.gap h4{color:var(--warn)} .tldr-card.next h4{color:var(--gold)}
+.tldr-card.trend h4{color:var(--accent-ink)} .tldr-card.gap h4{color:var(--warn)} .tldr-card.next h4{color:var(--gold)}
 .tldr-card ul{margin:0; padding-left:18px}
 .tldr-card li{margin-bottom:6px}
 .tldr-card li:last-child{margin-bottom:0}
-
-/* ---------- entity cards (기능 인벤토리) ---------- */
-.entity-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:16px}
-.entity{background:var(--surface); border:1px solid var(--line); border-radius:10px; overflow:hidden; box-shadow:var(--shadow)}
-.entity-head{display:flex; align-items:center; gap:9px; padding:11px 16px; background:var(--surface2); border-bottom:1px solid var(--line); font-weight:700; font-size:14px}
-.entity-head .dot{width:9px; height:9px; border-radius:50%; background:var(--accent); flex:none}
-.entity ul{margin:0; padding:12px 16px 14px 16px; list-style:none}
-.entity li{padding:5px 0 5px 16px; position:relative; font-size:13.5px; border-bottom:1px dashed var(--line)}
-.entity li:last-child{border-bottom:none}
-.entity li::before{content:""; position:absolute; left:0; top:13px; width:7px; height:7px; border-radius:2px; background:var(--accent-soft); border:1.5px solid var(--accent)}
-.entity li small{color:var(--muted); display:block; font-size:12px}
-
-/* ---------- 경쟁 서비스 ---------- */
 .svc-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px}
 .svc{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:18px 20px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:8px}
 .svc-top{display:flex; align-items:baseline; justify-content:space-between; gap:8px; flex-wrap:wrap}
@@ -96,8 +72,6 @@ h3{font-size:16px; font-weight:700; margin:32px 0 12px}
 .svc p{margin:0; font-size:13.5px; color:var(--muted)}
 .svc .sig{font-size:13.5px; color:var(--text); margin:0}
 .svc .sig b{color:var(--accent-ink)}
-
-/* ---------- matrix ---------- */
 .matrix-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--surface); box-shadow:var(--shadow)}
 table.matrix{border-collapse:collapse; width:100%; min-width:860px; font-size:13px}
 .matrix th,.matrix td{padding:8px 10px; border-bottom:1px solid var(--line); text-align:center; white-space:nowrap}
@@ -112,8 +86,6 @@ table.matrix{border-collapse:collapse; width:100%; min-width:860px; font-size:13
 .n{color:var(--none)}
 .legend{display:flex; gap:18px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); margin-top:10px}
 .legend b{font-weight:800}
-
-/* ---------- roadmap ---------- */
 .tier{background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:10px; padding:22px 24px; margin-bottom:20px; box-shadow:var(--shadow)}
 .tier.t1{border-left-color:var(--good)}
 .tier.t2{border-left-color:var(--gold)}
@@ -134,13 +106,9 @@ table.matrix{border-collapse:collapse; width:100%; min-width:860px; font-size:13
 .reco p b{color:var(--text); font-weight:600}
 .reco .why{margin-top:4px}
 .reco .why em{font-style:normal; color:var(--accent-ink); font-weight:600}
-
-/* ---------- unique callout ---------- */
 .callout{background:linear-gradient(135deg,var(--accent-soft),transparent 70%); border:1px solid var(--line); border-radius:12px; padding:24px 26px; margin-top:24px}
 .callout h3{margin:0 0 8px; font-size:16px; color:var(--accent-ink)}
 .callout p{margin:0; font-size:14px; max-width:720px}
-
-/* ---------- conclusion ---------- */
 .conclusion{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:28px 30px; box-shadow:var(--shadow)}
 .conclusion p{margin:0 0 14px; max-width:72ch}
 .conclusion p:last-child{margin-bottom:0}
@@ -148,7 +116,6 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
 footer a{font-size:12px}
 @media (max-width:640px){ header{padding-top:40px} .matrix tbody th{position:static} }
 </style>
-
 </head>
 <body>
 <div class="wrap">
@@ -162,113 +129,50 @@ footer a{font-size:12px}
       <line x1="4" y1="2" x2="4" y2="12" stroke="currentColor" stroke-width="1.5"/>
       <line x1="0.75" y1="7" x2="7" y2="7" stroke="currentColor" stroke-width="1.5"/>
     </svg>
-    ERD Studio · 경쟁력 분석
+    ERD Studio · 시장조사
   </div>
-  <h1>ERD Studio 기능 분석 &amp; 경쟁 서비스 비교 리포트</h1>
-  <p class="lede">코드베이스 전수 조사로 확인한 현재 기능과, ERDCloud·dbdiagram.io·drawSQL·ChartDB·Liam ERD 등 시장의 주요 도구를 비교해 다음에 만들 기능의 우선순위를 제안합니다.</p>
+  <h1>ERD 도구 시장조사 &amp; 경쟁력 분석 리포트</h1>
+  <p class="lede">ERDCloud · dbdiagram.io · drawSQL · ChartDB · Liam ERD · IDE 내장 도구를 조사하고, ERD Studio가 어디에 서 있는지와 다음에 만들 기능의 우선순위를 제안합니다. ERD Studio의 현재 기능은 <a href="erd-studio-features-20260810.html">기능 명세서</a>에 분리 정리했습니다.</p>
   <div class="stats">
-    <div class="stat"><b>40+</b><span>구현 확인 기능</span></div>
-    <div class="stat"><b>6</b><span>비교 대상 서비스</span></div>
+    <div class="stat"><b>6</b><span>조사 대상 서비스</span></div>
     <div class="stat"><b>24</b><span>비교 매트릭스 항목</span></div>
     <div class="stat"><b>13</b><span>추천 기능 (3단계)</span></div>
     <div class="stat"><b>2026.08</b><span>조사 기준</span></div>
+  </div>
+  <div class="docnav">
+    <a href="erd-studio-features-20260810.html">→ 현재 기능 명세서</a>
+    <a href="erd-studio-version-history.html">→ 버전 진화 히스토리</a>
   </div>
 </header>
 
 <!-- ================= TL;DR ================= -->
 <section>
   <h2><span class="sec-num">0</span>세 줄 요약</h2>
-  <p class="sec-desc">협업 엔진과 AI 연동은 이미 상용 서비스급이고, 부족한 것은 대부분 "보여주고 나눠주는" 표면 기능입니다.</p>
+  <p class="sec-desc">시장은 네 가지 축으로 수렴 중이고, ERD Studio는 그중 AI 축에 이미 가장 먼저 도착해 있습니다.</p>
   <div class="tldr">
-    <div class="tldr-card strong">
-      <h4>이미 강한 것</h4>
+    <div class="tldr-card trend">
+      <h4>2025–26 시장 트렌드</h4>
       <ul>
-        <li><b>실시간 동시편집 엔진</b> — 소프트 락, presence, 드래그 중계, Undo/Redo까지. drawSQL은 이걸 월 $59 플랜에 넣습니다.</li>
-        <li><b>MCP 서버 내장</b> — 조사한 6개 경쟁 서비스 중 어디에도 없는 기능. AI-네이티브 포지션의 핵심 자산.</li>
-        <li><b>DDL 임포트 + 관계 자동 추론 + LLM 도메인 분류</b> — FK 없는 실무 스키마를 알아서 정리해주는 조합은 희소.</li>
+        <li><b>AI 어시스턴트</b> — 자연어 스키마 생성 + diff 리뷰 (dbdiagram, drawSQL, ChartDB)</li>
+        <li><b>Diagram-as-code</b> — DBML로 코드처럼 관리 (dbdiagram 원조, ChartDB 병행)</li>
+        <li><b>Git/CI 통합 문서화</b> — 스키마 파일 → 자동 ERD (Liam ERD)</li>
+        <li><b>오픈소스 셀프호스팅</b> — 데이터 주권 (ChartDB ★20k, Liam)</li>
       </ul>
     </div>
     <div class="tldr-card gap">
-      <h4>비어 있는 것</h4>
+      <h4>ERD Studio의 위치</h4>
       <ul>
-        <li><b>공유 링크/딥링크 없음</b> — URL로 특정 방을 열 수 없어 "이거 봐" 한 마디가 안 됨. 웹 도구의 테이블 스테이크.</li>
-        <li><b>카디널리티 표기 없음</b> — 관계선이 방향·배수 없는 곡선 하나뿐. ERD 도구로서 표기법(IE/까마귀발)은 기본기.</li>
-        <li><b>MySQL 외 방언, PDF, 미니맵, 다크/라이트 전환</b> — 경쟁 서비스 대부분이 갖춘 기본 편의 기능.</li>
+        <li>협업 엔진(동시편집·소프트 락·이력)은 <b>drawSQL 월 $59 플랜급</b>을 이미 보유</li>
+        <li><b>MCP 서버는 6개 서비스 중 유일</b> — AI-네이티브 선점</li>
+        <li>공백은 표면 기능에 집중: <b>공유 링크, 카디널리티 표기, MySQL 외 방언, 미니맵, PDF</b></li>
       </ul>
     </div>
     <div class="tldr-card next">
       <h4>최우선 3가지</h4>
       <ul>
-        <li><b>① 방 딥링크 + 읽기전용 공유 링크</b> — 도입 장벽이 가장 낮고 확산 효과가 가장 큼.</li>
-        <li><b>② 관계 카디널리티 표기</b> — "ERD처럼 보이게" 만드는 최소 요건.</li>
-        <li><b>③ AI 스키마 리뷰</b> — Anthropic API 연동이 이미 있어 저비용으로 drawSQL 유료 기능을 따라잡는 차별화.</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<!-- ================= 현재 기능 ================= -->
-<section>
-  <h2><span class="sec-num">1</span>ERD Studio 현재 기능 인벤토리</h2>
-  <p class="sec-desc">README가 아니라 코드에서 직접 확인한 목록입니다. 각 카드는 실제 소스 디렉터리 단위와 대응합니다.</p>
-  <div class="entity-grid">
-    <div class="entity">
-      <div class="entity-head"><span class="dot"></span>캔버스 · 뷰어</div>
-      <ul>
-        <li>SVG 렌더링 + 베지어 관계선 <small>라이브러리 없는 자체 구현, 107테이블 시드에서 동작</small></li>
-        <li>도메인 그리드 자동 레이아웃 <small>저장된 좌표가 있으면 우선 적용</small></li>
-        <li>드래그 팬 / 휠 줌 / 전체보기 리셋 <small>rAF transform 조작으로 리렌더 없음</small></li>
-        <li>노드 클릭 → 관계 강조 + 상세 패널 <small>PK·UK·FK 배지, 참조/피참조 목록</small></li>
-        <li>테이블·컬럼·설명 검색, 도메인 필터 <small>매칭 외 노드 dim 처리</small></li>
-        <li>허브 테이블 강조 표시</li>
-      </ul>
-    </div>
-    <div class="entity">
-      <div class="entity-head"><span class="dot"></span>실시간 협업</div>
-      <ul>
-        <li>WebSocket 동시편집 <small>저장 버튼 없이 즉시 반영·자동 저장</small></li>
-        <li>접속자 아바타 + 탭 중복 제거 presence</li>
-        <li>테이블 단위 소프트 락 <small>"○○님이 편집 중" 배지, 끊기면 30초 내 자동 해제</small></li>
-        <li>드래그 위치 실시간 중계 <small>50ms 스로틀, mouseup 시 확정</small></li>
-        <li>Undo/Redo 50단계 <small>역연산 기반, 자기 편집만, Ctrl+Z</small></li>
-        <li>2초 간격 자동 재접속 + 전체 재동기화</li>
-      </ul>
-    </div>
-    <div class="entity">
-      <div class="entity-head"><span class="dot"></span>편집 · 모델링</div>
-      <ul>
-        <li>테이블/컬럼/관계 편집 폼 <small>PK·UK·FK 플래그, 관계 라벨</small></li>
-        <li>도메인 관리 <small>추가·색상·순서 변경, 최대 20개</small></li>
-        <li>노드 배치 저장 <small>모두에게 동일하게 보임</small></li>
-        <li>변경 이력 50건 조회 + 시점 복원 <small>op마다 전체 스냅샷 저장(방당 1,000개)</small></li>
-      </ul>
-    </div>
-    <div class="entity">
-      <div class="entity-head"><span class="dot"></span>임포트 · AI</div>
-      <ul>
-        <li>MySQL/MariaDB DDL 임포트 <small>미리보기 → merge/replace 선택</small></li>
-        <li>FK 없는 스키마 관계 자동 추론 <small>컬럼명·접미사·토큰 점수 기반</small></li>
-        <li>도메인 자동 분류 2종 <small>30개 규칙 사전 + Claude(Haiku) LLM 분류, 실패 시 자동 폴백</small></li>
-        <li>MCP 서버 (SSE·JSON-RPC) <small>도구 6종: 방 목록/생성, 스키마 조회/교체, DDL 미리보기/적용</small></li>
-        <li>MCP 연결 가이드 모달 <small>등록 명령 자동 생성, Bearer 토큰 인증 옵션</small></li>
-      </ul>
-    </div>
-    <div class="entity">
-      <div class="entity-head"><span class="dot"></span>내보내기 · 불러오기</div>
-      <ul>
-        <li>SQL (MySQL/MariaDB) <small>FK 제약·컬럼 COMMENT 포함</small></li>
-        <li>DBML <small>dbdiagram.io / ERDCloud로 이주 가능</small></li>
-        <li>PNG (2x) · 독립 실행형 SVG</li>
-        <li>JSON 백업 / 불러오기 <small>전체 교체, undo 가능</small></li>
-      </ul>
-    </div>
-    <div class="entity">
-      <div class="entity-head"><span class="dot"></span>방 · 운영</div>
-      <ul>
-        <li>방 분리 워크스페이스 <small>최대 20방 × 동시 10명, 데이터·이력·락 완전 분리</small></li>
-        <li>방 목록 5초 폴링 <small>테이블 수·접속자 수 배지</small></li>
-        <li>이름만으로 접속 <small>계정·로그인 없음, localStorage 저장</small></li>
-        <li>Docker 2컨테이너 셀프호스팅 <small>Coolify 배포, /api/health 헬스체크</small></li>
+        <li><b>① 방 딥링크 + 읽기전용 공유 링크</b> — 도입 장벽 최소, 확산 효과 최대</li>
+        <li><b>② 관계 카디널리티 표기</b> — "ERD처럼 보이게" 만드는 최소 요건</li>
+        <li><b>③ AI 스키마 리뷰</b> — 기존 Anthropic API 연동 재활용으로 drawSQL 유료 기능을 저비용 확보</li>
       </ul>
     </div>
   </div>
@@ -276,8 +180,8 @@ footer a{font-size:12px}
 
 <!-- ================= 경쟁 서비스 ================= -->
 <section>
-  <h2><span class="sec-num">2</span>경쟁 서비스 한눈에 보기</h2>
-  <p class="sec-desc">2025–2026년 기준 웹 조사 결과입니다. 시장은 ① AI 어시스턴트 ② diagram-as-code ③ Git/CI 통합 문서화 ④ 오픈소스 셀프호스팅, 네 축으로 수렴하고 있습니다.</p>
+  <h2><span class="sec-num">1</span>경쟁 서비스 한눈에 보기</h2>
+  <p class="sec-desc">2025–2026년 기준 웹 조사 결과입니다.</p>
   <div class="svc-grid">
     <div class="svc">
       <div class="svc-top"><h4>ERDCloud</h4><span class="price">완전 무료 (광고)</span></div>
@@ -320,7 +224,7 @@ footer a{font-size:12px}
 
 <!-- ================= 비교 매트릭스 ================= -->
 <section>
-  <h2><span class="sec-num">3</span>기능 비교 매트릭스</h2>
+  <h2><span class="sec-num">2</span>기능 비교 매트릭스</h2>
   <p class="sec-desc">ERD Studio 열이 강조되어 있습니다. 협업·AI 구간은 이미 상위권이고, 공백은 "공유·표기·방언" 구간에 몰려 있습니다.</p>
   <div class="matrix-scroll">
     <table class="matrix">
@@ -373,7 +277,7 @@ footer a{font-size:12px}
 
 <!-- ================= 로드맵 ================= -->
 <section>
-  <h2><span class="sec-num">4</span>추천 기능 로드맵</h2>
+  <h2><span class="sec-num">3</span>추천 기능 로드맵</h2>
   <p class="sec-desc">우선순위 = (경쟁 필수도 × 확산 효과) ÷ 구현 비용. 난이도는 실제 코드 구조(스냅샷 이력, LLM 연동, op 프로토콜이 이미 있음)를 기준으로 추정했습니다.</p>
 
   <div class="tier t1">
@@ -456,21 +360,23 @@ footer a{font-size:12px}
 
 <!-- ================= 결론 ================= -->
 <section>
-  <h2><span class="sec-num">5</span>포지셔닝 결론</h2>
+  <h2><span class="sec-num">4</span>포지셔닝 결론</h2>
   <div class="conclusion">
     <p><b>ERD Studio의 경쟁 상대는 기능 목록이 아니라 "그냥 ERDCloud 쓰자"는 관성입니다.</b> ERDCloud는 무료 실시간 협업 하나로 한국 시장을 잡았지만, 데이터가 외부 클라우드에 올라가고 AI·버전 관리·임베드가 전부 공백입니다. ERD Studio는 이미 사내망 셀프호스팅 + 동급 이상의 협업 엔진을 갖췄으므로, <b>Tier 1(공유 링크·카디널리티·방언)만 메워도 "사내 데이터는 사내 도구로"라는 전환 논리가 완성됩니다.</b></p>
     <p>그 다음 승부처는 AI입니다. 시장이 자연어 스키마 생성과 AI 리뷰로 수렴하는 가운데, ERD Studio는 유일하게 MCP 서버를 내장해 에이전트 워크플로에 먼저 도착해 있습니다. Anthropic API 연동도 이미 코드에 있으므로, <b>AI 스키마 리뷰(항목 6)와 내장 어시스턴트(항목 9)는 경쟁사가 유료로 파는 기능을 낮은 비용으로 확보하는 지름길</b>입니다.</p>
     <p>요약하면 — 단기에는 기본기 5개로 이탈 명분을 없애고, 중기에는 이미 가진 AI·이력 자산을 UI로 노출해 차별화를 굳히고, 권한·확장은 수요가 증명된 뒤에 갑니다.</p>
   </div>
   <footer>
-    조사 방법: 프로젝트 코드베이스 전수 탐색(2026-08-10) + 웹 리서치. 경쟁 서비스 정보 출처 —
+    조사 방법: 웹 리서치 + 프로젝트 코드베이스 전수 탐색(2026-08-10). 경쟁 서비스 정보 출처 —
     <a href="https://www.erdcloud.com/">erdcloud.com</a> ·
     <a href="https://docs.dbdiagram.io/">docs.dbdiagram.io</a> ·
     <a href="https://drawsql.app/features">drawsql.app</a> ·
     <a href="https://chartdb.io/">chartdb.io</a> ·
     <a href="https://github.com/liam-hq/liam">github.com/liam-hq/liam</a> ·
     <a href="https://www.dbvis.com/thetable/best-sql-clients-for-er-diagrams-modeling-2025/">dbvis.com (2025 비교)</a>.
-    가격·기능은 조사 시점 기준이며 변동될 수 있습니다.
+    가격·기능은 조사 시점 기준이며 변동될 수 있습니다. 관련 문서:
+    <a href="erd-studio-features-20260810.html">현재 기능 명세서</a> ·
+    <a href="erd-studio-version-history.html">버전 진화 히스토리</a>
   </footer>
 </section>
 </div>
