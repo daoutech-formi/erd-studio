@@ -1,8 +1,19 @@
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useMemo, useRef, type RefObject } from "react";
+
+export interface ViewState {
+  tx: number;
+  ty: number;
+  scale: number;
+}
 
 export interface PanZoomApi {
   reset: () => void;
   zoomBy: (factor: number) => void;
+  getView: () => ViewState;
+  /** 월드 좌표 (wx,wy)가 화면 중앙에 오도록 이동한다 (미니맵 클릭 이동용). */
+  centerOn: (wx: number, wy: number) => void;
+  /** 팬/줌 변경 구독 — 해제 함수를 돌려준다 (미니맵 뷰포트 표시용). */
+  subscribe: (fn: (v: ViewState) => void) => () => void;
 }
 
 const INITIAL = { tx: 60, ty: 20, scale: 0.65 };
@@ -18,6 +29,7 @@ export function usePanZoom(
 ): PanZoomApi {
   const view = useRef({ ...INITIAL });
   const raf = useRef(0);
+  const listeners = useRef(new Set<(v: ViewState) => void>());
   const callbacks = useRef(onBackgroundDown);
   callbacks.current = onBackgroundDown;
 
@@ -26,6 +38,7 @@ export function usePanZoom(
     raf.current = requestAnimationFrame(() => {
       const { tx, ty, scale } = view.current;
       viewportRef.current?.setAttribute("transform", `translate(${tx},${ty}) scale(${scale})`);
+      listeners.current.forEach((fn) => fn({ tx, ty, scale }));
     });
   };
 
@@ -85,14 +98,33 @@ export function usePanZoom(
     // eslint 없이 진행하므로 의존성은 의도적으로 비워 둔다.
   }, []);
 
-  return {
-    reset: () => {
-      view.current = { ...INITIAL };
-      apply();
-    },
-    zoomBy: (factor: number) => {
-      view.current.scale *= factor;
-      apply();
-    },
-  };
+  // ref만 참조하므로 항상 같은 객체를 돌려줘 구독자(미니맵)의 재구독을 막는다.
+  return useMemo(
+    () => ({
+      reset: () => {
+        view.current = { ...INITIAL };
+        apply();
+      },
+      zoomBy: (factor: number) => {
+        view.current.scale *= factor;
+        apply();
+      },
+      getView: () => ({ ...view.current }),
+      centerOn: (wx: number, wy: number) => {
+        const stage = stageRef.current;
+        if (!stage) {
+          return;
+        }
+        view.current.tx = stage.clientWidth / 2 - wx * view.current.scale;
+        view.current.ty = stage.clientHeight / 2 - wy * view.current.scale;
+        apply();
+      },
+      subscribe: (fn: (v: ViewState) => void) => {
+        listeners.current.add(fn);
+        return () => listeners.current.delete(fn);
+      },
+    }),
+    // eslint-disable 없이 — 전부 ref 기반이라 안전하다.
+    [],
+  );
 }

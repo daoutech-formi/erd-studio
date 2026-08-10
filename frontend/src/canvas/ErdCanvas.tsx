@@ -4,6 +4,7 @@ import { useDispatch, useStore } from "../state/schemaStore";
 import { rowStr } from "../types";
 import { ErdEdge } from "./ErdEdge";
 import { ErdNode } from "./ErdNode";
+import { Minimap } from "./Minimap";
 import { computeLayout, type LayoutResult } from "./layout";
 import { usePanZoom, type PanZoomApi } from "./usePanZoom";
 import { useNodeDrag } from "./useNodeDrag";
@@ -86,7 +87,8 @@ export function ErdCanvas({ apiRef, onNodeClick }: Props) {
     dispatch({ type: "select", name: null });
   }, [dispatch]);
 
-  apiRef.current = usePanZoom(stageRef, viewportRef, clearFocus);
+  const panZoom = usePanZoom(stageRef, viewportRef, clearFocus);
+  apiRef.current = panZoom;
   const onNodeMouseDown = useNodeDrag(nodeEls, editMode);
 
   return (
@@ -103,7 +105,16 @@ export function ErdCanvas({ apiRef, onNodeClick }: Props) {
               const hl = selected !== null && (cn.name === selected || pn.name === selected);
               const dim = !hl && (selected !== null || searchMatches !== null || focusDomain !== null);
               return (
-                <ErdEdge key={`${cn.name}→${pn.name}#${i}`} x1={cn.x + 75} y1={cn.y} x2={pn.x + 75} y2={pn.y} hl={hl} dim={dim} />
+                <ErdEdge
+                  key={`${cn.name}→${pn.name}#${i}`}
+                  x1={cn.x + 75}
+                  y1={cn.y}
+                  x2={pn.x + 75}
+                  y2={pn.y}
+                  cardinality={rowStr(r, 3)}
+                  hl={hl}
+                  dim={dim}
+                />
               );
             })}
           </g>
@@ -140,6 +151,7 @@ export function ErdCanvas({ apiRef, onNodeClick }: Props) {
           </g>
         </g>
       </svg>
+      <Minimap layout={layout} domains={doc?.domains} api={panZoom} stageRef={stageRef} />
       <div className="footnote">마우스 드래그: 이동 · 휠: 확대/축소 · 노드 클릭: 관계 강조{editMode ? " · 편집 모드: 노드 드래그로 위치 이동" : ""}</div>
     </div>
   );
