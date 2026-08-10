@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ERD Studio 구축 배경 및 ERDCloud 비교</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    background: #f4f6fa; color: #1f2937; line-height: 1.65; font-size: 14px;
+    padding: 36px 16px;
+  }
+  .page { max-width: 960px; margin: 0 auto; }
+  .sheet { background: #fff; border: 1px solid #e5e9f0; border-radius: 14px;
+           padding: 34px 40px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(15,23,42,.04); }
+
+  /* 헤더 */
+  .doc-label { font-size: 12px; letter-spacing: 2px; color: #2563eb; font-weight: 700; }
+  h1 { font-size: 26px; margin: 6px 0 8px; letter-spacing: -0.5px; }
+  .doc-meta { font-size: 12px; color: #6b7280; }
+
+  h2 { font-size: 17px; margin-bottom: 14px; padding-left: 12px; border-left: 4px solid #2563eb; letter-spacing: -0.3px; }
+  h2 .en { font-size: 12px; color: #93a3b8; font-weight: 500; margin-left: 8px; }
+
+  /* 요약 */
+  .summary { background: #f0f5ff; border: 1px solid #dbe7ff; border-radius: 10px; padding: 16px 20px; font-size: 14px; }
+  .summary b { color: #1d4ed8; }
+
+  /* 한계 카드 2단 */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .card { border: 1px solid #e5e9f0; border-radius: 10px; padding: 16px 18px; }
+  .card h3 { font-size: 14px; margin-bottom: 10px; color: #b91c1c; }
+  .card .tag { display: inline-block; font-size: 10px; font-weight: 700; color: #fff; background: #b91c1c;
+               border-radius: 10px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
+  .card ul { list-style: none; }
+  .card li { padding-left: 16px; position: relative; margin-bottom: 8px; font-size: 13px; color: #374151; }
+  .card li::before { content: "·"; position: absolute; left: 4px; color: #9ca3af; font-weight: 700; }
+  .card li b { color: #111827; }
+
+  /* 계기 하이라이트 */
+  .reasons { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .reason { border-radius: 10px; padding: 18px 20px; background: linear-gradient(135deg,#1d4ed8,#3b82f6); color: #fff; }
+  .reason .no { font-size: 11px; opacity: .75; font-weight: 700; letter-spacing: 1.5px; }
+  .reason .t { font-size: 15px; font-weight: 700; margin: 4px 0 6px; }
+  .reason .d { font-size: 12.5px; opacity: .92; line-height: 1.6; }
+
+  /* 비교표 */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: #1e293b; color: #fff; padding: 10px 12px; text-align: left; font-weight: 600; }
+  thead th:first-child { border-radius: 8px 0 0 0; width: 19%; }
+  thead th:last-child { border-radius: 0 8px 0 0; }
+  tbody th { text-align: left; padding: 10px 12px; background: #f8fafc; font-weight: 600; color: #334155;
+             border-bottom: 1px solid #e9edf3; width: 19%; }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid #e9edf3; vertical-align: top; }
+  td.no  { color: #b91c1c; }
+  td.yes { color: #15803d; }
+  td .mark { font-weight: 700; margin-right: 6px; }
+  .col-erdstudio { background: #f0f7ff; }
+  thead th.col-erdstudio { background: #1d4ed8; color: #fff; } /* 헤더는 진한 파랑 — 흰 글자 가독성 유지 */
+
+  /* 보완 사항 */
+  .todo { border: 1px dashed #cbd5e1; background: #f8fafc; border-radius: 10px; padding: 14px 18px; margin-bottom: 10px;
+          display: flex; gap: 12px; align-items: baseline; }
+  .todo .t { font-weight: 700; color: #334155; font-size: 13.5px; white-space: nowrap; }
+  .todo .d { font-size: 12.5px; color: #64748b; }
+
+  .conclusion { font-size: 13.5px; color: #374151; }
+  .conclusion b { color: #1d4ed8; }
+  .plus { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  .chip { border: 1px solid #dbe3ee; background: #f8fafc; border-radius: 20px; padding: 6px 14px; font-size: 12.5px; color: #334155; }
+  .footnote { font-size: 11px; color: #94a3b8; margin-top: 10px; }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .sheet { box-shadow: none; border: none; page-break-inside: avoid; padding: 24px 8px; margin-bottom: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- 표지/헤더 -->
+  <div class="sheet">
+    <div class="doc-label">INTERNAL REPORT</div>
+    <h1>ERD Studio 구축 배경 및 ERDCloud 비교</h1>
+    <div class="doc-meta">사내 ERD 협업 도구 자체 구축 경위 · 기능 비교 | 작성일 2026. 08.</div>
+  </div>
+
+  <!-- 요약 -->
+  <div class="sheet">
+    <h2>요약</h2>
+    <div class="summary">
+      기존에 사용하던 ERDCloud는 <b>관계도 가독성·DDL 임포트·편집 동선·속도</b> 등 기능/UI 전반에서 실무 요구를
+      충족하지 못했고, 공동편집 시 <b>누가 무엇을 편집 중인지 보이지 않는</b> 한계가 있었습니다.
+      이에 도메인 자동 분류·관계 자동 추론·실시간 협업 가시성을 갖춘 <b>ERD Studio를 자체 구축</b>했습니다.
+    </div>
+  </div>
+
+  <!-- ERDCloud 한계 -->
+  <div class="sheet">
+    <h2>ERDCloud 사용 시 확인된 한계</h2>
+    <div class="grid2">
+      <div class="card">
+        <h3>① 기능·UI 관점 <span class="tag">구축의 직접 계기</span></h3>
+        <ul>
+          <li><b>관계도 가독성 부족</b> — 테이블이 많아지면 선이 뒤엉켜 특정 테이블 중심의 관계 파악이 어려움</li>
+          <li><b>DDL 임포트 시 관계 미표시</b> — FK 제약이 없는 운영 DDL(사내 대부분)은 관계선이 전혀 그려지지 않음</li>
+          <li><b>도메인(업무 영역) 분류 부재</b> — 테이블을 업무 의미 단위로 묶어 보는 기능이 없어 전체 구조 파악이 어려움</li>
+          <li><b>편집 동선 불편</b> — 테이블 추가·컬럼 추가·관계 추가를 각각 따로 등록해야 함</li>
+          <li><b>속도 저하</b> — 화면 확대/축소와 편집 시 반응이 느려 작업 흐름이 끊김</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>② 공동편집 관점</h3>
+        <ul>
+          <li><b>어떤 테이블이 편집 중인지 표시되지 않음</b> — 같은 테이블을 동시에 수정하다 서로의 작업을 덮어쓸 위험</li>
+          <li><b>누가 편집 중인지 알 수 없음</b> — 작업 조율이 안 되어 중복·충돌 작업 발생</li>
+          <li><b>실시간 접속자 목록 부재</b> — 지금 누가 함께 보고 있는지 확인 불가</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footnote">※ 사내 활용(FK 제약 없는 운영 DDL, 대규모 테이블, 다인 동시 편집) 관점에서 확인된 한계 기준</div>
+  </div>
+
+  <!-- 구축 핵심 계기 -->
+  <div class="sheet">
+    <h2>자체 구축의 핵심 계기 <span class="en">Key Drivers</span></h2>
+    <div class="reasons">
+      <div class="reason">
+        <div class="no">DRIVER 01</div>
+        <div class="t">도메인 단위로 한눈에 보는 스키마</div>
+        <div class="d">
+          DDL만 올리면 테이블명·코멘트의 의미를 분석해 회원/주문/결제/발송 등
+          업무 도메인별로 자동 분류·색상 구분. 150개 테이블도 구조가 한눈에 들어옴.
+        </div>
+      </div>
+      <div class="reason">
+        <div class="no">DRIVER 02</div>
+        <div class="t">테이블 중심의 관계 탐색</div>
+        <div class="d">
+          테이블 선택 시 참조(→)·역참조(←) 관계를 강조 표시.
+          FK 제약이 없어도 컬럼명 규칙(user_no → USER 등)으로 관계를 자동 추론해 그려줌.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 기능 비교표 -->
+  <div class="sheet">
+    <h2>기능 비교 <span class="en">ERD Studio vs ERDCloud</span></h2>
+    <table>
+      <thead>
+        <tr>
+          <th>구분</th>
+          <th>ERDCloud</th>
+          <th class="col-erdstudio">ERD Studio (자체 구축)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>관계 탐색 UX</th>
+          <td class="no"><span class="mark">△</span>전체 관계도만 표시 — 선이 얽혀 가독성 저하</td>
+          <td class="yes col-erdstudio"><span class="mark">✓</span>테이블 선택 시 참조/역참조 강조 + 검색·도메인 필터</td>
+        </tr>
+        <tr>
+          <th>DDL 임포트 → 관계도</th>
+          <td class="no"><span class="mark">✕</span>FK 제약이 있어야 관계선 표시</td>
+          <td class="yes col-erdstudio"><span class="mark">✓</span>FK 없어도 컬럼명 기반 자동 추론 (FK 있으면 우선 사용)</td>
+        </tr>
+        <tr>
+          <th>도메인(업무영역) 분류</th>
+          <td class="no"><span class="mark">△</span>수동 색상 지정만 가능 — 의미 기반 자동 분류 없음</td>
+          <td class="yes col-erdstudio"><span class="mark">✓</span>테이블명·코멘트 의미 기반 자동 분류 + 도메인 추가/수정/삭제 UI</td>
+        </tr>
+        <tr>
+          <th>편집 동선</th>
+          <td class="no"><span class="mark">△</span>테이블 추가 → 컬럼 추가 → 관계 추가를 각각 등록</td>
+          <td class="yes col-erdstudio"><span class="mark">✓</span>한 패널에서 테이블·컬럼·관계·도메인 일괄 편집</td>
+        </tr>
+        <tr>
+          <th>속도·반응성</th>
+          <td class="no"><span class="mark">△</span>확대/축소·편집 시 지연 체감</td>
+          <td class="yes col-erdstudio"><span class="mark">✓</span>경량 캔버스 — 확대/축소·드래그 즉각 반응</td>
+        </tr>
+        <tr>
+          <th>공동편집 가시성</th>
+          <td class="no"><span class="mark">✕</span>편집 중인 테이블·사용자 표시 없음 (덮어쓰기 위험)</td>
+          <td class="yes col-erdstudio"><span class="mark">✓</span>테이블 단위 편집 락 + 편집 중 사용자 표시 + 실시간 접속자 목록</td>
+        </tr>
+        <tr>
+          <th>변경 이력·복원</th>
+          <td class="yes"><span class="mark">✓</span>Undo/Redo · 변경 이력 자동 기록 · 시점 복원</td>
+          <td class="yes col-erdstudio"><span class="mark">✓</span>동일 지원 (Undo/Redo · 이력 자동 기록 · 시점 복원)</td>
+        </tr>
+        <tr>
+          <th>프로젝트 관리</th>
+          <td class="yes"><span class="mark">✓</span>ERD별 관리 · 팀/멤버 초대</td>
+          <td class="yes col-erdstudio"><span class="mark">✓</span>방(Room) 단위 관리 + 동시 접속 정원(10명)·접속 현황 실시간 표시</td>
+        </tr>
+        <tr>
+          <th>팀 커뮤니케이션</th>
+          <td class="yes"><span class="mark">✓</span>팀원 간 채팅·실시간 댓글 지원</td>
+          <td class="no col-erdstudio"><span class="mark">✕</span>미지원 — 보완 예정</td>
+        </tr>
+        <tr>
+          <th>메모 기능</th>
+          <td class="yes"><span class="mark">✓</span>다이어그램 메모 지원</td>
+          <td class="no col-erdstudio"><span class="mark">✕</span>미지원 — 보완 예정</td>
+        </tr>
+        <tr>
+          <th>회원·권한 관리</th>
+          <td class="yes"><span class="mark">✓</span>계정 로그인 · 팀 권한 관리</td>
+          <td class="no col-erdstudio"><span class="mark">✕</span>이름 입력 게스트 방식 — 보완 예정</td>
+        </tr>
+        <tr>
+          <th>논리/물리명 전환</th>
+          <td class="yes"><span class="mark">✓</span>논리명 ↔ 물리명 표시 전환</td>
+          <td class="no col-erdstudio"><span class="mark">✕</span>물리명 + 코멘트 병기만 지원 — 보완 예정</td>
+        </tr>
+        <tr>
+          <th>AI 연동</th>
+          <td class="no"><span class="mark">✕</span>없음</td>
+          <td class="yes col-erdstudio"><span class="mark">✓</span>Claude 연결(MCP) — 대화 한 문장으로 DDL 임포트·도메인 의미 분류</td>
+        </tr>
+        <tr>
+          <th>내보내기</th>
+          <td class="yes"><span class="mark">✓</span>SQL · PNG · Excel · 스냅샷</td>
+          <td class="yes col-erdstudio"><span class="mark">✓</span>SQL · DBML · JSON · PNG · SVG</td>
+        </tr>
+        <tr>
+          <th>기능 확장</th>
+          <td class="no"><span class="mark">✕</span>불가 (외부 서비스 의존)</td>
+          <td class="yes col-erdstudio"><span class="mark">✓</span>사내 요구사항 즉시 반영 (자체 소스 보유)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 결론 -->
+  <div class="sheet">
+    <h2>결론</h2>
+    <p class="conclusion">
+      ERDCloud는 무료로 쓸 수 있는 범용 도구지만, <b>FK 없는 운영 DDL과 다인 동시 편집</b>이라는 사내 조건에서는
+      관계 파악·편집 효율·협업 가시성 모두 한계가 분명했습니다. ERD Studio는 이 간극을 메우기 위해 구축한 도구로,
+      <b>도메인 자동 분류와 테이블 중심 관계 탐색</b>이라는 두 가지 핵심 요구를 해결했고,
+      <b>편집 락과 실시간 접속자·편집 상태 표시</b>로 공동편집의 안정성을 확보했습니다.
+      나아가 Claude 연동(MCP)으로 <b>대화형 스키마 관리</b>까지 확장해, 단순 대체를 넘어선 사내 표준 ERD 협업 도구로 활용 가능합니다.
+    </p>
+    <div class="plus">
+      <span class="chip">도메인 자동 분류</span>
+      <span class="chip">FK 없는 DDL 관계 추론</span>
+      <span class="chip">참조/역참조 강조 탐색</span>
+      <span class="chip">일괄 편집 UI · 빠른 반응성</span>
+      <span class="chip">편집 락 · 실시간 접속자 표시</span>
+      <span class="chip">Claude(MCP) 대화형 관리</span>
+    </div>
+  </div>
+
+  <!-- 보완할 사항 -->
+  <div class="sheet">
+    <h2>보완할 사항 <span class="en">ERDCloud 대비 미비 기능 — 추후 로드맵</span></h2>
+    <div class="todo">
+      <span class="t">팀 채팅·댓글</span>
+      <span class="d">ERDCloud처럼 방 안에서 팀원 간 채팅·실시간 댓글로 소통하는 기능. 이미 WebSocket 기반이라 확장 용이</span>
+    </div>
+    <div class="todo">
+      <span class="t">메모 기능</span>
+      <span class="d">다이어그램 위에 포스트잇처럼 설명·논의 메모를 붙이는 기능. 설계 리뷰 시 유용</span>
+    </div>
+    <div class="todo">
+      <span class="t">회원·권한 관리</span>
+      <span class="d">현재는 이름만 입력하는 게스트 방식 — 로그인 계정, 방별 조회/편집 권한, 소유자 개념 도입 필요</span>
+    </div>
+    <div class="todo">
+      <span class="t">논리/물리명 전환</span>
+      <span class="d">한글 논리명 ↔ 영문 물리명 표시 전환. 현재는 물리명 + 코멘트 병기만 지원</span>
+    </div>
+    <div class="todo">
+      <span class="t">AI 기능 접근성 개선</span>
+      <span class="d">현재 대화형 AI 기능은 Claude Code 사용자 한정(MCP 연결) — 서버 API 연동 방식을 병행하면
+        Claude 라이선스가 없는 구성원도 화면에서 바로 도메인 자동 분류 등 AI 기능 사용 가능.
+        도메인 분류의 API 연동 기반은 이미 구현되어 있어 API 키 발급 정책 협의만 남음</span>
+    </div>
+    <div class="footnote">※ 사용 피드백을 반영해 우선순위를 정한 뒤 단계적으로 반영 예정</div>
+  </div>
+
+</div>
+</body>
+</html>
