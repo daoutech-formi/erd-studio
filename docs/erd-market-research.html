@@ -102,6 +102,8 @@ table.matrix{border-collapse:collapse; width:100%; min-width:860px; font-size:13
 .badge.e1{background:var(--accent-soft); color:var(--accent-ink)}
 .badge.e2{background:var(--gold-soft); color:var(--gold)}
 .badge.e3{background:var(--surface2); color:var(--muted)}
+.badge.done{background:rgba(43,138,62,.14); color:var(--good)}
+.reco.done > .reco-head b{text-decoration:line-through; text-decoration-thickness:1px; opacity:.75}
 .reco p{margin:0; font-size:13.5px; color:var(--muted)}
 .reco p b{color:var(--text); font-weight:600}
 .reco .why{margin-top:4px}
@@ -132,15 +134,16 @@ footer a{font-size:12px}
     ERD Studio · 시장조사
   </div>
   <h1>ERD 도구 시장조사 &amp; 경쟁력 분석 리포트</h1>
-  <p class="lede">ERDCloud · dbdiagram.io · drawSQL · ChartDB · Liam ERD · IDE 내장 도구를 조사하고, ERD Studio가 어디에 서 있는지와 다음에 만들 기능의 우선순위를 제안합니다. ERD Studio의 현재 기능은 <a href="erd-studio-features-20260810.html">기능 명세서</a>에, 자체 구축 경위는 <a href="erd-studio-report.html">구축 배경 리포트</a>에 분리 정리했습니다.</p>
+  <p class="lede">ERDCloud · dbdiagram.io · drawSQL · ChartDB · Liam ERD · IDE 내장 도구를 조사하고, ERD Studio가 어디에 서 있는지와 다음에 만들 기능의 우선순위를 제안합니다. ERD Studio의 현재 기능은 <a href="erd-studio-features.html">기능 명세서</a>에, 자체 구축 경위는 <a href="erd-studio-report.html">구축 배경 리포트</a>에 분리 정리했습니다.</p>
   <div class="stats">
     <div class="stat"><b>6</b><span>조사 대상 서비스</span></div>
     <div class="stat"><b>24</b><span>비교 매트릭스 항목</span></div>
     <div class="stat"><b>13</b><span>추천 기능 (3단계)</span></div>
+    <div class="stat"><b>5 / 13</b><span>완료 — Tier 1 전체 (v1.3)</span></div>
     <div class="stat"><b>2026.08</b><span>조사 기준</span></div>
   </div>
   <div class="docnav">
-    <a href="erd-studio-features-20260810.html">→ 현재 기능 명세서</a>
+    <a href="erd-studio-features.html">→ 현재 기능 명세서</a>
     <a href="erd-studio-version-history.html">→ 버전 진화 히스토리</a>
     <a href="erd-studio-report.html">→ 구축 배경 · ERDCloud 비교</a>
   </div>
@@ -165,14 +168,14 @@ footer a{font-size:12px}
       <ul>
         <li>협업 엔진(동시편집·소프트 락·이력)은 <b>drawSQL 월 $59 플랜급</b>을 이미 보유</li>
         <li><b>MCP 서버는 6개 서비스 중 유일</b> — AI-네이티브 선점</li>
-        <li>공백은 표면 기능에 집중: <b>공유 링크, 카디널리티 표기, MySQL 외 방언, 미니맵, PDF</b></li>
+        <li>공백이던 표면 기능 5종(<b>공유 링크, 카디널리티 표기, PostgreSQL 방언, 미니맵, 라이트 테마·PDF</b>)은 <b>v1.3(2026-08-10)에서 전부 해소</b></li>
       </ul>
     </div>
     <div class="tldr-card next">
       <h4>최우선 3가지</h4>
       <ul>
-        <li><b>① 방 딥링크 + 읽기전용 공유 링크</b> — 도입 장벽 최소, 확산 효과 최대</li>
-        <li><b>② 관계 카디널리티 표기</b> — "ERD처럼 보이게" 만드는 최소 요건</li>
+        <li><b>① 방 딥링크 + 읽기전용 공유 링크</b> — 도입 장벽 최소, 확산 효과 최대 <span class="badge done">✓ v1.3 완료</span></li>
+        <li><b>② 관계 카디널리티 표기</b> — "ERD처럼 보이게" 만드는 최소 요건 <span class="badge done">✓ v1.3 완료</span></li>
         <li><b>③ AI 스키마 리뷰</b> — 기존 Anthropic API 연동 재활용으로 drawSQL 유료 기능을 저비용 확보</li>
       </ul>
     </div>
@@ -259,7 +262,7 @@ footer a{font-size:12px}
 <!-- ================= 비교 매트릭스 ================= -->
 <section>
   <h2><span class="sec-num">3</span>기능 비교 매트릭스</h2>
-  <p class="sec-desc">ERD Studio 열이 강조되어 있습니다. 협업·AI 구간은 이미 상위권이고, 공백은 "공유·표기·방언" 구간에 몰려 있습니다.</p>
+  <p class="sec-desc">ERD Studio 열이 강조되어 있습니다. 협업·AI 구간에 이어 "공유·표기·방언" 구간도 v1.3에서 채워졌습니다. 남은 공백은 코멘트 스레드·이력 diff·권한·임베드 등 Tier 2~3 항목입니다.</p>
   <div class="matrix-scroll">
     <table class="matrix">
       <colgroup><col><col class="me"><col><col><col><col><col></colgroup>
@@ -277,17 +280,17 @@ footer a{font-size:12px}
         <tr><th>이력 diff 뷰</th><td class="n">—</td><td class="n">—</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="n">—</td></tr>
         <tr><th>권한 (admin/editor/viewer)</th><td class="n">—</td><td class="p">◐ 공개범위</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="n">—</td></tr>
         <tr class="grp"><th colspan="7">공유 · 접근</th></tr>
-        <tr><th>공유 링크 / 딥링크</th><td class="n">—</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td></tr>
+        <tr><th>공유 링크 / 딥링크</th><td class="y">● 읽기전용 링크</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td></tr>
         <tr><th>임베드 (iframe)</th><td class="n">—</td><td class="n">—</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="p">◐ 정적</td></tr>
         <tr><th>계정 없이 사용</th><td class="y">●</td><td class="n">—</td><td class="p">◐</td><td class="y">●</td><td class="y">●</td><td class="y">●</td></tr>
         <tr><th>셀프호스팅</th><td class="y">●</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="y">●</td><td class="y">●</td></tr>
         <tr class="grp"><th colspan="7">임포트 · 내보내기</th></tr>
-        <tr><th>SQL DDL 임포트</th><td class="p">◐ MySQL만</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">● 10방언+</td><td class="y">●</td></tr>
+        <tr><th>SQL DDL 임포트</th><td class="y">● MySQL·PG</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">● 10방언+</td><td class="y">●</td></tr>
         <tr><th>FK 없는 관계 자동 추론</th><td class="y">●</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
         <tr><th>ORM 스키마 (Rails·Prisma 등)</th><td class="n">—</td><td class="n">—</td><td class="y">●</td><td class="p">◐ 출력만</td><td class="n">—</td><td class="y">●</td></tr>
-        <tr><th>SQL 내보내기</th><td class="p">◐ MySQL만</td><td class="y">●</td><td class="y">● 3방언</td><td class="y">●</td><td class="y">● AI 변환</td><td class="n">—</td></tr>
+        <tr><th>SQL 내보내기</th><td class="y">● 2방언</td><td class="y">●</td><td class="y">● 3방언</td><td class="y">●</td><td class="y">● AI 변환</td><td class="n">—</td></tr>
         <tr><th>이미지 (PNG/SVG)</th><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="n">—</td></tr>
-        <tr><th>PDF 내보내기</th><td class="n">—</td><td class="y">●</td><td class="y">●</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
+        <tr><th>PDF 내보내기</th><td class="y">● 인쇄 기반</td><td class="y">●</td><td class="y">●</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
         <tr><th>DBML</th><td class="p">◐ 출력만</td><td class="p">◐ 임포트</td><td class="y">● 네이티브</td><td class="n">—</td><td class="y">●</td><td class="n">—</td></tr>
         <tr class="grp"><th colspan="7">AI · 자동화</th></tr>
         <tr><th>AI 자연어 → 스키마</th><td class="p">◐ MCP 경유</td><td class="n">—</td><td class="y">●</td><td class="p">◐ 유료</td><td class="y">●</td><td class="n">—</td></tr>
@@ -295,9 +298,9 @@ footer a{font-size:12px}
         <tr><th>AI 도메인 자동 분류</th><td class="y">●</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
         <tr><th>MCP 서버</th><td class="y">● 도구 6종</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
         <tr class="grp"><th colspan="7">뷰어 품질</th></tr>
-        <tr><th>카디널리티 표기 (까마귀발 등)</th><td class="n">—</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td></tr>
-        <tr><th>미니맵</th><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="y">●</td><td class="p">◐ 축소뷰</td></tr>
-        <tr><th>다크 / 라이트 테마 전환</th><td class="n">— 다크 고정</td><td class="n">—</td><td class="y">●</td><td class="n">—</td><td class="y">●</td><td class="y">●</td></tr>
+        <tr><th>카디널리티 표기 (까마귀발 등)</th><td class="y">● IE 표기</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td></tr>
+        <tr><th>미니맵</th><td class="y">●</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="y">●</td><td class="p">◐ 축소뷰</td></tr>
+        <tr><th>다크 / 라이트 테마 전환</th><td class="y">●</td><td class="n">—</td><td class="y">●</td><td class="n">—</td><td class="y">●</td><td class="y">●</td></tr>
       </tbody>
     </table>
   </div>
@@ -315,30 +318,30 @@ footer a{font-size:12px}
   <p class="sec-desc">우선순위 = (경쟁 필수도 × 확산 효과) ÷ 구현 비용. 난이도는 실제 코드 구조(스냅샷 이력, LLM 연동, op 프로토콜이 이미 있음)를 기준으로 추정했습니다.</p>
 
   <div class="tier t1">
-    <div class="tier-head"><h3>Tier 1 — 테이블 스테이크 메우기</h3><span class="when">단기 · 각 1주 내외</span></div>
-    <p>경쟁 서비스 대부분이 갖춘 기본기. 없으면 "왜 ERDCloud 안 쓰고 이걸 써?"라는 질문에 답이 궁해지는 항목들입니다.</p>
-    <div class="reco">
-      <div class="reco-head"><b>1. 방 딥링크 + 읽기전용 공유 링크</b><span class="badge e1">난이도 하~중</span><span class="badge e2">확산 효과 최대</span></div>
+    <div class="tier-head"><h3>Tier 1 — 테이블 스테이크 메우기</h3><span class="when">단기 · 각 1주 내외</span><span class="badge done">✓ 5종 전체 완료 — v1.3 (2026-08-10)</span></div>
+    <p>경쟁 서비스 대부분이 갖춘 기본기. 없으면 "왜 ERDCloud 안 쓰고 이걸 써?"라는 질문에 답이 궁해지는 항목들입니다. <b>아래 5개 항목은 v1.3에서 모두 구현됐습니다.</b></p>
+    <div class="reco done">
+      <div class="reco-head"><b>1. 방 딥링크 + 읽기전용 공유 링크</b><span class="badge done">✓ 완료</span><span class="badge e1">난이도 하~중</span><span class="badge e2">확산 효과 최대</span></div>
       <p>현재 SPA 단일 화면이라 URL로 특정 방을 열 수 없습니다. <span class="mono">/room/:id</span> 라우팅과 <span class="mono">?view=readonly</span> 파라미터만 있어도 슬랙에 링크 한 줄로 리뷰 요청이 가능해집니다.</p>
       <p class="why"><em>근거</em> — 조사한 웹 기반 5개 서비스 전부 지원. 사내 확산(위키·PR 설명에 링크 첨부)의 전제 조건.</p>
     </div>
-    <div class="reco">
-      <div class="reco-head"><b>2. 관계 카디널리티 표기 (까마귀발/IE)</b><span class="badge e1">난이도 하</span></div>
+    <div class="reco done">
+      <div class="reco-head"><b>2. 관계 카디널리티 표기 (까마귀발/IE)</b><span class="badge done">✓ 완료</span><span class="badge e1">난이도 하</span></div>
       <p>관계선이 방향·배수 정보 없는 베지어 곡선 하나입니다. FK 구조상 child→parent가 이미 N:1이므로, SVG 마커만 추가해도 기본 표기가 가능하고, 관계 편집 폼에 1:1/1:N 선택지를 더하면 완성됩니다.</p>
       <p class="why"><em>근거</em> — 비교 6개 서비스 중 미지원은 ERD Studio뿐. "ERD 도구"라는 이름값의 최소 요건.</p>
     </div>
-    <div class="reco">
-      <div class="reco-head"><b>3. PostgreSQL 방언 지원 (임포트 + 내보내기)</b><span class="badge e2">난이도 중</span></div>
+    <div class="reco done">
+      <div class="reco-head"><b>3. PostgreSQL 방언 지원 (임포트 + 내보내기)</b><span class="badge done">✓ 완료</span><span class="badge e2">난이도 중</span></div>
       <p>DDL 파서와 SQL 내보내기가 MySQL/MariaDB 전용입니다. 백엔드 스택이 PostgreSQL인 조직에서 자기 DB 스키마를 못 불러오는 건 아이러니한 공백. 파서에 방언 분기, 내보내기에 방언 선택 드롭다운을 추가합니다.</p>
       <p class="why"><em>근거</em> — MySQL·PostgreSQL 동시 지원은 전 서비스 공통의 최소 공통분모.</p>
     </div>
-    <div class="reco">
-      <div class="reco-head"><b>4. 미니맵</b><span class="badge e2">난이도 중</span></div>
+    <div class="reco done">
+      <div class="reco-head"><b>4. 미니맵</b><span class="badge done">✓ 완료</span><span class="badge e2">난이도 중</span></div>
       <p>107개 테이블 시드에서 현재 위치를 잃기 쉽습니다. 노드 좌표는 이미 상태에 있으므로 축소 사각형 + 뷰포트 표시 + 클릭 이동만 구현하면 됩니다.</p>
       <p class="why"><em>근거</em> — ChartDB 지원, Liam도 축소 뷰 제공. 대형 스키마가 주 사용례인 이 프로젝트에 특히 유효.</p>
     </div>
-    <div class="reco">
-      <div class="reco-head"><b>5. 라이트 테마 + PDF 내보내기</b><span class="badge e1">난이도 하</span></div>
+    <div class="reco done">
+      <div class="reco-head"><b>5. 라이트 테마 + PDF 내보내기</b><span class="badge done">✓ 완료</span><span class="badge e1">난이도 하</span></div>
       <p>다크 고정 UI에 CSS 토큰화로 라이트 테마를 추가하고, 기존 SVG 내보내기 파이프라인을 인쇄용으로 확장해 PDF를 지원합니다. 문서·출력물 수요(설계 리뷰 회의)에 대응.</p>
       <p class="why"><em>근거</em> — PDF는 ERDCloud·dbdiagram 지원, 테마 전환은 dbdiagram·ChartDB·Liam 지원.</p>
     </div>
@@ -396,9 +399,9 @@ footer a{font-size:12px}
 <section>
   <h2><span class="sec-num">5</span>포지셔닝 결론</h2>
   <div class="conclusion">
-    <p><b>ERD Studio의 경쟁 상대는 기능 목록이 아니라 "그냥 ERDCloud 쓰자"는 관성입니다.</b> ERDCloud는 무료 실시간 협업 하나로 한국 시장을 잡았지만, 데이터가 외부 클라우드에 올라가고 AI·버전 관리·임베드가 전부 공백입니다. ERD Studio는 이미 사내망 셀프호스팅 + 동급 이상의 협업 엔진을 갖췄으므로, <b>Tier 1(공유 링크·카디널리티·방언)만 메워도 "사내 데이터는 사내 도구로"라는 전환 논리가 완성됩니다.</b></p>
+    <p><b>ERD Studio의 경쟁 상대는 기능 목록이 아니라 "그냥 ERDCloud 쓰자"는 관성입니다.</b> ERDCloud는 무료 실시간 협업 하나로 한국 시장을 잡았지만, 데이터가 외부 클라우드에 올라가고 AI·버전 관리·임베드가 전부 공백입니다. ERD Studio는 이미 사내망 셀프호스팅 + 동급 이상의 협업 엔진을 갖췄으므로, <b>Tier 1(공유 링크·카디널리티·방언)만 메워도 "사내 데이터는 사내 도구로"라는 전환 논리가 완성됩니다.</b> <span class="badge done">✓ Tier 1은 v1.3(2026-08-10)에서 전체 완료</span> — 이제 이 전환 논리가 실제로 성립합니다.</p>
     <p>그 다음 승부처는 AI입니다. 시장이 자연어 스키마 생성과 AI 리뷰로 수렴하는 가운데, ERD Studio는 유일하게 MCP 서버를 내장해 에이전트 워크플로에 먼저 도착해 있습니다. Anthropic API 연동도 이미 코드에 있으므로, <b>AI 스키마 리뷰(항목 6)와 내장 어시스턴트(항목 9)는 경쟁사가 유료로 파는 기능을 낮은 비용으로 확보하는 지름길</b>입니다.</p>
-    <p>요약하면 — 단기에는 기본기 5개로 이탈 명분을 없애고, 중기에는 이미 가진 AI·이력 자산을 UI로 노출해 차별화를 굳히고, 권한·확장은 수요가 증명된 뒤에 갑니다.</p>
+    <p>요약하면 — 단기 기본기 5개(완료)로 이탈 명분을 없앴고, 다음은 중기: 이미 가진 AI·이력 자산을 UI로 노출해 차별화를 굳히는 단계(항목 6~10)입니다. 권한·확장은 수요가 증명된 뒤에 갑니다.</p>
   </div>
   <footer>
     조사 방법: 웹 리서치 + 프로젝트 코드베이스 전수 탐색(2026-08-10). 경쟁 서비스 정보 출처 —
@@ -409,7 +412,7 @@ footer a{font-size:12px}
     <a href="https://github.com/liam-hq/liam">github.com/liam-hq/liam</a> ·
     <a href="https://www.dbvis.com/thetable/best-sql-clients-for-er-diagrams-modeling-2025/">dbvis.com (2025 비교)</a>.
     가격·기능은 조사 시점 기준이며 변동될 수 있습니다. 관련 문서:
-    <a href="erd-studio-features-20260810.html">현재 기능 명세서</a> ·
+    <a href="erd-studio-features.html">현재 기능 명세서</a> ·
     <a href="erd-studio-version-history.html">버전 진화 히스토리</a> ·
     <a href="erd-studio-report.html">구축 배경 · ERDCloud 비교</a>
   </footer>
