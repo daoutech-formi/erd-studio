@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchSchema, type RoomInfo } from "./api/http";
+import { fetchRooms, fetchSchema, type RoomInfo } from "./api/http";
 import { erdSocket } from "./api/socket";
 import { ErdCanvas } from "./canvas/ErdCanvas";
 import type { PanZoomApi } from "./canvas/usePanZoom";
@@ -12,17 +12,36 @@ import { NameModal } from "./components/NameModal";
 import { RoomList } from "./components/RoomList";
 import { Toast } from "./components/Toast";
 import { Toolbar } from "./components/Toolbar";
+import { parseRoute, readonlyShareUrl, setRoomHash } from "./state/route";
 import { useDispatch, useStore } from "./state/schemaStore";
 import { undoManager } from "./state/undo";
-import { clientKey, loadUser, type UserInfo } from "./state/user";
+import { clientKey, colorFor, loadUser, type UserInfo } from "./state/user";
+import { copyText } from "./utils/clipboard";
+
+/** 읽기전용 링크로 처음 온 사람은 이름 입력 없이 게스트로 들어온다 (localStorage 에는 남기지 않음). */
+function initialUser(): UserInfo | null {
+  const saved = loadUser();
+  if (saved) {
+    return saved;
+  }
+  if (parseRoute().readonly) {
+    const name = `게스트${Math.floor(10 + Math.random() * 90)}`;
+    return { name, color: colorFor(name) };
+  }
+  return null;
+}
 
 export function App() {
   const { editMode, selected, editing, locks, historyOpen } = useStore();
   const dispatch = useDispatch();
-  const [user, setUser] = useState<UserInfo | null>(loadUser);
+  const [user, setUser] = useState<UserInfo | null>(initialUser);
   const [room, setRoom] = useState<RoomInfo | null>(null);
   /** 입장 거절 등으로 방 목록에 돌아왔을 때 보여줄 안내 문구. */
   const [notice, setNotice] = useState("");
+  /** 읽기전용 링크로 들어왔는지 — 편집 UI 전체를 숨긴다. 방을 나가면 해제된다. */
+  const [readonly, setReadonly] = useState(() => parseRoute().readonly);
+  /** 주소의 #/room/:id — 방 목록을 조회해 해당 방으로 바로 들어간다. */
+  const [deepLinkId, setDeepLinkId] = useState<number | null>(() => parseRoute().roomId);
   const panZoomRef = useRef<PanZoomApi | null>(null);
   const roomId = room?.id ?? null;
 
@@ -33,6 +52,8 @@ export function App() {
     undoManager.clear();
     dispatch({ type: "reset" });
     setRoom(null);
+    setReadonly(false);
+    setRoomHash(null, false);
   }, [dispatch]);
 
   const enterRoom = useCallback(
@@ -44,6 +65,47 @@ export function App() {
     },
     [dispatch],
   );
+
+  // 딥링크 진입 — 방 목록에서 id 로 찾아 들어간다. 없으면 안내 후 방 목록으로.
+  useEffect(() => {
+    if (deepLinkId === null || !user || room) {
+      return;
+    }
+    fetchRooms()
+      .then((rooms) => {
+        const found = rooms.find((r) => r.id === deepLinkId);
+        if (found) {
+          enterRoom(found);
+        } else {
+          setNotice("링크의 방을 찾을 수 없습니다. 삭제되었거나 주소가 잘못되었습니다.");
+          setReadonly(false);
+          setRoomHash(null, false);
+        }
+      })
+      .catch((e: Error) => setNotice(`방 정보를 불러오지 못했습니다: ${e.message}`))
+      .finally(() => setDeepLinkId(null));
+  }, [deepLinkId, user, room, enterRoom]);
+
+  // 방에 들어가 있는 동안 주소를 #/room/:id 로 유지한다.
+  useEffect(() => {
+    if (roomId !== null) {
+      setRoomHash(roomId, readonly);
+    }
+  }, [roomId, readonly]);
+
+  const shareRoom = useCallback(() => {
+    if (roomId === null) {
+      return;
+    }
+    copyText(readonlyShareUrl(roomId)).then((ok) =>
+      dispatch({
+        type: "toast",
+        toast: ok
+          ? { message: "읽기전용 공유 링크가 복사되었습니다.", kind: "ok" }
+          : { message: "링크 복사에 실패했습니다.", kind: "err" },
+      }),
+    );
+  }, [roomId, dispatch]);
 
   const resync = useCallback(() => {
     if (roomId === null) {
@@ -136,6 +198,8 @@ export function App() {
     <div id="app">
       <Header
         roomName={room.name}
+        readonly={readonly}
+        onShare={shareRoom}
         onLeaveRoom={leaveRoom}
         onReset={() => {
           panZoomRef.current?.reset();
@@ -144,7 +208,7 @@ export function App() {
         }}
         onZoom={(f) => panZoomRef.current?.zoomBy(f)}
       />
-      {editMode && <Toolbar roomId={room.id} />}
+      {editMode && !readonly && <Toolbar roomId={room.id} />}
       <div id="body">
         <ErdCanvas apiRef={panZoomRef} onNodeClick={onNodeClick} />
         <Legend />
