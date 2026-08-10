@@ -2,7 +2,7 @@ import { useState } from "react";
 import { putSchema } from "../api/http";
 import { erdSocket } from "../api/socket";
 import { exportDbml } from "../exporters/dbml";
-import { exportPng, exportSvg } from "../exporters/image";
+import { exportPdf, exportPng, exportSvg } from "../exporters/image";
 import { exportJson, importJson } from "../exporters/json";
 import { exportSql } from "../exporters/sql";
 import { useDispatch, useStore } from "../state/schemaStore";
@@ -88,10 +88,12 @@ export function Toolbar({ roomId }: Props) {
       <button onClick={() => exportJson(doc)}>💾 JSON 저장</button>
       <button onClick={doImport}>📂 JSON 불러오기</button>
       <button onClick={() => setDdlOpen(true)}>⬆ DDL 불러오기</button>
-      <button onClick={() => exportSql(doc)}>⬇ SQL</button>
+      <button onClick={() => exportSql(doc, "mysql")}>⬇ SQL·MySQL</button>
+      <button onClick={() => exportSql(doc, "postgres")}>⬇ SQL·PG</button>
       <button onClick={() => exportDbml(doc)}>⬇ DBML</button>
       <button onClick={() => exportPng(toastErr)}>🖼 PNG</button>
       <button onClick={() => exportSvg(toastErr)}>🖼 SVG</button>
+      <button onClick={() => exportPdf(toastErr)}>🖨 PDF</button>
       <span className="tbnote">모든 편집은 즉시 전체 접속자에게 반영되고 DB에 저장됩니다</span>
       {ddlOpen && <DdlImportModal roomId={roomId} onClose={() => setDdlOpen(false)} />}
       {domainOpen && <DomainModal onClose={() => setDomainOpen(false)} />}

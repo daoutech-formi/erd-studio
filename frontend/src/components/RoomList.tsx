@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createRoom, deleteRoom, fetchRooms, type RoomInfo } from "../api/http";
 import type { UserInfo } from "../state/user";
 import { McpGuideModal } from "./McpGuideModal";
+import { ThemeToggle } from "./ThemeToggle";
 
 const MAX_ROOMS = 20;
 const MAX_USERS_PER_ROOM = 10;
@@ -87,6 +88,7 @@ export function RoomList({ user, notice, onEnter }: Props) {
           >
             <button onClick={() => setMcpOpen(true)}>🔗 MCP 연결</button>
           </span>
+          <ThemeToggle />
           <span className="room-count">{rooms.length} / {MAX_ROOMS} 방</span>
         </div>
       </header>

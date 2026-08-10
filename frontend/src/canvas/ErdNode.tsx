@@ -48,7 +48,6 @@ export const ErdNode = memo(function ErdNode(props: Props) {
       <rect
         width={NODE_W}
         height={NODE_H}
-        fill="#1b2336"
         stroke={lockColor ?? color}
         strokeWidth={lockUser ? 2 : 1}
         strokeDasharray={lockUser ? "4 3" : undefined}
