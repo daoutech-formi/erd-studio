@@ -1,7 +1,9 @@
 package com.daou.erdstudio.service;
 
+import com.daou.erdstudio.domain.ErdMemo;
 import com.daou.erdstudio.domain.ErdRoom;
 import com.daou.erdstudio.domain.ErdTable;
+import com.daou.erdstudio.repository.ErdMemoRepository;
 import com.daou.erdstudio.repository.ErdRoomRepository;
 import com.daou.erdstudio.repository.ErdTableRepository;
 import com.daou.erdstudio.web.dto.Op;
@@ -28,6 +30,8 @@ class OpServiceTest {
     OpService opService;
     @Autowired
     ErdTableRepository tableRepository;
+    @Autowired
+    ErdMemoRepository memoRepository;
     @Autowired
     ErdRoomRepository roomRepository;
     @Autowired
@@ -236,6 +240,99 @@ class OpServiceTest {
                 op("table.move", Map.of("name", "t_optest_move_bad", "x", "abc", "y", 1))))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("좌표");
+    }
+
+    private void addMemo(String id) {
+        opService.apply(roomId, op("memo.add",
+                Map.of("id", id, "text", "검토 필요", "x", 40.0, "y", -70.0, "color", "#ffd479")));
+    }
+
+    @Test
+    void memoAdd_메모를_생성한다() {
+        addMemo("m_test1");
+        ErdMemo saved = memoRepository.findByRoomIdAndMemoKey(roomId, "m_test1").orElseThrow();
+        assertThat(saved.getText()).isEqualTo("검토 필요");
+        assertThat(saved.getColor()).isEqualTo("#ffd479");
+        assertThat(saved.getPosX()).isEqualTo(40.0);
+        assertThat(saved.getPosY()).isEqualTo(-70.0);
+    }
+
+    @Test
+    void memoAdd_중복_식별자면_거부한다() {
+        addMemo("m_dup");
+        assertThatThrownBy(() -> addMemo("m_dup"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("이미 존재");
+    }
+
+    @Test
+    void memoAdd_숫자가_아닌_좌표면_거부한다() {
+        assertThatThrownBy(() -> opService.apply(roomId,
+                op("memo.add", Map.of("id", "m_bad", "text", "", "x", "abc", "y", 1))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("좌표");
+    }
+
+    @Test
+    void memoApply_내용과_색상을_변경한다() {
+        addMemo("m_edit");
+        opService.apply(roomId, op("memo.apply",
+                Map.of("id", "m_edit", "text", "수정된 내용", "color", "#7fd3a8")));
+        ErdMemo saved = memoRepository.findByRoomIdAndMemoKey(roomId, "m_edit").orElseThrow();
+        assertThat(saved.getText()).isEqualTo("수정된 내용");
+        assertThat(saved.getColor()).isEqualTo("#7fd3a8");
+    }
+
+    @Test
+    void memoMove_좌표를_저장한다() {
+        addMemo("m_move");
+        opService.apply(roomId, op("memo.move", Map.of("id", "m_move", "x", 200.5, "y", 90.0)));
+        ErdMemo saved = memoRepository.findByRoomIdAndMemoKey(roomId, "m_move").orElseThrow();
+        assertThat(saved.getPosX()).isEqualTo(200.5);
+        assertThat(saved.getPosY()).isEqualTo(90.0);
+    }
+
+    @Test
+    void memoDelete_메모를_삭제한다() {
+        addMemo("m_del");
+        opService.apply(roomId, op("memo.delete", Map.of("id", "m_del")));
+        assertThat(memoRepository.findByRoomIdAndMemoKey(roomId, "m_del")).isEmpty();
+    }
+
+    @Test
+    void memo_없는_메모면_거부한다() {
+        assertThatThrownBy(() -> opService.apply(roomId, op("memo.delete", Map.of("id", "m_ghost"))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("존재하지 않는 메모");
+    }
+
+    @Test
+    void loadDoc_메모_행을_포함한다() {
+        addMemo("m_doc");
+        SchemaDoc doc = schemaService.loadDoc(roomId);
+        assertThat(doc.memos()).containsExactly(List.of("m_doc", "검토 필요", 40.0, -70.0, "#ffd479"));
+    }
+
+    @Test
+    void schemaReplace_메모를_함께_교체한다() {
+        addMemo("m_before");
+        opService.apply(roomId, op("schema.replace", Map.of("doc", Map.of(
+                "domains", Map.of("d1", Map.of("name", "도메인1", "color", "#111111")),
+                "tables", List.of(), "relations", List.of(), "columns", Map.of(),
+                "memos", List.of(List.of("m_after", "새 메모", 10.0, 20.0, "#8ab0d0"))))));
+        assertThat(memoRepository.findByRoomIdAndMemoKey(roomId, "m_before")).isEmpty();
+        assertThat(memoRepository.findByRoomIdAndMemoKey(roomId, "m_after")).isPresent();
+    }
+
+    @Test
+    void validateDoc_메모_식별자_중복이면_거부한다() {
+        LinkedHashMap<String, SchemaDoc.DomainDef> domains = new LinkedHashMap<>();
+        domains.put("d1", new SchemaDoc.DomainDef("도메인1", "#111111"));
+        SchemaDoc doc = new SchemaDoc(domains, List.of(), List.of(), Map.of(),
+                List.of(List.of("m1", "a", 0, 0, ""), List.of("m1", "b", 0, 0, "")));
+        assertThatThrownBy(() -> opService.validateDoc(doc))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("메모 식별자");
     }
 
     @Test

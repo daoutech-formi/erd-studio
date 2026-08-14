@@ -8,13 +8,28 @@ import java.util.Map;
  * tables 행: [name, domainKey, description, hub, posX, posY] (뒤 3개는 생략/NULL 허용)
  * relations 행: [childName, parentName, label?]
  * columns 값 행: [name, colType, comment, flag?]
+ * memos 행: [id, text, x, y, color]
  */
 public record SchemaDoc(
         Map<String, DomainDef> domains,
         List<List<Object>> tables,
         List<List<Object>> relations,
-        Map<String, List<List<Object>>> columns
+        Map<String, List<List<Object>>> columns,
+        List<List<Object>> memos
 ) {
+
+    /** 메모 도입 전의 문서(JSON 저장본·이력 스냅샷)도 그대로 받아들인다. */
+    public SchemaDoc {
+        if (memos == null) {
+            memos = List.of();
+        }
+    }
+
+    /** 메모 없는 문서를 만드는 편의 생성자. */
+    public SchemaDoc(Map<String, DomainDef> domains, List<List<Object>> tables,
+                     List<List<Object>> relations, Map<String, List<List<Object>>> columns) {
+        this(domains, tables, relations, columns, List.of());
+    }
 
     public record DomainDef(String name, String color) {
     }

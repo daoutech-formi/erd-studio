@@ -170,7 +170,8 @@ public class DdlImportService {
             assignNewTables(tables, relations, domains, newDomains);
         }
 
-        SchemaDoc doc = new SchemaDoc(domains, tables, relations, columns);
+        // 메모는 DDL과 무관한 주석이므로 merge/replace 모두 그대로 유지한다.
+        SchemaDoc doc = new SchemaDoc(domains, tables, relations, columns, current.memos());
         return new ImportPlan(doc, new ImportSummary(added, updated, removed, unchanged, newRelations, newDomains));
     }
 

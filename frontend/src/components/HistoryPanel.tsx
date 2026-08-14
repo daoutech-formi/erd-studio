@@ -9,6 +9,23 @@ interface Props {
   roomId: number;
 }
 
+/** opKind 코드 → 한글 표기. 목록에 없는 값(구버전 등)은 코드 그대로 보여준다. */
+const OP_LABELS: Record<string, string> = {
+  "table.add": "테이블 추가",
+  "table.apply": "테이블 수정",
+  "table.delete": "테이블 삭제",
+  "table.move": "테이블 이동",
+  "domain.apply": "도메인 변경",
+  "memo.add": "메모 추가",
+  "memo.apply": "메모 수정",
+  "memo.delete": "메모 삭제",
+  "memo.move": "메모 이동",
+  "schema.replace": "전체 교체",
+  "history.restore": "이력 복원",
+};
+
+const opLabel = (kind: string): string => OP_LABELS[kind] ?? kind;
+
 /** 현재 방의 변경 이력 목록 + 특정 시점 복원. */
 export function HistoryPanel({ roomId }: Props) {
   const dispatch = useDispatch();
@@ -24,7 +41,7 @@ export function HistoryPanel({ roomId }: Props) {
   useEffect(reload, [reload]);
 
   const restore = (entry: HistoryEntry) => {
-    if (!window.confirm(`#${entry.id} (${entry.opKind} · ${entry.target}) 시점으로 복원할까요?`)) {
+    if (!window.confirm(`#${entry.id} (${opLabel(entry.opKind)} · ${entry.target}) 시점으로 복원할까요?`)) {
       return;
     }
     restoreHistory(roomId, entry.id, erdSocket.currentUser())
@@ -53,9 +70,9 @@ export function HistoryPanel({ roomId }: Props) {
         <tbody>
           {entries.map((h) => (
             <tr key={h.id}>
-              <td>{new Date(h.createdAt).toLocaleTimeString("ko-KR", { hour12: false })}</td>
+              <td>{new Date(h.createdAt).toLocaleTimeString("ko-KR", { hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit" })}</td>
               <td>{h.userName}</td>
-              <td>{h.opKind}</td>
+              <td>{opLabel(h.opKind)}</td>
               <td>{h.target}</td>
               <td><button className="mini" onClick={() => restore(h)}>복원</button></td>
             </tr>

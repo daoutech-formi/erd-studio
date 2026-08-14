@@ -20,7 +20,7 @@ const INITIAL = { tx: 60, ty: 20, scale: 0.65 };
 
 /**
  * 팬/줌 — React 상태를 거치지 않고 viewport <g>의 transform을 rAF로 직접 갱신한다.
- * 노드 위에서 시작한 mousedown은 노드 쪽에서 stopPropagation으로 차단한다.
+ * 노드/메모 위에서 시작한 mousedown은 onDown에서 걸러 팬하지 않는다.
  */
 export function usePanZoom(
   stageRef: RefObject<HTMLDivElement>,
@@ -53,6 +53,11 @@ export function usePanZoom(
     let sy = 0;
 
     const onDown = (e: MouseEvent) => {
+      // 노드/메모 드래그와 팬이 겹치지 않게 한다 — React 합성 이벤트의 stopPropagation은
+      // stage에 직접 붙인 이 네이티브 리스너보다 늦게 실행되어 여기서 직접 걸러야 한다.
+      if ((e.target as Element | null)?.closest?.(".node, .memo-node")) {
+        return;
+      }
       dragging = true;
       sx = e.clientX - view.current.tx;
       sy = e.clientY - view.current.ty;

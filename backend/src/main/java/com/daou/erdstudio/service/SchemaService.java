@@ -2,10 +2,12 @@ package com.daou.erdstudio.service;
 
 import com.daou.erdstudio.domain.ErdColumn;
 import com.daou.erdstudio.domain.ErdDomain;
+import com.daou.erdstudio.domain.ErdMemo;
 import com.daou.erdstudio.domain.ErdRelation;
 import com.daou.erdstudio.domain.ErdTable;
 import com.daou.erdstudio.repository.ErdColumnRepository;
 import com.daou.erdstudio.repository.ErdDomainRepository;
+import com.daou.erdstudio.repository.ErdMemoRepository;
 import com.daou.erdstudio.repository.ErdRelationRepository;
 import com.daou.erdstudio.repository.ErdTableRepository;
 import com.daou.erdstudio.web.dto.SchemaDoc;
@@ -15,9 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /** 방 하나의 전체 스키마 문서 조회/전체 교체를 담당한다. DB가 단일 진실 소스다. */
 @Service
@@ -27,13 +31,16 @@ public class SchemaService {
     private final ErdTableRepository tableRepository;
     private final ErdColumnRepository columnRepository;
     private final ErdRelationRepository relationRepository;
+    private final ErdMemoRepository memoRepository;
 
     public SchemaService(ErdDomainRepository domainRepository, ErdTableRepository tableRepository,
-                         ErdColumnRepository columnRepository, ErdRelationRepository relationRepository) {
+                         ErdColumnRepository columnRepository, ErdRelationRepository relationRepository,
+                         ErdMemoRepository memoRepository) {
         this.domainRepository = domainRepository;
         this.tableRepository = tableRepository;
         this.columnRepository = columnRepository;
         this.relationRepository = relationRepository;
+        this.memoRepository = memoRepository;
     }
 
     @Transactional(readOnly = true)
@@ -55,7 +62,16 @@ public class SchemaService {
             tableRows.add(Arrays.asList(t.getName(), t.getDomainKey(), t.getDescription(),
                     t.isHub(), t.getPosX(), t.getPosY()));
         }
-        return new SchemaDoc(domains, tableRows, loadRelationRows(roomId, nameById), loadColumnRows(nameById));
+        return new SchemaDoc(domains, tableRows, loadRelationRows(roomId, nameById), loadColumnRows(nameById),
+                loadMemoRows(roomId));
+    }
+
+    private List<List<Object>> loadMemoRows(Long roomId) {
+        List<List<Object>> rows = new ArrayList<>();
+        for (ErdMemo m : memoRepository.findByRoomIdOrderBySortOrderAsc(roomId)) {
+            rows.add(Arrays.asList(m.getMemoKey(), m.getText(), m.getPosX(), m.getPosY(), m.getColor()));
+        }
+        return rows;
     }
 
     private List<List<Object>> loadRelationRows(Long roomId, Map<Long, String> nameById) {
@@ -105,6 +121,7 @@ public class SchemaService {
         Map<String, Long> tableIds = insertTables(roomId, doc);
         insertColumns(doc, tableIds);
         insertRelations(roomId, doc, tableIds);
+        insertMemos(roomId, doc);
     }
 
     /** 방의 스키마 데이터(관계·컬럼·테이블·도메인)를 모두 지운다. 이력은 남긴다. */
@@ -119,6 +136,7 @@ public class SchemaService {
         }
         tableRepository.deleteByRoomId(roomId);
         domainRepository.deleteByRoomId(roomId);
+        memoRepository.deleteByRoomId(roomId);
     }
 
     private void insertDomains(Long roomId, SchemaDoc doc) {
@@ -173,5 +191,21 @@ public class SchemaService {
             entities.add(new ErdRelation(roomId, childId, parentId, Rows.str(row, 2), Rows.str(row, 3), i));
         }
         relationRepository.saveAll(entities);
+    }
+
+    private void insertMemos(Long roomId, SchemaDoc doc) {
+        List<ErdMemo> entities = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (List<Object> row : doc.memos()) {
+            String key = Rows.str(row, 0);
+            if (key.isEmpty() || !seen.add(key)) {
+                continue;
+            }
+            Double x = Rows.dbl(row, 2);
+            Double y = Rows.dbl(row, 3);
+            entities.add(new ErdMemo(roomId, key, Rows.str(row, 1), Rows.str(row, 4),
+                    x == null ? 0 : x, y == null ? 0 : y, entities.size()));
+        }
+        memoRepository.saveAll(entities);
     }
 }

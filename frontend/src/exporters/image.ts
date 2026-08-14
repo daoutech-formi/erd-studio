@@ -17,6 +17,9 @@ function buildSvgCss(): { css: string; background: string } {
   .domain-label { font-size: 14px; font-weight: 700; }
   .edge { fill: none; stroke: ${v("--edge", "#33405e")}; stroke-width: 1; opacity: 0.55; }
   .edge.hl { stroke: ${v("--edge-hl", "#6ea8ff")}; stroke-width: 2; opacity: 1; }
+  .memo-node rect { stroke: rgba(0, 0, 0, 0.28); }
+  .memo-node text { fill: #453d20; font-size: 12px; }
+  .memo-fold { fill: rgba(0, 0, 0, 0.16); }
 `;
   return { css, background: v("--bg", "#10141f") };
 }

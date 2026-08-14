@@ -1,5 +1,5 @@
 import type { DomainDef, Op, Row, SchemaDoc } from "../types";
-import { rowBool, rowNum, rowStr } from "../types";
+import { MEMO_DEFAULT_COLOR, docMemos, rowBool, rowNum, rowStr } from "../types";
 
 // 서버가 에코한 op를 로컬 문서에 반영하는 순수 함수.
 // 발신자/수신자 구분 없이 모든 클라이언트가 동일한 경로로 상태를 갱신한다.
@@ -29,9 +29,44 @@ export function applyOpToDoc(doc: SchemaDoc, op: Op): SchemaDoc {
       return applyMove(doc, op.payload as { name?: string; x?: number; y?: number });
     case "domain.apply":
       return applyDomains(doc, (op.payload.domains as Row[]) ?? []);
+    case "memo.add":
+      return applyMemoAdd(doc, op.payload as { id?: string; text?: string; x?: number; y?: number; color?: string });
+    case "memo.apply":
+      return applyMemoApply(doc, op.payload as { id?: string; text?: string; color?: string });
+    case "memo.delete":
+      return { ...doc, memos: docMemos(doc).filter((m) => rowStr(m, 0) !== String(op.payload.id ?? "")) };
+    case "memo.move":
+      return applyMemoMove(doc, op.payload as { id?: string; x?: number; y?: number });
     case "schema.replace":
       return op.payload.doc as SchemaDoc;
   }
+}
+
+function applyMemoAdd(doc: SchemaDoc, p: { id?: string; text?: string; x?: number; y?: number; color?: string }): SchemaDoc {
+  if (!p.id || docMemos(doc).some((m) => rowStr(m, 0) === p.id)) {
+    return doc;
+  }
+  return {
+    ...doc,
+    memos: [...docMemos(doc), [p.id, p.text ?? "", p.x ?? 0, p.y ?? 0, p.color ?? MEMO_DEFAULT_COLOR]],
+  };
+}
+
+function applyMemoApply(doc: SchemaDoc, p: { id?: string; text?: string; color?: string }): SchemaDoc {
+  const memos = docMemos(doc).map((m) =>
+    rowStr(m, 0) === p.id ? [rowStr(m, 0), p.text ?? "", rowNum(m, 2), rowNum(m, 3), p.color ?? rowStr(m, 4)] : m,
+  );
+  return { ...doc, memos };
+}
+
+function applyMemoMove(doc: SchemaDoc, p: { id?: string; x?: number; y?: number }): SchemaDoc {
+  if (typeof p.x !== "number" || typeof p.y !== "number") {
+    return doc;
+  }
+  const memos = docMemos(doc).map((m) =>
+    rowStr(m, 0) === p.id ? [rowStr(m, 0), rowStr(m, 1), p.x ?? 0, p.y ?? 0, rowStr(m, 4)] : m,
+  );
+  return { ...doc, memos };
 }
 
 /** 도메인 목록 교체 — 사라진 도메인에 속한 테이블은 첫 도메인으로 옮긴다(서버와 동일 규칙). */

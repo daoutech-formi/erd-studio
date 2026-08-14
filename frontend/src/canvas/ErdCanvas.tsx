@@ -1,13 +1,15 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { MutableRefObject } from "react";
+import { MemoModal } from "../components/MemoModal";
 import { useDispatch, useStore } from "../state/schemaStore";
-import { rowStr } from "../types";
+import { docMemos, rowNum, rowStr, MEMO_DEFAULT_COLOR } from "../types";
 import { ErdEdge } from "./ErdEdge";
 import { ErdNode } from "./ErdNode";
+import { MemoNode } from "./MemoNode";
 import { Minimap } from "./Minimap";
 import { computeLayout, type LayoutResult } from "./layout";
 import { usePanZoom, type PanZoomApi } from "./usePanZoom";
-import { useNodeDrag } from "./useNodeDrag";
+import { useMemoDrag, useNodeDrag, wasJustDragged } from "./useNodeDrag";
 
 interface Props {
   apiRef: MutableRefObject<PanZoomApi | null>;
@@ -23,6 +25,9 @@ export function ErdCanvas({ apiRef, onNodeClick }: Props) {
   const stageRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<SVGGElement>(null);
   const nodeEls = useRef(new Map<string, SVGGElement>());
+  const memoEls = useRef(new Map<string, SVGGElement>());
+  /** 편집 중인 메모 id — 편집 모드에서 메모를 클릭하면 모달이 열린다. */
+  const [memoOpen, setMemoOpen] = useState<string | null>(null);
 
   const layout = useMemo(() => (doc ? computeLayout(doc) : EMPTY_LAYOUT), [doc]);
 
@@ -83,6 +88,20 @@ export function ErdCanvas({ apiRef, onNodeClick }: Props) {
     }
   }, []);
 
+  const registerMemoEl = useCallback((id: string, el: SVGGElement | null) => {
+    if (el) {
+      memoEls.current.set(id, el);
+    } else {
+      memoEls.current.delete(id);
+    }
+  }, []);
+
+  const openMemo = useCallback((id: string) => {
+    if (!wasJustDragged()) {
+      setMemoOpen(id);
+    }
+  }, []);
+
   const clearFocus = useCallback(() => {
     dispatch({ type: "select", name: null });
   }, [dispatch]);
@@ -90,6 +109,10 @@ export function ErdCanvas({ apiRef, onNodeClick }: Props) {
   const panZoom = usePanZoom(stageRef, viewportRef, clearFocus);
   apiRef.current = panZoom;
   const onNodeMouseDown = useNodeDrag(nodeEls, editMode);
+  const onMemoMouseDown = useMemoDrag(memoEls, editMode);
+
+  /** 테이블 강조·검색·도메인 포커스 중에는 메모도 함께 흐리게 한다. */
+  const memosDim = selected !== null || searchMatches !== null || focusDomain !== null;
 
   return (
     <div id="stage" ref={stageRef}>
@@ -149,10 +172,28 @@ export function ErdCanvas({ apiRef, onNodeClick }: Props) {
               );
             })}
           </g>
+          <g id="memos">
+            {doc && docMemos(doc).map((m) => (
+              <MemoNode
+                key={rowStr(m, 0)}
+                id={rowStr(m, 0)}
+                text={rowStr(m, 1)}
+                color={rowStr(m, 4) || MEMO_DEFAULT_COLOR}
+                x={rowNum(m, 2) ?? 0}
+                y={rowNum(m, 3) ?? 0}
+                dim={memosDim}
+                editMode={editMode}
+                onOpen={openMemo}
+                onMemoMouseDown={onMemoMouseDown}
+                registerEl={registerMemoEl}
+              />
+            ))}
+          </g>
         </g>
       </svg>
       <Minimap layout={layout} domains={doc?.domains} api={panZoom} stageRef={stageRef} />
-      <div className="footnote">마우스 드래그: 이동 · 휠: 확대/축소 · 노드 클릭: 관계 강조{editMode ? " · 편집 모드: 노드 드래그로 위치 이동" : ""}</div>
+      <div className="footnote">마우스 드래그: 이동 · 휠: 확대/축소 · 노드 클릭: 관계 강조{editMode ? " · 편집 모드: 노드 드래그로 위치 이동, 메모 클릭으로 편집" : ""}</div>
+      {memoOpen && <MemoModal id={memoOpen} onClose={() => setMemoOpen(null)} />}
     </div>
   );
 }

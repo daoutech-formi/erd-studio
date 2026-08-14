@@ -1,5 +1,5 @@
 import type { Op, Row, SchemaDoc } from "../types";
-import { rowBool, rowNum, rowStr } from "../types";
+import { docMemos, rowBool, rowNum, rowStr } from "../types";
 
 // Undo/Redo — 자신이 보낸 op의 역연산을 쌓아 두고, 실행 시 일반 op로 서버에 보낸다.
 
@@ -95,7 +95,53 @@ export function invertOp(op: Op, before: SchemaDoc, user: string): Op[] {
     case "domain.apply":
       // 도메인 삭제 시 테이블 소속까지 바뀌므로 전체 스냅샷으로 되돌린다.
       return [{ type: "schema.replace", user, payload: { doc: before } }];
+    case "memo.add":
+      return [{ type: "memo.delete", user, payload: { id: op.payload.id } }];
+    case "memo.apply": {
+      const row = findMemo(before, op);
+      if (!row) {
+        return [];
+      }
+      return [{
+        type: "memo.apply",
+        user,
+        payload: { id: rowStr(row, 0), text: rowStr(row, 1), color: rowStr(row, 4) },
+      }];
+    }
+    case "memo.delete": {
+      const row = findMemo(before, op);
+      if (!row) {
+        return [];
+      }
+      return [{
+        type: "memo.add",
+        user,
+        payload: {
+          id: rowStr(row, 0),
+          text: rowStr(row, 1),
+          x: rowNum(row, 2) ?? 0,
+          y: rowNum(row, 3) ?? 0,
+          color: rowStr(row, 4),
+        },
+      }];
+    }
+    case "memo.move": {
+      const row = findMemo(before, op);
+      if (!row) {
+        return [];
+      }
+      return [{
+        type: "memo.move",
+        user,
+        payload: { id: rowStr(row, 0), x: rowNum(row, 2) ?? 0, y: rowNum(row, 3) ?? 0 },
+      }];
+    }
     case "schema.replace":
       return [{ type: "schema.replace", user, payload: { doc: before } }];
   }
+}
+
+function findMemo(doc: SchemaDoc, op: Op): Row | undefined {
+  const id = String(op.payload.id ?? "");
+  return docMemos(doc).find((m) => rowStr(m, 0) === id);
 }

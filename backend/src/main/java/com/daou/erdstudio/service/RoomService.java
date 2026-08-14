@@ -80,7 +80,7 @@ public class RoomService {
     private SchemaDoc defaultDoc() {
         Map<String, SchemaDoc.DomainDef> domains = new LinkedHashMap<>();
         domains.put(DEFAULT_DOMAIN_KEY, new SchemaDoc.DomainDef("기타", "#9aa0aa"));
-        return new SchemaDoc(domains, List.of(), List.of(), Map.of());
+        return new SchemaDoc(domains, List.of(), List.of(), Map.of(), List.of());
     }
 
     private String safeUser(String user) {

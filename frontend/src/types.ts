@@ -10,6 +10,7 @@ export interface DomainDef {
  * tables:    [name, domainKey, description, hub?, posX?, posY?]
  * relations: [childName, parentName, label?, cardinality?] (cardinality: N:1(기본)/1:1/N:M)
  * columns:   [name, colType, comment, flag?]
+ * memos:     [id, text, x, y, color]
  */
 export type Row = (string | number | boolean | null)[];
 
@@ -18,7 +19,15 @@ export interface SchemaDoc {
   tables: Row[];
   relations: Row[];
   columns: Record<string, Row[]>;
+  /** 캔버스에 붙이는 스티키 메모. 메모 도입 전 문서에는 없을 수 있다. */
+  memos?: Row[];
 }
+
+/** 메모 배경색 팔레트 — 첫 값이 기본색. 어두운 글자가 읽히는 파스텔 톤만 쓴다. */
+export const MEMO_COLORS = ["#ffd479", "#7fd3a8", "#8ab0d0", "#f2a0c4"] as const;
+export const MEMO_DEFAULT_COLOR: string = MEMO_COLORS[0];
+
+export const docMemos = (doc: SchemaDoc): Row[] => doc.memos ?? [];
 
 export const rowStr = (row: Row, i: number): string => {
   const v = row[i];
@@ -36,6 +45,10 @@ export type OpType =
   | "table.delete"
   | "table.move"
   | "domain.apply"
+  | "memo.add"
+  | "memo.apply"
+  | "memo.delete"
+  | "memo.move"
   | "schema.replace";
 
 export interface Op {

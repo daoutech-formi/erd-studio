@@ -248,6 +248,21 @@ table.cols .cc { color: var(--muted); }
 .rrow .rt2 { flex: 1; } .rrow .rc2 { width: 84px; flex: none; } .rrow .rl2 { width: 74px; flex: none; }
 select.ci { appearance: auto; }
 
+/* ---------- 캔버스 메모 ---------- */
+.memo-node rect { stroke: rgba(0, 0, 0, 0.28); }
+.memo-node text { fill: #453d20; font-size: 12px; pointer-events: none; user-select: none; }
+.memo-node.dim { opacity: 0.15; }
+.memo-fold { fill: rgba(0, 0, 0, 0.16); }
+.memo-ta { resize: vertical; min-height: 96px; font-family: inherit; line-height: 1.5; }
+.memo-swatches { display: flex; gap: 8px; margin: 10px 0 14px; }
+.memo-swatch {
+  width: 26px; height: 26px; padding: 0; border-radius: 6px;
+  border: 2px solid transparent; cursor: pointer;
+}
+.memo-swatch.on { border-color: var(--text); }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.modal-actions .danger { margin-right: auto; }
+
 /* ---------- 이름 모달 ---------- */
 .modal-backdrop {
   position: fixed; inset: 0; background: var(--backdrop);
@@ -264,14 +279,16 @@ select.ci { appearance: auto; }
 /* ---------- 이력 패널 ---------- */
 .history-panel {
   position: absolute; right: 12px; top: 12px;
-  width: 380px; max-height: calc(100% - 24px); overflow-y: auto;
+  width: 620px; max-width: calc(100% - 24px); max-height: calc(100% - 24px); overflow-y: auto;
   background: var(--panel-glass-strong);
-  border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-size: 12px;
+  border: 1px solid var(--border); border-radius: 8px; padding: 16px; font-size: 13px;
 }
-.history-panel table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.history-panel table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 .history-panel td, .history-panel th {
-  border-bottom: 1px solid var(--row-border); padding: 4px; text-align: left; font-size: 11px;
+  border-bottom: 1px solid var(--row-border); padding: 6px 8px; text-align: left; font-size: 12px;
 }
+/* 시각·사용자·작업·복원 칸은 한 줄 고정 — 줄바꿈은 '대상' 칸에서만 일어난다. */
+.history-panel td:nth-child(-n + 3), .history-panel td:last-child { white-space: nowrap; }
 .history-panel th { color: var(--muted); font-weight: 400; }
 
 /* ---------- DDL 임포트 미리보기 ---------- */

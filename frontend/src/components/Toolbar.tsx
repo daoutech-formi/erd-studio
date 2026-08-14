@@ -8,7 +8,7 @@ import { exportSql } from "../exporters/sql";
 import { useDispatch, useStore } from "../state/schemaStore";
 import { invertOp, undoManager } from "../state/undo";
 import type { Op } from "../types";
-import { rowStr } from "../types";
+import { MEMO_DEFAULT_COLOR, docMemos, rowStr } from "../types";
 import { DdlImportModal } from "./DdlImportModal";
 import { DomainModal } from "./DomainModal";
 
@@ -41,6 +41,22 @@ export function Toolbar({ roomId }: Props) {
     const op: Op = { type: "table.add", user, payload: { name, domain, desc: "새 테이블" } };
     erdSocket.sendEditOp(op, invertOp(op, doc, user));
     dispatch({ type: "select", name });
+  };
+
+  const addMemo = () => {
+    const memos = docMemos(doc);
+    let id = "";
+    do {
+      id = `m${Math.random().toString(36).slice(2, 9)}`;
+    } while (memos.some((m) => rowStr(m, 0) === id));
+    // 자동 배치 영역(y≥30)을 피해 캔버스 왼쪽 위 빈 공간에 계단식으로 놓는다.
+    const n = memos.length % 6;
+    const op: Op = {
+      type: "memo.add",
+      user,
+      payload: { id, text: "새 메모", x: 40 + n * 28, y: -70 + n * 28, color: MEMO_DEFAULT_COLOR },
+    };
+    erdSocket.sendEditOp(op, invertOp(op, doc, user));
   };
 
   const run = (ops: Op[] | null) => {
@@ -76,6 +92,7 @@ export function Toolbar({ roomId }: Props) {
   return (
     <div className="toolbar">
       <button onClick={addTable}>＋ 테이블 추가</button>
+      <button onClick={addMemo}>🗒 메모 추가</button>
       <button onClick={() => setDomainOpen(true)}>🎨 도메인 관리</button>
       <span className="tbsep" />
       <button onClick={() => run(undoManager.undo())}>↺ 되돌리기</button>

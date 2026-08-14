@@ -100,9 +100,12 @@ class ErdSocket {
         this.dispatch({ type: "locks", locks: msg.locks });
         break;
       case "move":
+        // "memo:{id}" 접두사는 메모 이동 중계 — 서버는 식별자를 그대로 되돌려준다.
         this.dispatch({
           type: "applyOp",
-          op: { type: "table.move", user: "", payload: { name: msg.table, x: msg.x, y: msg.y } },
+          op: msg.table.startsWith("memo:")
+            ? { type: "memo.move", user: "", payload: { id: msg.table.slice(5), x: msg.x, y: msg.y } }
+            : { type: "table.move", user: "", payload: { name: msg.table, x: msg.x, y: msg.y } },
         });
         break;
       case "error":
