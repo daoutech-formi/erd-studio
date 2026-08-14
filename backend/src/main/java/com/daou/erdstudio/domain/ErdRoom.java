@@ -32,6 +32,10 @@ public class ErdRoom {
     @Column(name = "created_by", nullable = false)
     private String createdBy;
 
+    /** 생성자의 브라우저 식별자 — 이름 변경 시 생성자 표시명을 따라 바꾸는 데 쓴다. 구버전 방은 NULL. */
+    @Column(name = "creator_client_key", length = 64)
+    private String creatorClientKey;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -39,9 +43,18 @@ public class ErdRoom {
     }
 
     public ErdRoom(String name, String createdBy) {
+        this(name, createdBy, null);
+    }
+
+    public ErdRoom(String name, String createdBy, String creatorClientKey) {
         this.name = name;
         this.createdBy = createdBy;
+        this.creatorClientKey = creatorClientKey;
         this.createdAt = Instant.now();
+    }
+
+    public void updateCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
     }
 
     public Long getId() {
@@ -54,6 +67,10 @@ public class ErdRoom {
 
     public String getCreatedBy() {
         return createdBy;
+    }
+
+    public String getCreatorClientKey() {
+        return creatorClientKey;
     }
 
     public Instant getCreatedAt() {

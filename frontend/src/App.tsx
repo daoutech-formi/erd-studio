@@ -192,7 +192,7 @@ export function App() {
     return <NameModal onSubmit={setUser} />;
   }
   if (!room) {
-    return <RoomList user={user} notice={notice} onEnter={enterRoom} />;
+    return <RoomList user={user} notice={notice} onEnter={enterRoom} onUserChange={setUser} />;
   }
   return (
     <div id="app">

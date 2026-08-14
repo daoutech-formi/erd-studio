@@ -23,12 +23,21 @@ export function fetchRooms(): Promise<RoomInfo[]> {
   return fetch("/api/rooms").then((res) => parse<RoomInfo[]>(res));
 }
 
-export function createRoom(name: string, user: string): Promise<RoomInfo> {
+export function createRoom(name: string, user: string, clientKey: string): Promise<RoomInfo> {
   return fetch("/api/rooms", {
     method: "POST",
     headers: { "Content-Type": "application/json", ...userHeader(user) },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, clientKey }),
   }).then((res) => parse<RoomInfo>(res));
+}
+
+/** 이름 변경 시 같은 브라우저(clientKey)로 만든 방들의 생성자 표시명을 갱신한다. */
+export function renameRoomCreator(clientKey: string, name: string): Promise<{ ok: boolean; updated: number }> {
+  return fetch("/api/rooms/creator-name", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ clientKey, name }),
+  }).then((res) => parse(res));
 }
 
 export function deleteRoom(roomId: number): Promise<{ ok: boolean }> {

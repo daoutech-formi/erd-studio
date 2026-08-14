@@ -9,5 +9,7 @@ public interface ErdRoomRepository extends JpaRepository<ErdRoom, Long> {
 
     List<ErdRoom> findAllByOrderByIdAsc();
 
+    List<ErdRoom> findByCreatorClientKey(String creatorClientKey);
+
     boolean existsByName(String name);
 }

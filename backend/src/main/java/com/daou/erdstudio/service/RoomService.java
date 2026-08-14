@@ -42,6 +42,11 @@ public class RoomService {
      */
     @Transactional
     public ErdRoom create(String name, String user) {
+        return create(name, user, null);
+    }
+
+    @Transactional
+    public ErdRoom create(String name, String user, String clientKey) {
         String trimmed = name == null ? "" : name.trim();
         if (trimmed.isEmpty()) {
             throw new IllegalArgumentException("방 이름을 입력하세요.");
@@ -55,7 +60,7 @@ public class RoomService {
         if (roomRepository.count() >= MAX_ROOMS) {
             throw new IllegalArgumentException("방은 최대 " + MAX_ROOMS + "개까지 만들 수 있습니다.");
         }
-        ErdRoom room = roomRepository.save(new ErdRoom(trimmed, safeUser(user)));
+        ErdRoom room = roomRepository.save(new ErdRoom(trimmed, safeUser(user), safeClientKey(clientKey)));
         schemaService.replaceAll(room.getId(), defaultDoc());
         return room;
     }
@@ -83,10 +88,30 @@ public class RoomService {
         return new SchemaDoc(domains, List.of(), List.of(), Map.of(), List.of());
     }
 
+    /** 사용자 이름 변경 — 같은 브라우저(clientKey)로 만든 방들의 생성자 표시명을 갱신한다. */
+    @Transactional
+    public int renameCreator(String clientKey, String newName) {
+        String key = safeClientKey(clientKey);
+        if (key == null) {
+            throw new IllegalArgumentException("브라우저 식별자가 올바르지 않습니다.");
+        }
+        String name = safeUser(newName);
+        List<ErdRoom> rooms = roomRepository.findByCreatorClientKey(key);
+        rooms.forEach(room -> room.updateCreatedBy(name));
+        return rooms.size();
+    }
+
     private String safeUser(String user) {
         if (user == null || user.isBlank()) {
             return "unknown";
         }
         return user.length() > 20 ? user.substring(0, 20) : user;
+    }
+
+    private String safeClientKey(String clientKey) {
+        if (clientKey == null || clientKey.isBlank() || clientKey.length() > 64) {
+            return null;
+        }
+        return clientKey;
     }
 }

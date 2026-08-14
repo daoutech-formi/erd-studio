@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { createRoom, deleteRoom, fetchRooms, type RoomInfo } from "../api/http";
-import type { UserInfo } from "../state/user";
+import { createRoom, deleteRoom, fetchRooms, renameRoomCreator, type RoomInfo } from "../api/http";
+import { clientKey, type UserInfo } from "../state/user";
 import { McpGuideModal } from "./McpGuideModal";
+import { NameModal } from "./NameModal";
 import { ThemeToggle } from "./ThemeToggle";
 
 const MAX_ROOMS = 20;
@@ -13,15 +14,18 @@ interface Props {
   /** 입장이 거절되었을 때 서버가 보낸 안내 문구. */
   notice: string;
   onEnter: (room: RoomInfo) => void;
+  /** 이름 변경 저장 시 새 사용자 정보를 상위(App)에 반영한다. */
+  onUserChange: (user: UserInfo) => void;
 }
 
 /** 메인 화면 — ERD 방 목록. 방을 고르면 그 방의 ERD로 들어간다. */
-export function RoomList({ user, notice, onEnter }: Props) {
+export function RoomList({ user, notice, onEnter, onUserChange }: Props) {
   const [rooms, setRooms] = useState<RoomInfo[]>([]);
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [mcpOpen, setMcpOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
 
   const load = useCallback(() => {
     fetchRooms()
@@ -47,7 +51,7 @@ export function RoomList({ user, notice, onEnter }: Props) {
       return;
     }
     setBusy(true);
-    createRoom(trimmed, user.name)
+    createRoom(trimmed, user.name, clientKey)
       .then((room) => {
         setName("");
         setError("");
@@ -76,7 +80,7 @@ export function RoomList({ user, notice, onEnter }: Props) {
           <h1>ERD Studio</h1>
           <div className="sub">
             {user.name}님, 참여할 방을 선택하세요. 방은 최대 {MAX_ROOMS}개, 한 방에 최대 {MAX_USERS_PER_ROOM}명까지
-            동시 접속할 수 있습니다.
+            동시 접속할 수 있습니다. <button className="mini" onClick={() => setRenaming(true)}>✏ 이름 변경</button>
           </div>
         </div>
         <div className="room-header-right">
@@ -152,6 +156,20 @@ export function RoomList({ user, notice, onEnter }: Props) {
         </div>
       )}
       {mcpOpen && <McpGuideModal onClose={() => setMcpOpen(false)} />}
+      {renaming && (
+        <NameModal
+          initialName={user.name}
+          onCancel={() => setRenaming(false)}
+          onSubmit={(next) => {
+            onUserChange(next);
+            setRenaming(false);
+            // 내가 만든 방들의 생성자 표시명도 새 이름으로 갱신한 뒤 목록을 다시 읽는다.
+            renameRoomCreator(clientKey, next.name)
+              .then(load)
+              .catch((e: Error) => setError(`생성자 이름 갱신 실패: ${e.message}`));
+          }}
+        />
+      )}
     </div>
   );
 }

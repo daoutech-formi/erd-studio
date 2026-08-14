@@ -63,6 +63,31 @@ class RoomServiceTest {
     }
 
     @Test
+    void 이름을_바꾸면_같은_브라우저로_만든_방의_생성자명이_갱신된다() {
+        ErdRoom mine = roomService.create("내 방", "옛이름", "ck-rename-test");
+        ErdRoom others = roomService.create("남의 방", "옛이름", "ck-someone-else");
+        ErdRoom legacy = roomService.create("구버전 방", "옛이름"); // clientKey 없음
+
+        int updated = roomService.renameCreator("ck-rename-test", "새이름");
+
+        assertThat(updated).isEqualTo(1);
+        assertThat(roomRepositoryFind(mine).getCreatedBy()).isEqualTo("새이름");
+        assertThat(roomRepositoryFind(others).getCreatedBy()).isEqualTo("옛이름");
+        assertThat(roomRepositoryFind(legacy).getCreatedBy()).isEqualTo("옛이름");
+    }
+
+    @Test
+    void 이름_변경은_브라우저_식별자가_없으면_거부한다() {
+        assertThatThrownBy(() -> roomService.renameCreator("", "새이름"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("식별자");
+    }
+
+    private ErdRoom roomRepositoryFind(ErdRoom room) {
+        return roomRepository.findById(room.getId()).orElseThrow();
+    }
+
+    @Test
     void 중복된_방_이름은_거부한다() {
         roomService.create("중복방", "tester");
         assertThatThrownBy(() -> roomService.create("중복방", "tester"))
