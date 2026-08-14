@@ -262,7 +262,7 @@ footer a{font-size:12px}
 <!-- ================= 비교 매트릭스 ================= -->
 <section>
   <h2><span class="sec-num">3</span>기능 비교 매트릭스</h2>
-  <p class="sec-desc">ERD Studio 열이 강조되어 있습니다. 협업·AI 구간에 이어 "공유·표기·방언" 구간도 v1.3에서 채워졌습니다. 남은 공백은 코멘트 스레드·이력 diff·권한·임베드 등 Tier 2~3 항목입니다.</p>
+  <p class="sec-desc">ERD Studio 열이 강조되어 있습니다. 협업·AI 구간에 이어 "공유·표기·방언" 구간은 v1.3에서, 캔버스 메모는 v1.4에서 채워졌습니다. 남은 공백은 리뷰 스레드·이력 diff·권한·임베드 등 Tier 2~3 항목입니다.</p>
   <div class="matrix-scroll">
     <table class="matrix">
       <colgroup><col><col class="me"><col><col><col><col><col></colgroup>
@@ -275,7 +275,7 @@ footer a{font-size:12px}
         <tr class="grp"><th colspan="7">협업</th></tr>
         <tr><th>실시간 동시편집</th><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="p">◐ $59~</td><td class="p">◐ 유료</td><td class="n">—</td></tr>
         <tr><th>편집 잠금 / 라이브 커서</th><td class="y">● 소프트 락</td><td class="n">—</td><td class="n">—</td><td class="y">● 커서</td><td class="n">—</td><td class="n">—</td></tr>
-        <tr><th>코멘트 / 리뷰 스레드</th><td class="n">—</td><td class="y">●</td><td class="p">◐ 노트</td><td class="y">● 스레드</td><td class="p">◐ 노트</td><td class="n">—</td></tr>
+        <tr><th>코멘트 / 리뷰 스레드</th><td class="p">◐ 캔버스 메모</td><td class="y">●</td><td class="p">◐ 노트</td><td class="y">● 스레드</td><td class="p">◐ 노트</td><td class="n">—</td></tr>
         <tr><th>변경 이력 / 복원</th><td class="y">●</td><td class="n">—</td><td class="y">●</td><td class="p">◐ 유료</td><td class="y">●</td><td class="n">—</td></tr>
         <tr><th>이력 diff 뷰</th><td class="n">—</td><td class="n">—</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="n">—</td></tr>
         <tr><th>권한 (admin/editor/viewer)</th><td class="n">—</td><td class="p">◐ 공개범위</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="n">—</td></tr>
@@ -361,8 +361,8 @@ footer a{font-size:12px}
       <p class="why"><em>근거</em> — dbdiagram·drawSQL·ChartDB 모두 제공. "누가 뭘 바꿨지?"는 협업 도구의 핵심 질문.</p>
     </div>
     <div class="reco">
-      <div class="reco-head"><b>8. 캔버스 코멘트 / 스티키 노트</b><span class="badge e2">난이도 중</span></div>
-      <p>테이블에 다는 리뷰 스레드와 캔버스 자유 배치 메모. 기존 op 프로토콜에 <span class="mono">note.add</span>/<span class="mono">comment.add</span> 연산을 추가하면 실시간 동기화·이력·undo가 공짜로 따라옵니다.</p>
+      <div class="reco-head"><b>8. 캔버스 코멘트 / 스티키 노트</b><span class="badge done">✓ 스티키 노트 완료 — v1.4 (2026-08-14)</span><span class="badge e2">난이도 중</span></div>
+      <p>캔버스 자유 배치 메모는 v1.4에서 <span class="mono">memo.add/apply/delete/move</span> 연산으로 구현 — 예상대로 기존 op 프로토콜에 얹어 실시간 동기화·이력·undo가 그대로 따라왔습니다. 남은 절반은 테이블에 다는 리뷰 스레드(댓글)입니다.</p>
       <p class="why"><em>근거</em> — ERDCloud(실시간 댓글)·drawSQL(디스커션 스레드)의 협업 승부처. 설계 리뷰 문화와 직결.</p>
     </div>
     <div class="reco">
@@ -404,7 +404,7 @@ footer a{font-size:12px}
     <p>요약하면 — 단기 기본기 5개(완료)로 이탈 명분을 없앴고, 다음은 중기: 이미 가진 AI·이력 자산을 UI로 노출해 차별화를 굳히는 단계(항목 6~10)입니다. 권한·확장은 수요가 증명된 뒤에 갑니다.</p>
   </div>
   <footer>
-    조사 방법: 웹 리서치 + 프로젝트 코드베이스 전수 탐색(2026-08-10). 경쟁 서비스 정보 출처 —
+    조사 방법: 웹 리서치 + 프로젝트 코드베이스 전수 탐색(2026-08-10) · v1.4 캔버스 메모 반영 갱신(2026-08-14). 경쟁 서비스 정보 출처 —
     <a href="https://www.erdcloud.com/">erdcloud.com</a> ·
     <a href="https://docs.dbdiagram.io/">docs.dbdiagram.io</a> ·
     <a href="https://drawsql.app/features">drawsql.app</a> ·

@@ -93,9 +93,9 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
   <h1>ERD Studio 진화의 기록</h1>
   <p class="lede">단일 HTML 파일 뷰어에서 시작해, 2주 만에 실시간 협업 · AI 분류 · MCP 연동을 갖춘 팀 도구가 되기까지 — git 커밋으로 재구성한 타임라인입니다. 최신이 위에 옵니다.</p>
   <div class="stats">
-    <div class="stat"><b>5</b><span>메이저 마일스톤</span></div>
-    <div class="stat"><b>27</b><span>기능 커밋</span></div>
-    <div class="stat"><b>15일</b><span>v1.0 → v1.3 (7/27~8/10)</span></div>
+    <div class="stat"><b>6</b><span>메이저 마일스톤</span></div>
+    <div class="stat"><b>28</b><span>기능 커밋</span></div>
+    <div class="stat"><b>19일</b><span>v1.0 → v1.4 (7/27~8/14)</span></div>
   </div>
   <div class="docnav">
     <a href="erd-studio-features.html">→ 현재 기능 명세서</a>
@@ -104,6 +104,17 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
 </header>
 
 <div class="timeline">
+
+  <div class="release milestone">
+    <div class="rel-head"><span class="ver">v1.4</span><h2>캔버스 메모 — 다이어그램 위에 대화를 남기다</h2><span class="rel-date">2026-08-14</span></div>
+    <p class="rel-summary">ERD Cloud처럼 캔버스에 스티키 메모를 붙일 수 있게 됐습니다. 리뷰 코멘트·TODO·회의 안건을 테이블 옆에 바로 적어 두면 모든 접속자에게 실시간으로 보입니다. 변경 이력 패널도 한글화·확대로 다듬었습니다.</p>
+    <div class="rel-card"><ul>
+      <li><span class="sha">66c2f15</span><span><b>캔버스 스티키 메모</b><small>메모 op 4종(<span class="mono">memo.add/apply/delete/move</span>) — 색상 4종 팔레트, 드래그 이동(50ms 실시간 중계), 최대 500자·방당 200개, 실시간 동기화 · Undo/Redo · 변경 이력 · 시점 복원 · PNG/SVG/PDF 내보내기까지 기존 파이프라인 전체에 편입. 메모 도입 전 JSON/이력 스냅샷과 하위 호환</small></span></li>
+      <li><span class="sha">66c2f15</span><span><b>노드 드래그 시 캔버스 팬 겹침 버그 수정</b><small>테이블·메모를 드래그하면 캔버스도 함께 팬 되던 잠복 버그 — React 합성 이벤트 stopPropagation이 stage의 네이티브 리스너를 막지 못하던 문제를 usePanZoom에서 직접 필터링해 해결</small></span></li>
+      <li><span class="sha">66c2f15</span><span><b>변경 이력 패널 개선</b><small>작업명 한글화(memo.apply → 메모 수정 등), 시각 포맷 단축(12:29:01), 패널 폭 380→620px, 시각·사용자·작업 칸 한 줄 고정</small></span></li>
+    </ul></div>
+    <div class="feat-tags"><span class="feat-tag new">+ 캔버스 메모</span><span class="feat-tag new">+ 메모 op 4종</span><span class="feat-tag">이력 패널 한글화·확대</span><span class="feat-tag">드래그 팬 버그 수정</span></div>
+  </div>
 
   <div class="release milestone">
     <div class="rel-head"><span class="ver">v1.3</span><h2>테이블 스테이크 완성 — 시장조사 Tier 1 반영</h2><span class="rel-date">2026-08-10</span></div>
@@ -179,7 +190,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
 </div>
 
 <footer>
-  git 커밋 히스토리 기반 재구성 (2026-08-10) · 임시 커밋(167ce33 → 2e6747b 원복)과 문서 커밋은 제외 ·
+  git 커밋 히스토리 기반 재구성 (2026-08-10, v1.4는 2026-08-14 반영) · 임시 커밋(167ce33 → 2e6747b 원복)과 문서 커밋은 제외 ·
   관련 문서: <a href="erd-studio-features.html">현재 기능 명세서</a> ·
   <a href="erd-market-research.html">시장조사 리포트</a>
 </footer>
