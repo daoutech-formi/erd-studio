@@ -112,6 +112,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
       <li><span class="sha">66c2f15</span><span><b>캔버스 스티키 메모</b><small>메모 op 4종(<span class="mono">memo.add/apply/delete/move</span>) — 색상 4종 팔레트, 드래그 이동(50ms 실시간 중계), 최대 500자·방당 200개, 실시간 동기화 · Undo/Redo · 변경 이력 · 시점 복원 · PNG/SVG/PDF 내보내기까지 기존 파이프라인 전체에 편입. 메모 도입 전 JSON/이력 스냅샷과 하위 호환</small></span></li>
       <li><span class="sha">66c2f15</span><span><b>노드 드래그 시 캔버스 팬 겹침 버그 수정</b><small>테이블·메모를 드래그하면 캔버스도 함께 팬 되던 잠복 버그 — React 합성 이벤트 stopPropagation이 stage의 네이티브 리스너를 막지 못하던 문제를 usePanZoom에서 직접 필터링해 해결</small></span></li>
       <li><span class="sha">66c2f15</span><span><b>변경 이력 패널 개선</b><small>작업명 한글화(memo.apply → 메모 수정 등), 시각 포맷 단축(12:29:01), 패널 폭 380→620px, 시각·사용자·작업 칸 한 줄 고정</small></span></li>
+      <li><span class="sha">387647c</span><span><b>접속자 목록 드롭다운</b><small>헤더 "N명 접속" 배지 클릭 → 접속 중인 사용자 전체 목록(색상 아바타·이름·본인 "나" 표시), 바깥 클릭으로 닫힘</small></span></li>
     </ul></div>
     <div class="feat-tags"><span class="feat-tag new">+ 캔버스 메모</span><span class="feat-tag new">+ 메모 op 4종</span><span class="feat-tag">이력 패널 한글화·확대</span><span class="feat-tag">드래그 팬 버그 수정</span></div>
   </div>
