@@ -20,6 +20,8 @@ function buildSvgCss(): { css: string; background: string } {
   .memo-node rect { stroke: rgba(0, 0, 0, 0.28); }
   .memo-node text { fill: #453d20; font-size: 12px; }
   .memo-fold { fill: rgba(0, 0, 0, 0.16); }
+  .memo-badge rect { fill: rgba(0, 0, 0, 0.62); stroke: none; }
+  .memo-badge text { fill: #fff; font-size: 10px; text-anchor: middle; }
 `;
   return { css, background: v("--bg", "#10141f") };
 }

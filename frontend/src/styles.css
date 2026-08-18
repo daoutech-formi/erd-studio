@@ -271,7 +271,10 @@ select.ci { appearance: auto; }
 .memo-node rect { stroke: rgba(0, 0, 0, 0.28); }
 .memo-node text { fill: #453d20; font-size: 12px; pointer-events: none; user-select: none; }
 .memo-node.dim { opacity: 0.15; }
+.memo-node.active rect { stroke: var(--text); stroke-width: 2; }
 .memo-fold { fill: rgba(0, 0, 0, 0.16); }
+.memo-badge rect { fill: rgba(0, 0, 0, 0.62); stroke: none; }
+.memo-badge text { fill: #fff; font-size: 10px; text-anchor: middle; }
 .memo-ta { resize: vertical; min-height: 96px; font-family: inherit; line-height: 1.5; }
 .memo-swatches { display: flex; gap: 8px; margin: 10px 0 14px; }
 .memo-swatch {
@@ -279,6 +282,23 @@ select.ci { appearance: auto; }
   border: 2px solid transparent; cursor: pointer;
 }
 .memo-swatch.on { border-color: var(--text); }
+.memo-links { margin-bottom: 14px; }
+.memo-links-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: 11px; color: var(--muted); margin-bottom: 6px;
+}
+.memo-links-filter { width: 130px; margin-bottom: 0; }
+.memo-links-list {
+  max-height: 160px; overflow-y: auto;
+  border: 1px solid var(--border-strong); border-radius: 5px; padding: 4px;
+}
+.memo-link-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; padding: 3px 4px; border-radius: 4px; cursor: pointer;
+}
+.memo-link-item:hover { background: var(--bg); }
+.memo-link-item.on { color: var(--text); font-weight: 600; }
+.memo-links-empty { display: block; font-size: 11px; color: var(--muted); padding: 6px 4px; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .modal-actions .danger { margin-right: auto; }
 

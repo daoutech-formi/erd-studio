@@ -3,7 +3,7 @@ import { erdSocket } from "../api/socket";
 import { useDispatch, useStore } from "../state/schemaStore";
 import { invertOp } from "../state/undo";
 import type { Op } from "../types";
-import { MEMO_COLORS, MEMO_DEFAULT_COLOR, docMemos, rowStr } from "../types";
+import { MAX_MEMO_LINKS, MEMO_COLORS, MEMO_DEFAULT_COLOR, docMemos, rowStr, rowStrArr } from "../types";
 
 const MAX_TEXT = 500;
 
@@ -19,6 +19,8 @@ export function MemoModal({ id, onClose }: Props) {
   const row = doc ? docMemos(doc).find((m) => rowStr(m, 0) === id) : undefined;
   const [text, setText] = useState(row ? rowStr(row, 1) : "");
   const [color, setColor] = useState(row ? rowStr(row, 4) || MEMO_DEFAULT_COLOR : MEMO_DEFAULT_COLOR);
+  const [links, setLinks] = useState<string[]>(row ? rowStrArr(row, 5) : []);
+  const [linkFilter, setLinkFilter] = useState("");
 
   // 편집 중 다른 사용자가 이 메모를 지우면 모달을 닫는다.
   useEffect(() => {
@@ -32,8 +34,18 @@ export function MemoModal({ id, onClose }: Props) {
   }
   const user = erdSocket.currentUser();
 
+  const tableNames = doc.tables.map((t) => rowStr(t, 0)).sort((a, b) => a.localeCompare(b));
+  const q = linkFilter.trim().toLowerCase();
+  const visibleNames = q ? tableNames.filter((n) => n.toLowerCase().includes(q)) : tableNames;
+
+  const toggleLink = (name: string) => {
+    setLinks((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : prev.length < MAX_MEMO_LINKS ? [...prev, name] : prev,
+    );
+  };
+
   const save = () => {
-    const op: Op = { type: "memo.apply", user, payload: { id, text, color } };
+    const op: Op = { type: "memo.apply", user, payload: { id, text, color, links } };
     erdSocket.sendEditOp(op, invertOp(op, doc, user));
     onClose();
   };
@@ -73,6 +85,35 @@ export function MemoModal({ id, onClose }: Props) {
               onClick={() => setColor(c)}
             />
           ))}
+        </div>
+        <div className="memo-links">
+          <div className="memo-links-head">
+            <span>연결할 테이블 ({links.length}/{MAX_MEMO_LINKS})</span>
+            <input
+              className="fi memo-links-filter"
+              type="text"
+              placeholder="테이블 검색"
+              value={linkFilter}
+              onChange={(e) => setLinkFilter(e.target.value)}
+            />
+          </div>
+          <div className="memo-links-list">
+            {visibleNames.length === 0 && <span className="memo-links-empty">일치하는 테이블이 없습니다.</span>}
+            {visibleNames.map((name) => {
+              const on = links.includes(name);
+              return (
+                <label key={name} className={`memo-link-item${on ? " on" : ""}`}>
+                  <input
+                    type="checkbox"
+                    checked={on}
+                    disabled={!on && links.length >= MAX_MEMO_LINKS}
+                    onChange={() => toggleLink(name)}
+                  />
+                  {name}
+                </label>
+              );
+            })}
+          </div>
         </div>
         <div className="modal-actions">
           <button className="danger" onClick={remove}>삭제</button>

@@ -11,6 +11,8 @@ export interface State {
   doc: SchemaDoc | null;
   error: string | null;
   selected: string | null;
+  /** 조회 모드에서 클릭해 강조 중인 메모 id — 테이블 선택(selected)과 상호 배타. */
+  selectedMemo: string | null;
   search: string;
   focusDomain: string | null;
   editMode: boolean;
@@ -28,6 +30,7 @@ export type Action =
   | { type: "loadError"; message: string }
   | { type: "applyOp"; op: Op }
   | { type: "select"; name: string | null }
+  | { type: "selectMemo"; id: string | null }
   | { type: "search"; text: string }
   | { type: "focusDomain"; domain: string | null }
   | { type: "editMode"; on: boolean }
@@ -43,6 +46,7 @@ const initialState: State = {
   doc: null,
   error: null,
   selected: null,
+  selectedMemo: null,
   search: "",
   focusDomain: null,
   editMode: false,
@@ -65,25 +69,30 @@ function reducer(state: State, action: Action): State {
         return state;
       }
       const doc = applyOpToDoc(state.doc, action.op);
-      // 내가 보던/편집하던 테이블이 사라졌으면 선택을 해제한다.
+      // 내가 보던/편집하던 테이블·강조하던 메모가 사라졌으면 선택을 해제한다.
       const gone = (name: string | null) =>
         name !== null && !doc.tables.some((t) => String(t[0]) === name);
+      const memoGone =
+        state.selectedMemo !== null && !(doc.memos ?? []).some((m) => String(m[0]) === state.selectedMemo);
       return {
         ...state,
         doc,
         selected: gone(state.selected) ? null : state.selected,
+        selectedMemo: memoGone ? null : state.selectedMemo,
         editing: gone(state.editing) ? null : state.editing,
       };
     }
     case "select":
-      return { ...state, selected: action.name, focusDomain: null };
+      return { ...state, selected: action.name, selectedMemo: null, focusDomain: null };
+    case "selectMemo":
+      return { ...state, selectedMemo: action.id, selected: null, focusDomain: null };
     case "search":
-      return { ...state, search: action.text, focusDomain: null };
+      return { ...state, search: action.text, selectedMemo: null, focusDomain: null };
     case "focusDomain":
-      return { ...state, focusDomain: action.domain, selected: null, search: "" };
+      return { ...state, focusDomain: action.domain, selected: null, selectedMemo: null, search: "" };
     case "editMode":
       // editing(락)은 App의 락 효과가 해제 메시지를 보낸 뒤 정리한다.
-      return { ...state, editMode: action.on, selected: null };
+      return { ...state, editMode: action.on, selected: null, selectedMemo: null };
     case "editing":
       return { ...state, editing: action.name };
     case "presence":

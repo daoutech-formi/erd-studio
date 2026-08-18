@@ -1,5 +1,5 @@
 import type { Op, Row, SchemaDoc } from "../types";
-import { docMemos, rowBool, rowNum, rowStr } from "../types";
+import { docMemos, rowBool, rowNum, rowStr, rowStrArr } from "../types";
 
 // Undo/Redo — 자신이 보낸 op의 역연산을 쌓아 두고, 실행 시 일반 op로 서버에 보낸다.
 
@@ -105,7 +105,7 @@ export function invertOp(op: Op, before: SchemaDoc, user: string): Op[] {
       return [{
         type: "memo.apply",
         user,
-        payload: { id: rowStr(row, 0), text: rowStr(row, 1), color: rowStr(row, 4) },
+        payload: { id: rowStr(row, 0), text: rowStr(row, 1), color: rowStr(row, 4), links: rowStrArr(row, 5) },
       }];
     }
     case "memo.delete": {
@@ -122,6 +122,7 @@ export function invertOp(op: Op, before: SchemaDoc, user: string): Op[] {
           x: rowNum(row, 2) ?? 0,
           y: rowNum(row, 3) ?? 0,
           color: rowStr(row, 4),
+          links: rowStrArr(row, 5),
         },
       }];
     }

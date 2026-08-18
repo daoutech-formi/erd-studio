@@ -12,6 +12,7 @@ import com.daou.erdstudio.repository.ErdRelationRepository;
 import com.daou.erdstudio.repository.ErdTableRepository;
 import com.daou.erdstudio.web.dto.Op;
 import com.daou.erdstudio.web.dto.SchemaDoc;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,6 +44,10 @@ public class OpService {
     private static final int MAX_MEMOS = 200;
     private static final int MAX_MEMO_KEY_LENGTH = 64;
     private static final int MAX_MEMO_TEXT_LENGTH = 500;
+    /** 메모 하나에 연결할 수 있는 테이블 최대 개수 — 프론트(MAX_MEMO_LINKS)와 동일해야 한다. */
+    private static final int MAX_MEMO_LINKS = 10;
+    /** erd_memo.links 컬럼 길이 — 직렬화한 JSON이 이를 넘으면 거부한다. */
+    private static final int MAX_MEMO_LINKS_JSON = 2000;
 
     private final ErdDomainRepository domainRepository;
     private final ErdTableRepository tableRepository;
@@ -115,6 +120,9 @@ public class OpService {
         table.update(resolveDomain(roomId, Rows.str(row, 1)), Rows.str(row, 2), Rows.bool(row, 3));
         replaceColumns(table, toRows(p.path("columns")));
         replaceChildRelations(roomId, table, toRows(p.path("relations")));
+        if (!newName.equals(oldName)) {
+            remapMemoLinks(roomId, oldName, newName);
+        }
         return newName;
     }
 
@@ -149,6 +157,7 @@ public class OpService {
         columnRepository.deleteByTableId(table.getId());
         relationRepository.deleteAllInvolving(table.getId());
         tableRepository.delete(table);
+        remapMemoLinks(roomId, name, null);
         return name;
     }
 
@@ -179,13 +188,13 @@ public class OpService {
         String text = memoText(p);
         int order = (int) memoRepository.countByRoomId(roomId);
         memoRepository.save(new ErdMemo(roomId, key, text, memoColor(p),
-                p.path("x").asDouble(), p.path("y").asDouble(), order));
+                p.path("x").asDouble(), p.path("y").asDouble(), order, memoLinks(roomId, p)));
         return memoTarget(text);
     }
 
     private String applyMemoApply(Long roomId, JsonNode p) {
         ErdMemo memo = findMemo(roomId, p);
-        memo.update(memoText(p), memoColor(p));
+        memo.update(memoText(p), memoColor(p), memoLinks(roomId, p));
         return memoTarget(memo.getText());
     }
 
@@ -224,6 +233,66 @@ public class OpService {
             throw new IllegalArgumentException("메모 색상이 올바르지 않습니다.");
         }
         return color;
+    }
+
+    /**
+     * payload의 links 배열을 검증해 JSON 문자열로 만든다.
+     * 개수 초과는 거부하고, 방에 없는 테이블명은 조용히 제거한다(동시 삭제 경합 대비).
+     */
+    private String memoLinks(Long roomId, JsonNode p) {
+        JsonNode node = p.path("links");
+        if (!node.isArray()) {
+            return "[]";
+        }
+        Set<String> names = new LinkedHashSet<>();
+        for (JsonNode n : node) {
+            String name = n.asText("").trim();
+            if (!name.isEmpty()) {
+                names.add(name);
+            }
+        }
+        if (names.size() > MAX_MEMO_LINKS) {
+            throw new IllegalArgumentException("메모에는 최대 " + MAX_MEMO_LINKS + "개의 테이블만 연결할 수 있습니다.");
+        }
+        List<String> existing = names.stream()
+                .filter(name -> tableRepository.existsByRoomIdAndName(roomId, name))
+                .toList();
+        String json = writeLinks(existing);
+        if (json.length() > MAX_MEMO_LINKS_JSON) {
+            throw new IllegalArgumentException("연결 정보가 너무 깁니다.");
+        }
+        return json;
+    }
+
+    /** 테이블 이름 변경/삭제에 맞춰 방 전체 메모의 links를 정리한다. to가 null이면 제거만 한다. */
+    private void remapMemoLinks(Long roomId, String from, String to) {
+        for (ErdMemo memo : memoRepository.findByRoomIdOrderBySortOrderAsc(roomId)) {
+            List<String> links = readLinks(memo.getLinks());
+            if (!links.contains(from)) {
+                continue;
+            }
+            List<String> next = to == null
+                    ? links.stream().filter(name -> !name.equals(from)).toList()
+                    : links.stream().map(name -> name.equals(from) ? to : name).toList();
+            memo.updateLinks(writeLinks(next));
+        }
+    }
+
+    private List<String> readLinks(String json) {
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {
+            });
+        } catch (JsonProcessingException e) {
+            return List.of();
+        }
+    }
+
+    private String writeLinks(List<String> links) {
+        try {
+            return objectMapper.writeValueAsString(links);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("연결 정보가 올바르지 않습니다.");
+        }
     }
 
     /** 이력 목록에 표시할 메모 대상명 — 첫 줄 앞부분, 비어 있으면 '메모'. */

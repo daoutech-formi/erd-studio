@@ -15,8 +15,13 @@ interface Props {
   x: number;
   y: number;
   dim: boolean;
+  /** 연결된 테이블 개수 — 1개 이상이면 우상단에 링크 배지를 그린다. */
+  linkCount: number;
+  /** 조회 모드에서 클릭해 강조 중인 메모인지. */
+  active: boolean;
   editMode: boolean;
   onOpen: (id: string) => void;
+  onSelect: (id: string) => void;
   onMemoMouseDown: (id: string, e: React.MouseEvent<SVGGElement>) => void;
   registerEl: (id: string, el: SVGGElement | null) => void;
 }
@@ -44,20 +49,22 @@ export function wrapMemoLines(text: string): string[] {
 
 /** 캔버스 스티키 메모 1개. 좌표(x,y)는 좌상단 기준. */
 export const MemoNode = memo(function MemoNode(props: Props) {
-  const { id, text, color, x, y, dim, editMode } = props;
+  const { id, text, color, x, y, dim, linkCount, active, editMode } = props;
   const lines = wrapMemoLines(text.trim() === "" ? "(내용 없음)" : text);
   const h = Math.max(34, lines.length * LINE_H + 13);
 
   return (
     <g
       ref={(el) => props.registerEl(id, el)}
-      className={`memo-node${dim ? " dim" : ""}`}
+      className={`memo-node${dim ? " dim" : ""}${active ? " active" : ""}`}
       transform={`translate(${x},${y})`}
-      style={{ cursor: editMode ? "grab" : "default" }}
+      style={{ cursor: editMode ? "grab" : linkCount > 0 ? "pointer" : "default" }}
       onClick={(e) => {
         e.stopPropagation();
         if (editMode) {
           props.onOpen(id);
+        } else {
+          props.onSelect(id);
         }
       }}
       onMouseDown={(e) => props.onMemoMouseDown(id, e)}
@@ -69,6 +76,12 @@ export const MemoNode = memo(function MemoNode(props: Props) {
           {line}
         </text>
       ))}
+      {linkCount > 0 && (
+        <g className="memo-badge" transform={`translate(${MEMO_W - 14},-5)`}>
+          <rect x={-16} y={-9} width={32} height={18} rx={9} />
+          <text y={4}>🔗{linkCount}</text>
+        </g>
+      )}
     </g>
   );
 });

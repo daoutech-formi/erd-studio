@@ -10,9 +10,9 @@ export interface DomainDef {
  * tables:    [name, domainKey, description, hub?, posX?, posY?]
  * relations: [childName, parentName, label?, cardinality?] (cardinality: N:1(기본)/1:1/N:M)
  * columns:   [name, colType, comment, flag?]
- * memos:     [id, text, x, y, color]
+ * memos:     [id, text, x, y, color, links?] (links: 연결된 테이블명 배열, 없으면 생략)
  */
-export type Row = (string | number | boolean | null)[];
+export type Row = (string | number | boolean | null | string[])[];
 
 export interface SchemaDoc {
   domains: Record<string, DomainDef>;
@@ -29,6 +29,9 @@ export const MEMO_DEFAULT_COLOR: string = MEMO_COLORS[0];
 
 export const docMemos = (doc: SchemaDoc): Row[] => doc.memos ?? [];
 
+/** 메모 하나에 연결할 수 있는 테이블 최대 개수 — 서버(OpService.MAX_MEMO_LINKS)와 동일해야 한다. */
+export const MAX_MEMO_LINKS = 10;
+
 export const rowStr = (row: Row, i: number): string => {
   const v = row[i];
   return v === null || v === undefined ? "" : String(v);
@@ -38,6 +41,10 @@ export const rowBool = (row: Row, i: number): boolean => row[i] === true;
 
 export const rowNum = (row: Row, i: number): number | null =>
   typeof row[i] === "number" ? (row[i] as number) : null;
+
+/** 행의 i번째가 배열이면 문자열 배열로 돌려준다 — 메모 links(인덱스 5) 접근용. */
+export const rowStrArr = (row: Row, i: number): string[] =>
+  Array.isArray(row[i]) ? (row[i] as unknown[]).map(String) : [];
 
 export type OpType =
   | "table.add"

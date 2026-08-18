@@ -307,6 +307,90 @@ class OpServiceTest {
     }
 
     @Test
+    void memoApply_links를_저장한다() {
+        addTable("t_optest_link_a");
+        addTable("t_optest_link_b");
+        addMemo("m_links");
+        opService.apply(roomId, op("memo.apply", Map.of("id", "m_links", "text", "설계 고민", "color", "#ffd479",
+                "links", List.of("t_optest_link_a", "t_optest_link_b"))));
+        ErdMemo saved = memoRepository.findByRoomIdAndMemoKey(roomId, "m_links").orElseThrow();
+        assertThat(saved.getLinks()).isEqualTo("[\"t_optest_link_a\",\"t_optest_link_b\"]");
+    }
+
+    @Test
+    void memoApply_존재하지_않는_테이블은_links에서_제거한다() {
+        addTable("t_optest_link_real");
+        addMemo("m_links_ghost");
+        opService.apply(roomId, op("memo.apply", Map.of("id", "m_links_ghost", "text", "", "color", "",
+                "links", List.of("t_optest_link_real", "t_no_such_table"))));
+        ErdMemo saved = memoRepository.findByRoomIdAndMemoKey(roomId, "m_links_ghost").orElseThrow();
+        assertThat(saved.getLinks()).isEqualTo("[\"t_optest_link_real\"]");
+    }
+
+    @Test
+    void memoApply_links가_10개를_넘으면_거부한다() {
+        addMemo("m_links_over");
+        List<String> links = new java.util.ArrayList<>();
+        for (int i = 1; i <= 11; i++) {
+            links.add("t_over_" + i);
+        }
+        assertThatThrownBy(() -> opService.apply(roomId, op("memo.apply",
+                Map.of("id", "m_links_over", "text", "", "color", "", "links", links))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("최대 10개");
+    }
+
+    @Test
+    void tableApply_이름을_바꾸면_메모_links도_갱신된다() {
+        addTable("t_optest_link_old");
+        addMemo("m_links_rename");
+        opService.apply(roomId, op("memo.apply", Map.of("id", "m_links_rename", "text", "", "color", "",
+                "links", List.of("t_optest_link_old"))));
+        opService.apply(roomId, op("table.apply", Map.of(
+                "oldName", "t_optest_link_old",
+                "table", List.of("t_optest_link_new", "user", "", false),
+                "columns", List.of(), "relations", List.of())));
+        ErdMemo saved = memoRepository.findByRoomIdAndMemoKey(roomId, "m_links_rename").orElseThrow();
+        assertThat(saved.getLinks()).isEqualTo("[\"t_optest_link_new\"]");
+    }
+
+    @Test
+    void tableDelete_메모_links에서_제거된다() {
+        addTable("t_optest_link_del");
+        addTable("t_optest_link_keep");
+        addMemo("m_links_del");
+        opService.apply(roomId, op("memo.apply", Map.of("id", "m_links_del", "text", "", "color", "",
+                "links", List.of("t_optest_link_del", "t_optest_link_keep"))));
+        opService.apply(roomId, op("table.delete", Map.of("name", "t_optest_link_del")));
+        ErdMemo saved = memoRepository.findByRoomIdAndMemoKey(roomId, "m_links_del").orElseThrow();
+        assertThat(saved.getLinks()).isEqualTo("[\"t_optest_link_keep\"]");
+    }
+
+    @Test
+    void loadDoc_links가_있으면_메모_행이_6요소다() {
+        addTable("t_optest_link_doc");
+        addMemo("m_links_doc");
+        opService.apply(roomId, op("memo.apply", Map.of("id", "m_links_doc", "text", "검토 필요", "color", "#ffd479",
+                "links", List.of("t_optest_link_doc"))));
+        addMemo("m_plain_doc");
+        SchemaDoc doc = schemaService.loadDoc(roomId);
+        assertThat(doc.memos()).contains(
+                List.of("m_links_doc", "검토 필요", 40.0, -70.0, "#ffd479", List.of("t_optest_link_doc")),
+                List.of("m_plain_doc", "검토 필요", 40.0, -70.0, "#ffd479"));
+    }
+
+    @Test
+    void schemaReplace_메모_links를_함께_저장한다() {
+        opService.apply(roomId, op("schema.replace", Map.of("doc", Map.of(
+                "domains", Map.of("d1", Map.of("name", "도메인1", "color", "#111111")),
+                "tables", List.of(List.of("s1", "d1", "")),
+                "relations", List.of(), "columns", Map.of(),
+                "memos", List.of(List.of("m_rep", "메모", 0.0, 0.0, "#ffd479", List.of("s1", "ghost")))))));
+        ErdMemo saved = memoRepository.findByRoomIdAndMemoKey(roomId, "m_rep").orElseThrow();
+        assertThat(saved.getLinks()).isEqualTo("[\"s1\"]");
+    }
+
+    @Test
     void loadDoc_메모_행을_포함한다() {
         addMemo("m_doc");
         SchemaDoc doc = schemaService.loadDoc(roomId);

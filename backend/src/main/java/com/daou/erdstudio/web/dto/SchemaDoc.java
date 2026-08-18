@@ -8,7 +8,7 @@ import java.util.Map;
  * tables 행: [name, domainKey, description, hub, posX, posY] (뒤 3개는 생략/NULL 허용)
  * relations 행: [childName, parentName, label?]
  * columns 값 행: [name, colType, comment, flag?]
- * memos 행: [id, text, x, y, color]
+ * memos 행: [id, text, x, y, color, links?] (links: 연결된 테이블명 배열, 없으면 생략)
  */
 public record SchemaDoc(
         Map<String, DomainDef> domains,

@@ -11,6 +11,9 @@ import com.daou.erdstudio.repository.ErdMemoRepository;
 import com.daou.erdstudio.repository.ErdRelationRepository;
 import com.daou.erdstudio.repository.ErdTableRepository;
 import com.daou.erdstudio.web.dto.SchemaDoc;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,15 +35,17 @@ public class SchemaService {
     private final ErdColumnRepository columnRepository;
     private final ErdRelationRepository relationRepository;
     private final ErdMemoRepository memoRepository;
+    private final ObjectMapper objectMapper;
 
     public SchemaService(ErdDomainRepository domainRepository, ErdTableRepository tableRepository,
                          ErdColumnRepository columnRepository, ErdRelationRepository relationRepository,
-                         ErdMemoRepository memoRepository) {
+                         ErdMemoRepository memoRepository, ObjectMapper objectMapper) {
         this.domainRepository = domainRepository;
         this.tableRepository = tableRepository;
         this.columnRepository = columnRepository;
         this.relationRepository = relationRepository;
         this.memoRepository = memoRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional(readOnly = true)
@@ -69,9 +74,24 @@ public class SchemaService {
     private List<List<Object>> loadMemoRows(Long roomId) {
         List<List<Object>> rows = new ArrayList<>();
         for (ErdMemo m : memoRepository.findByRoomIdOrderBySortOrderAsc(roomId)) {
-            rows.add(Arrays.asList(m.getMemoKey(), m.getText(), m.getPosX(), m.getPosY(), m.getColor()));
+            List<String> links = readLinks(m.getLinks());
+            // [id, text, x, y, color, links?] — 연결 없는 메모는 5요소로 유지해 문서를 가볍게 한다.
+            if (links.isEmpty()) {
+                rows.add(Arrays.asList(m.getMemoKey(), m.getText(), m.getPosX(), m.getPosY(), m.getColor()));
+            } else {
+                rows.add(Arrays.asList(m.getMemoKey(), m.getText(), m.getPosX(), m.getPosY(), m.getColor(), links));
+            }
         }
         return rows;
+    }
+
+    private List<String> readLinks(String json) {
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {
+            });
+        } catch (JsonProcessingException e) {
+            return List.of();
+        }
     }
 
     private List<List<Object>> loadRelationRows(Long roomId, Map<Long, String> nameById) {
@@ -194,6 +214,10 @@ public class SchemaService {
     }
 
     private void insertMemos(Long roomId, SchemaDoc doc) {
+        Set<String> tableNames = new HashSet<>();
+        for (List<Object> row : doc.tables()) {
+            tableNames.add(Rows.str(row, 0));
+        }
         List<ErdMemo> entities = new ArrayList<>();
         Set<String> seen = new HashSet<>();
         for (List<Object> row : doc.memos()) {
@@ -203,9 +227,21 @@ public class SchemaService {
             }
             Double x = Rows.dbl(row, 2);
             Double y = Rows.dbl(row, 3);
+            List<String> links = Rows.strList(row, 5).stream().filter(tableNames::contains).toList();
             entities.add(new ErdMemo(roomId, key, Rows.str(row, 1), Rows.str(row, 4),
-                    x == null ? 0 : x, y == null ? 0 : y, entities.size()));
+                    x == null ? 0 : x, y == null ? 0 : y, entities.size(), writeLinks(links)));
         }
         memoRepository.saveAll(entities);
+    }
+
+    private String writeLinks(List<String> links) {
+        if (links.isEmpty()) {
+            return "[]";
+        }
+        try {
+            return objectMapper.writeValueAsString(links);
+        } catch (JsonProcessingException e) {
+            return "[]";
+        }
     }
 }

@@ -25,4 +25,12 @@ public final class Rows {
         }
         return number.doubleValue();
     }
+
+    /** 해당 인덱스가 배열이면 문자열 목록으로 돌려준다 — 메모 links(인덱스 5) 접근용. */
+    public static List<String> strList(List<Object> row, int index) {
+        if (row == null || index >= row.size() || !(row.get(index) instanceof List<?> list)) {
+            return List.of();
+        }
+        return list.stream().map(String::valueOf).toList();
+    }
 }

@@ -40,10 +40,16 @@ public class ErdMemo {
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
 
+    /** 연결된 테이블명 목록의 JSON 배열 문자열 (예: ["order","user"]). 없으면 "[]". */
+    // default 필수 — 메모가 이미 있는 DB에서 ddl-auto update가 NOT NULL 컬럼을 추가하려면 기본값이 있어야 한다.
+    @Column(name = "links", nullable = false, length = 2000, columnDefinition = "varchar(2000) default '[]' not null")
+    private String links = "[]";
+
     protected ErdMemo() {
     }
 
-    public ErdMemo(Long roomId, String memoKey, String text, String color, double posX, double posY, int sortOrder) {
+    public ErdMemo(Long roomId, String memoKey, String text, String color, double posX, double posY, int sortOrder,
+                   String links) {
         this.roomId = roomId;
         this.memoKey = memoKey;
         this.text = text;
@@ -51,11 +57,17 @@ public class ErdMemo {
         this.posX = posX;
         this.posY = posY;
         this.sortOrder = sortOrder;
+        this.links = links == null || links.isBlank() ? "[]" : links;
     }
 
-    public void update(String text, String color) {
+    public void update(String text, String color, String links) {
         this.text = text;
         this.color = color.isBlank() ? DEFAULT_COLOR : color;
+        this.links = links == null || links.isBlank() ? "[]" : links;
+    }
+
+    public void updateLinks(String links) {
+        this.links = links == null || links.isBlank() ? "[]" : links;
     }
 
     public void moveTo(double x, double y) {
@@ -93,5 +105,9 @@ public class ErdMemo {
 
     public int getSortOrder() {
         return sortOrder;
+    }
+
+    public String getLinks() {
+        return links;
     }
 }
