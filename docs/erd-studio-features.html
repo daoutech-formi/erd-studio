@@ -115,7 +115,8 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
         <li>다크/라이트 테마 <small>☀/🌙 토글, localStorage 유지, 내보내기 이미지에도 테마 색 반영</small></li>
         <li>도메인 그리드 자동 레이아웃 <small>도메인별 5열 배치, 저장 좌표가 있으면 우선</small></li>
         <li>드래그 팬 / 휠 줌 / 줌 버튼 / 전체보기 리셋 <small>rAF transform 조작 — 줌 중 리렌더 없음</small></li>
-        <li>노드 클릭 → 관계 강조 <small>인접 테이블 외 자동 dim 처리</small></li>
+        <li>노드 클릭 → 관계 강조 <small>인접 테이블 외 자동 dim 처리, 그 테이블을 연결한 메모는 유지</small></li>
+        <li>메모 클릭 → 연결 테이블 강조 <small>조회 모드에서 링크 배지(🔗n) 있는 메모 클릭 시 연결 테이블·그 사이 관계선만 강조, 재클릭·배경 클릭으로 해제</small></li>
         <li>상세 패널 <small>도메인 태그, 참조/피참조 관계 목록, 컬럼 PK·UK·FK 배지</small></li>
         <li>테이블명·컬럼명·설명 통합 검색 <small>매칭 외 노드 dim</small></li>
         <li>도메인 필터 <small>범례 클릭으로 특정 도메인만 강조, 도메인별 테이블 수 표시</small></li>
@@ -140,7 +141,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
         <li>테이블 편집 폼 <small>이름·도메인·설명·컬럼(타입/설명/PK/UK/FK)·참조관계(대상+카디널리티+라벨)</small></li>
         <li>테이블 추가/삭제 <small>삭제 시 관련 관계 함께 정리</small></li>
         <li>도메인 관리 <small>추가·이름·색상·순서 변경, 최대 20개, 삭제 시 소속 테이블 자동 이동</small></li>
-        <li>캔버스 스티키 메모 <small>다이어그램 위에 붙이는 공유 메모 — 색상 4종, 드래그 이동, 최대 500자·방당 200개, 실시간 동기화·이력·Undo·이미지 내보내기 포함</small></li>
+        <li>캔버스 스티키 메모 <small>다이어그램 위에 붙이는 공유 메모 — 색상 4종, 드래그 이동, 테이블 연결(메모당 최대 10개), 최대 500자·방당 200개, 실시간 동기화·이력·Undo·이미지 내보내기 포함</small></li>
         <li>노드 배치 저장 <small>드래그 위치가 방 전원에게 동일하게 유지</small></li>
         <li>변경 이력 + 시점 복원 <small>누가 언제 무엇을 바꿨는지 최근 50건(작업명 한글 표기), op마다 전체 스냅샷(방당 1,000개)</small></li>
       </ul>
@@ -236,7 +237,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
     <table class="spec">
       <tbody>
         <tr><td class="mono">table.add · table.apply · table.delete · table.move</td><td>테이블 생성 · 속성/컬럼/관계 일괄 적용 · 삭제 · 위치 이동</td></tr>
-        <tr><td class="mono">memo.add · memo.apply · memo.delete · memo.move</td><td>캔버스 메모 생성 · 내용/색상 수정 · 삭제 · 위치 이동</td></tr>
+        <tr><td class="mono">memo.add · memo.apply · memo.delete · memo.move</td><td>캔버스 메모 생성 · 내용/색상/테이블 연결(links) 수정 · 삭제 · 위치 이동</td></tr>
         <tr><td class="mono">domain.apply · schema.replace</td><td>도메인 구성 일괄 적용 · 전체 스키마 교체 (JSON/DDL/MCP 공통 경로)</td></tr>
       </tbody>
     </table>
