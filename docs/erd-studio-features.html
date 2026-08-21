@@ -141,7 +141,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
         <li>테이블 편집 폼 <small>이름·도메인·설명·컬럼(타입/설명/PK/UK/FK)·참조관계(대상+카디널리티+라벨)</small></li>
         <li>테이블 추가/삭제 <small>삭제 시 관련 관계 함께 정리</small></li>
         <li>도메인 관리 <small>추가·이름·색상·순서 변경, 최대 20개, 삭제 시 소속 테이블 자동 이동</small></li>
-        <li>캔버스 스티키 메모 <small>다이어그램 위에 붙이는 공유 메모 — 색상 4종, 드래그 이동, 테이블 연결(메모당 최대 10개), 최대 500자·방당 200개, 실시간 동기화·이력·Undo·이미지 내보내기 포함</small></li>
+        <li>캔버스 스티키 메모 <small>다이어그램 위에 붙이는 공유 메모 — 색상 4종, 드래그 이동, 우하단 모서리 드래그로 크기 조절(90~800px, 내용 높이가 하한), 테이블 연결(메모당 최대 10개), 최대 500자·방당 200개, 실시간 동기화·이력·Undo·이미지 내보내기 포함</small></li>
         <li>노드 배치 저장 <small>드래그 위치가 방 전원에게 동일하게 유지</small></li>
         <li>변경 이력 + 시점 복원 <small>누가 언제 무엇을 바꿨는지 최근 50건(작업명 한글 표기), op마다 전체 스냅샷(방당 1,000개)</small></li>
       </ul>
@@ -237,7 +237,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
     <table class="spec">
       <tbody>
         <tr><td class="mono">table.add · table.apply · table.delete · table.move</td><td>테이블 생성 · 속성/컬럼/관계 일괄 적용 · 삭제 · 위치 이동</td></tr>
-        <tr><td class="mono">memo.add · memo.apply · memo.delete · memo.move</td><td>캔버스 메모 생성 · 내용/색상/테이블 연결(links) 수정 · 삭제 · 위치 이동</td></tr>
+        <tr><td class="mono">memo.add · memo.apply · memo.delete · memo.move · memo.resize</td><td>캔버스 메모 생성 · 내용/색상/테이블 연결(links) 수정 · 삭제 · 위치 이동 · 크기 조절(w/h, 생략 시 기본 크기 복귀)</td></tr>
         <tr><td class="mono">domain.apply · schema.replace</td><td>도메인 구성 일괄 적용 · 전체 스키마 교체 (JSON/DDL/MCP 공통 경로)</td></tr>
       </tbody>
     </table>
@@ -245,7 +245,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
 </section>
 
 <footer>
-  기준일 2026-08-14 · 코드베이스 전수 조사 기반 · 관련 문서:
+  기준일 2026-08-21 · 코드베이스 전수 조사 기반 · 관련 문서:
   <a href="erd-studio-version-history.html">버전 진화 히스토리</a> ·
   <a href="erd-market-research.html">시장조사 리포트</a>
 </footer>

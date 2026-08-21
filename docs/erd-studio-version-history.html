@@ -115,8 +115,10 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
       <li><span class="sha">387647c</span><span><b>접속자 목록 드롭다운</b><small>헤더 "N명 접속" 배지 클릭 → 접속 중인 사용자 전체 목록(색상 아바타·이름·본인 "나" 표시), 바깥 클릭으로 닫힘</small></span></li>
       <li><span class="sha">e13dc96</span><span><b>사용자 이름 변경</b><small>방 목록의 ✏ 이름 변경 버튼 — 방 생성 시 브라우저 식별자를 저장해 두고, 이름을 바꾸면 내가 만든 방들의 생성자 표시명도 함께 갱신 (식별자 없는 기존 방은 유지)</small></span></li>
       <li><span class="sha">a5433c4</span><span><b>메모–테이블 연결 및 클릭 하이라이트</b><small>메모 편집 모달에서 테이블을 최대 10개 연결(🔗n 배지 상시 표시) — 조회 모드에서 메모 클릭 시 연결 테이블과 그 사이 관계선만 강조, 테이블 선택 시 연결된 메모는 흐려지지 않음. 테이블 이름 변경/삭제에 links 자동 추종, Undo·이력·기존 5요소 메모 행 하위 호환</small></span></li>
+      <li><span class="sha">03e161d</span><span><b>메모 크기 자유 조절</b><small>편집 모드에서 메모 우하단 모서리 드래그로 폭·높이 조절(90~800px, 내용 높이가 하한) — 새 op <span class="mono">memo.resize</span>, 텍스트는 폭에 맞춰 자동 줄바꿈, Undo 시 이전 크기(최초엔 기본 크기)로 복귀, 크기 미지정 기존 메모 행 하위 호환</small></span></li>
+      <li><span class="sha">91703f9</span><span><b>캔버스 팬 시 관계 강조 유지 버그 수정</b><small>테이블 클릭으로 관계를 강조한 상태에서 배경을 드래그(팬)만 해도 강조가 풀리던 문제 — 해제를 mousedown이 아닌 mouseup 시점에 4px 이하 제자리 클릭일 때만 수행하도록 변경, 빈 배경 클릭으로 해제하는 기존 동작은 유지</small></span></li>
     </ul></div>
-    <div class="feat-tags"><span class="feat-tag new">+ 캔버스 메모</span><span class="feat-tag new">+ 메모 op 4종</span><span class="feat-tag new">+ 메모–테이블 연결</span><span class="feat-tag">이력 패널 한글화·확대</span><span class="feat-tag">드래그 팬 버그 수정</span></div>
+    <div class="feat-tags"><span class="feat-tag new">+ 캔버스 메모</span><span class="feat-tag new">+ 메모 op 4종</span><span class="feat-tag new">+ 메모–테이블 연결</span><span class="feat-tag new">+ 메모 크기 조절</span><span class="feat-tag">이력 패널 한글화·확대</span><span class="feat-tag">드래그 팬 버그 수정</span></div>
   </div>
 
   <div class="release milestone">
