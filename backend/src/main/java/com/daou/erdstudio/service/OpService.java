@@ -48,6 +48,9 @@ public class OpService {
     private static final int MAX_MEMO_LINKS = 10;
     /** erd_memo.links 컬럼 길이 — 직렬화한 JSON이 이를 넘으면 거부한다. */
     private static final int MAX_MEMO_LINKS_JSON = 2000;
+    /** 메모 사용자 지정 크기의 허용 범위 — 프론트(MEMO_MIN_W 등)를 여유 있게 포함한다. */
+    static final double MIN_MEMO_SIZE = 20;
+    static final double MAX_MEMO_SIZE = 2000;
 
     private final ErdDomainRepository domainRepository;
     private final ErdTableRepository tableRepository;
@@ -85,6 +88,7 @@ public class OpService {
             case "memo.apply" -> applyMemoApply(roomId, p);
             case "memo.delete" -> applyMemoDelete(roomId, p);
             case "memo.move" -> applyMemoMove(roomId, p);
+            case "memo.resize" -> applyMemoResize(roomId, p);
             case "schema.replace" -> applySchemaReplace(roomId, p);
             default -> throw new IllegalArgumentException("알 수 없는 op 유형: " + op.type());
         };
@@ -187,8 +191,11 @@ public class OpService {
         }
         String text = memoText(p);
         int order = (int) memoRepository.countByRoomId(roomId);
-        memoRepository.save(new ErdMemo(roomId, key, text, memoColor(p),
-                p.path("x").asDouble(), p.path("y").asDouble(), order, memoLinks(roomId, p)));
+        ErdMemo memo = new ErdMemo(roomId, key, text, memoColor(p),
+                p.path("x").asDouble(), p.path("y").asDouble(), order, memoLinks(roomId, p));
+        // 삭제 undo가 크기까지 되살릴 수 있도록 w/h를 받는다. 없으면 기본 크기.
+        memo.resizeTo(memoSize(p, "w"), memoSize(p, "h"));
+        memoRepository.save(memo);
         return memoTarget(text);
     }
 
@@ -211,6 +218,26 @@ public class OpService {
         }
         memo.moveTo(p.path("x").asDouble(), p.path("y").asDouble());
         return memoTarget(memo.getText());
+    }
+
+    /** 메모 크기 변경. w/h가 숫자가 아니면 기본 크기로 되돌린다. */
+    private String applyMemoResize(Long roomId, JsonNode p) {
+        ErdMemo memo = findMemo(roomId, p);
+        memo.resizeTo(memoSize(p, "w"), memoSize(p, "h"));
+        return memoTarget(memo.getText());
+    }
+
+    /** 크기 필드를 읽어 검증한다. 숫자가 아니면 null(기본 크기), 범위를 벗어나면 거부. */
+    private Double memoSize(JsonNode p, String field) {
+        JsonNode node = p.path(field);
+        if (!node.isNumber()) {
+            return null;
+        }
+        double v = node.asDouble();
+        if (v < MIN_MEMO_SIZE || v > MAX_MEMO_SIZE) {
+            throw new IllegalArgumentException("메모 크기가 올바르지 않습니다.");
+        }
+        return v;
     }
 
     private ErdMemo findMemo(Long roomId, JsonNode p) {

@@ -37,6 +37,8 @@ export function applyOpToDoc(doc: SchemaDoc, op: Op): SchemaDoc {
       return { ...doc, memos: docMemos(doc).filter((m) => rowStr(m, 0) !== String(op.payload.id ?? "")) };
     case "memo.move":
       return applyMemoMove(doc, op.payload as { id?: string; x?: number; y?: number });
+    case "memo.resize":
+      return applyMemoResize(doc, op.payload as { id?: string; w?: number | null; h?: number | null });
     case "schema.replace":
       return op.payload.doc as SchemaDoc;
   }
@@ -49,6 +51,8 @@ interface MemoAddPayload {
   y?: number;
   color?: string;
   links?: string[];
+  w?: number | null;
+  h?: number | null;
 }
 
 interface MemoApplyPayload {
@@ -64,14 +68,16 @@ function applyMemoAdd(doc: SchemaDoc, p: MemoAddPayload): SchemaDoc {
   }
   return {
     ...doc,
-    memos: [...docMemos(doc), [p.id, p.text ?? "", p.x ?? 0, p.y ?? 0, p.color ?? MEMO_DEFAULT_COLOR, p.links ?? []]],
+    memos: [...docMemos(doc), [p.id, p.text ?? "", p.x ?? 0, p.y ?? 0, p.color ?? MEMO_DEFAULT_COLOR, p.links ?? [],
+      typeof p.w === "number" ? p.w : null, typeof p.h === "number" ? p.h : null]],
   };
 }
 
 function applyMemoApply(doc: SchemaDoc, p: MemoApplyPayload): SchemaDoc {
   const memos = docMemos(doc).map((m) =>
     rowStr(m, 0) === p.id
-      ? [rowStr(m, 0), p.text ?? "", rowNum(m, 2), rowNum(m, 3), p.color ?? rowStr(m, 4), p.links ?? rowStrArr(m, 5)]
+      ? [rowStr(m, 0), p.text ?? "", rowNum(m, 2), rowNum(m, 3), p.color ?? rowStr(m, 4), p.links ?? rowStrArr(m, 5),
+          rowNum(m, 6), rowNum(m, 7)]
       : m,
   );
   return { ...doc, memos };
@@ -82,7 +88,21 @@ function applyMemoMove(doc: SchemaDoc, p: { id?: string; x?: number; y?: number 
     return doc;
   }
   const memos = docMemos(doc).map((m) =>
-    rowStr(m, 0) === p.id ? [rowStr(m, 0), rowStr(m, 1), p.x ?? 0, p.y ?? 0, rowStr(m, 4), rowStrArr(m, 5)] : m,
+    rowStr(m, 0) === p.id
+      ? [rowStr(m, 0), rowStr(m, 1), p.x ?? 0, p.y ?? 0, rowStr(m, 4), rowStrArr(m, 5), rowNum(m, 6), rowNum(m, 7)]
+      : m,
+  );
+  return { ...doc, memos };
+}
+
+/** w/h가 숫자가 아니면 null(기본 크기)로 되돌린다. */
+function applyMemoResize(doc: SchemaDoc, p: { id?: string; w?: number | null; h?: number | null }): SchemaDoc {
+  const w = typeof p.w === "number" ? p.w : null;
+  const h = typeof p.h === "number" ? p.h : null;
+  const memos = docMemos(doc).map((m) =>
+    rowStr(m, 0) === p.id
+      ? [rowStr(m, 0), rowStr(m, 1), rowNum(m, 2), rowNum(m, 3), rowStr(m, 4), rowStrArr(m, 5), w, h]
+      : m,
   );
   return { ...doc, memos };
 }
@@ -95,7 +115,7 @@ function remapMemoLinks(doc: SchemaDoc, from: string, to: string | null): Row[] 
       return m;
     }
     const next = to === null ? links.filter((n) => n !== from) : links.map((n) => (n === from ? to : n));
-    return [rowStr(m, 0), rowStr(m, 1), rowNum(m, 2), rowNum(m, 3), rowStr(m, 4), next];
+    return [rowStr(m, 0), rowStr(m, 1), rowNum(m, 2), rowNum(m, 3), rowStr(m, 4), next, rowNum(m, 6), rowNum(m, 7)];
   });
 }
 

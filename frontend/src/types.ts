@@ -10,7 +10,7 @@ export interface DomainDef {
  * tables:    [name, domainKey, description, hub?, posX?, posY?]
  * relations: [childName, parentName, label?, cardinality?] (cardinality: N:1(기본)/1:1/N:M)
  * columns:   [name, colType, comment, flag?]
- * memos:     [id, text, x, y, color, links?] (links: 연결된 테이블명 배열, 없으면 생략)
+ * memos:     [id, text, x, y, color, links?, w?, h?] (links: 연결된 테이블명 배열 / w·h: 사용자 지정 크기, 없으면 기본 크기)
  */
 export type Row = (string | number | boolean | null | string[])[];
 
@@ -56,6 +56,7 @@ export type OpType =
   | "memo.apply"
   | "memo.delete"
   | "memo.move"
+  | "memo.resize"
   | "schema.replace";
 
 export interface Op {

@@ -123,6 +123,8 @@ export function invertOp(op: Op, before: SchemaDoc, user: string): Op[] {
           y: rowNum(row, 3) ?? 0,
           color: rowStr(row, 4),
           links: rowStrArr(row, 5),
+          w: rowNum(row, 6),
+          h: rowNum(row, 7),
         },
       }];
     }
@@ -135,6 +137,18 @@ export function invertOp(op: Op, before: SchemaDoc, user: string): Op[] {
         type: "memo.move",
         user,
         payload: { id: rowStr(row, 0), x: rowNum(row, 2) ?? 0, y: rowNum(row, 3) ?? 0 },
+      }];
+    }
+    case "memo.resize": {
+      const row = findMemo(before, op);
+      if (!row) {
+        return [];
+      }
+      // 이전 크기가 없으면 null을 보내 기본 크기로 되돌린다.
+      return [{
+        type: "memo.resize",
+        user,
+        payload: { id: rowStr(row, 0), w: rowNum(row, 6), h: rowNum(row, 7) },
       }];
     }
     case "schema.replace":

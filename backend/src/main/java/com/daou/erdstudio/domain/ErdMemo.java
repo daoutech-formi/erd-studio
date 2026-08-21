@@ -40,6 +40,13 @@ public class ErdMemo {
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
 
+    /** 사용자 지정 폭/높이. null이면 기본 폭·내용 높이(프론트가 계산)를 쓴다. */
+    @Column(name = "memo_w")
+    private Double width;
+
+    @Column(name = "memo_h")
+    private Double height;
+
     /** 연결된 테이블명 목록의 JSON 배열 문자열 (예: ["order","user"]). 없으면 "[]". */
     // default 필수 — 메모가 이미 있는 DB에서 ddl-auto update가 NOT NULL 컬럼을 추가하려면 기본값이 있어야 한다.
     @Column(name = "links", nullable = false, length = 2000, columnDefinition = "varchar(2000) default '[]' not null")
@@ -73,6 +80,12 @@ public class ErdMemo {
     public void moveTo(double x, double y) {
         this.posX = x;
         this.posY = y;
+    }
+
+    /** null을 넘기면 기본 크기로 되돌린다. */
+    public void resizeTo(Double width, Double height) {
+        this.width = width;
+        this.height = height;
     }
 
     public Long getId() {
@@ -109,5 +122,13 @@ public class ErdMemo {
 
     public String getLinks() {
         return links;
+    }
+
+    public Double getWidth() {
+        return width;
+    }
+
+    public Double getHeight() {
+        return height;
     }
 }

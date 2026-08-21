@@ -75,8 +75,11 @@ public class SchemaService {
         List<List<Object>> rows = new ArrayList<>();
         for (ErdMemo m : memoRepository.findByRoomIdOrderBySortOrderAsc(roomId)) {
             List<String> links = readLinks(m.getLinks());
-            // [id, text, x, y, color, links?] — 연결 없는 메모는 5요소로 유지해 문서를 가볍게 한다.
-            if (links.isEmpty()) {
+            // [id, text, x, y, color, links?, w?, h?] — 뒤쪽 빈 값은 생략해 문서를 가볍게 한다.
+            if (m.getWidth() != null || m.getHeight() != null) {
+                rows.add(Arrays.asList(m.getMemoKey(), m.getText(), m.getPosX(), m.getPosY(), m.getColor(), links,
+                        m.getWidth(), m.getHeight()));
+            } else if (links.isEmpty()) {
                 rows.add(Arrays.asList(m.getMemoKey(), m.getText(), m.getPosX(), m.getPosY(), m.getColor()));
             } else {
                 rows.add(Arrays.asList(m.getMemoKey(), m.getText(), m.getPosX(), m.getPosY(), m.getColor(), links));
@@ -228,10 +231,20 @@ public class SchemaService {
             Double x = Rows.dbl(row, 2);
             Double y = Rows.dbl(row, 3);
             List<String> links = Rows.strList(row, 5).stream().filter(tableNames::contains).toList();
-            entities.add(new ErdMemo(roomId, key, Rows.str(row, 1), Rows.str(row, 4),
-                    x == null ? 0 : x, y == null ? 0 : y, entities.size(), writeLinks(links)));
+            ErdMemo memo = new ErdMemo(roomId, key, Rows.str(row, 1), Rows.str(row, 4),
+                    x == null ? 0 : x, y == null ? 0 : y, entities.size(), writeLinks(links));
+            memo.resizeTo(memoSize(Rows.dbl(row, 6)), memoSize(Rows.dbl(row, 7)));
+            entities.add(memo);
         }
         memoRepository.saveAll(entities);
+    }
+
+    /** 전체 교체(schema.replace)로 들어온 메모 크기 — 범위를 벗어나면 조용히 기본 크기로 되돌린다. */
+    private Double memoSize(Double v) {
+        if (v == null || v < OpService.MIN_MEMO_SIZE || v > OpService.MAX_MEMO_SIZE) {
+            return null;
+        }
+        return v;
     }
 
     private String writeLinks(List<String> links) {

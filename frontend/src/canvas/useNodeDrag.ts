@@ -9,6 +9,10 @@ const TRANSLATE_RE = /translate\(([-\d.]+),([-\d.]+)\)/;
 /** 드래그 직후의 click 이벤트를 무시하기 위한 플래그 — 메모를 옮기자마자 편집창이 열리는 것을 막는다. */
 let suppressClickUntil = 0;
 export const wasJustDragged = (): boolean => performance.now() < suppressClickUntil;
+/** 드래그 외의 제스처(메모 크기 조절 등)가 끝난 뒤에도 같은 click 억제를 쓸 수 있게 한다. */
+export const suppressNextClick = (): void => {
+  suppressClickUntil = performance.now() + 200;
+};
 
 interface DragTarget {
   /** move 중계·op 대상 식별자 (테이블명 또는 "memo:{id}"). */
@@ -54,7 +58,7 @@ function beginDrag(el: SVGGElement, e: React.MouseEvent<SVGGElement>, target: Dr
     if (!moved) {
       return;
     }
-    suppressClickUntil = performance.now() + 200;
+    suppressNextClick();
     erdSocket.sendEditOp(target.makeOp(current.x, current.y), [target.makeOp(start.x, start.y)]);
   };
   window.addEventListener("mousemove", onMove);

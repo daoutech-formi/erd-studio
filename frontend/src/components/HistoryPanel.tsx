@@ -20,6 +20,7 @@ const OP_LABELS: Record<string, string> = {
   "memo.apply": "메모 수정",
   "memo.delete": "메모 삭제",
   "memo.move": "메모 이동",
+  "memo.resize": "메모 크기 조절",
   "schema.replace": "전체 교체",
   "history.restore": "이력 복원",
 };

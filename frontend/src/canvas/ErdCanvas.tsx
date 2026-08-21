@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { MutableRefObject } from "react";
+import { erdSocket } from "../api/socket";
 import { MemoModal } from "../components/MemoModal";
 import { useDispatch, useStore } from "../state/schemaStore";
 import { docMemos, rowNum, rowStr, rowStrArr, MEMO_DEFAULT_COLOR } from "../types";
@@ -143,6 +144,19 @@ export function ErdCanvas({ apiRef, onNodeClick }: Props) {
   const onNodeMouseDown = useNodeDrag(nodeEls, editMode);
   const onMemoMouseDown = useMemoDrag(memoEls, editMode);
 
+  /** 메모 크기 조절 확정 — resize op 전송, undo는 이전 크기(없으면 기본 크기 복귀)로 되돌린다. */
+  const onMemoResize = useCallback(
+    (id: string, w: number, h: number) => {
+      const row = doc ? docMemos(doc).find((m) => rowStr(m, 0) === id) : undefined;
+      const user = erdSocket.currentUser();
+      erdSocket.sendEditOp(
+        { type: "memo.resize", user, payload: { id, w, h } },
+        row ? [{ type: "memo.resize", user, payload: { id, w: rowNum(row, 6), h: rowNum(row, 7) } }] : [],
+      );
+    },
+    [doc],
+  );
+
   /** 메모별 흐림 — 강조 중인 메모·선택 테이블에 연결된 메모는 남기고 나머지를 흐린다. */
   const isMemoDim = useCallback(
     (id: string, links: string[]): boolean => {
@@ -234,6 +248,8 @@ export function ErdCanvas({ apiRef, onNodeClick }: Props) {
                   color={rowStr(m, 4) || MEMO_DEFAULT_COLOR}
                   x={rowNum(m, 2) ?? 0}
                   y={rowNum(m, 3) ?? 0}
+                  w={rowNum(m, 6)}
+                  h={rowNum(m, 7)}
                   dim={isMemoDim(id, links)}
                   linkCount={links.length}
                   active={id === selectedMemo}
@@ -241,6 +257,7 @@ export function ErdCanvas({ apiRef, onNodeClick }: Props) {
                   onOpen={openMemo}
                   onSelect={selectMemoClick}
                   onMemoMouseDown={onMemoMouseDown}
+                  onResize={onMemoResize}
                   registerEl={registerMemoEl}
                 />
               );

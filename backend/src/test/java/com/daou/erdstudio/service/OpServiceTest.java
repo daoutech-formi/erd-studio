@@ -293,6 +293,43 @@ class OpServiceTest {
     }
 
     @Test
+    void memoResize_크기를_저장한다() {
+        addMemo("m_resize");
+        opService.apply(roomId, op("memo.resize", Map.of("id", "m_resize", "w", 320.0, "h", 180.0)));
+        ErdMemo saved = memoRepository.findByRoomIdAndMemoKey(roomId, "m_resize").orElseThrow();
+        assertThat(saved.getWidth()).isEqualTo(320.0);
+        assertThat(saved.getHeight()).isEqualTo(180.0);
+    }
+
+    @Test
+    void memoResize_숫자가_아니면_기본_크기로_되돌린다() {
+        addMemo("m_resize_reset");
+        opService.apply(roomId, op("memo.resize", Map.of("id", "m_resize_reset", "w", 320.0, "h", 180.0)));
+        opService.apply(roomId, op("memo.resize", Map.of("id", "m_resize_reset")));
+        ErdMemo saved = memoRepository.findByRoomIdAndMemoKey(roomId, "m_resize_reset").orElseThrow();
+        assertThat(saved.getWidth()).isNull();
+        assertThat(saved.getHeight()).isNull();
+    }
+
+    @Test
+    void memoResize_범위를_벗어나면_거부한다() {
+        addMemo("m_resize_bad");
+        assertThatThrownBy(() -> opService.apply(roomId,
+                op("memo.resize", Map.of("id", "m_resize_bad", "w", 5000.0, "h", 100.0))))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("메모 크기");
+    }
+
+    @Test
+    void memoAdd_크기를_함께_받으면_저장한다() {
+        opService.apply(roomId, op("memo.add",
+                Map.of("id", "m_add_size", "text", "", "x", 0, "y", 0, "w", 250.0, "h", 120.0)));
+        ErdMemo saved = memoRepository.findByRoomIdAndMemoKey(roomId, "m_add_size").orElseThrow();
+        assertThat(saved.getWidth()).isEqualTo(250.0);
+        assertThat(saved.getHeight()).isEqualTo(120.0);
+    }
+
+    @Test
     void memoDelete_메모를_삭제한다() {
         addMemo("m_del");
         opService.apply(roomId, op("memo.delete", Map.of("id", "m_del")));
