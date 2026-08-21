@@ -17,6 +17,8 @@ export interface PanZoomApi {
 }
 
 const INITIAL = { tx: 60, ty: 20, scale: 0.65 };
+/** 이 거리(px) 이하로 움직인 mousedown→mouseup은 팬이 아니라 배경 클릭으로 본다. */
+const CLICK_SLOP = 4;
 
 /**
  * 팬/줌 — React 상태를 거치지 않고 viewport <g>의 transform을 rAF로 직접 갱신한다.
@@ -25,13 +27,13 @@ const INITIAL = { tx: 60, ty: 20, scale: 0.65 };
 export function usePanZoom(
   stageRef: RefObject<HTMLDivElement>,
   viewportRef: RefObject<SVGGElement>,
-  onBackgroundDown: () => void,
+  onBackgroundClick: () => void,
 ): PanZoomApi {
   const view = useRef({ ...INITIAL });
   const raf = useRef(0);
   const listeners = useRef(new Set<(v: ViewState) => void>());
-  const callbacks = useRef(onBackgroundDown);
-  callbacks.current = onBackgroundDown;
+  const callbacks = useRef(onBackgroundClick);
+  callbacks.current = onBackgroundClick;
 
   const apply = () => {
     cancelAnimationFrame(raf.current);
@@ -51,6 +53,9 @@ export function usePanZoom(
     let dragging = false;
     let sx = 0;
     let sy = 0;
+    let downX = 0;
+    let downY = 0;
+    let moved = false;
 
     const onDown = (e: MouseEvent) => {
       // 노드/메모 드래그와 팬이 겹치지 않게 한다 — React 합성 이벤트의 stopPropagation은
@@ -59,20 +64,29 @@ export function usePanZoom(
         return;
       }
       dragging = true;
+      moved = false;
+      downX = e.clientX;
+      downY = e.clientY;
       sx = e.clientX - view.current.tx;
       sy = e.clientY - view.current.ty;
       stage.classList.add("grabbing");
-      callbacks.current();
     };
     const onMove = (e: MouseEvent) => {
       if (!dragging) {
         return;
+      }
+      if (Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY) > CLICK_SLOP) {
+        moved = true;
       }
       view.current.tx = e.clientX - sx;
       view.current.ty = e.clientY - sy;
       apply();
     };
     const onUp = () => {
+      // 팬(드래그)은 강조를 유지하고, 제자리 클릭일 때만 배경 클릭으로 보고 강조를 해제한다.
+      if (dragging && !moved) {
+        callbacks.current();
+      }
       dragging = false;
       stage.classList.remove("grabbing");
     };
