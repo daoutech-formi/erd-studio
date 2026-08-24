@@ -2,6 +2,7 @@ package com.daou.erdstudio.service;
 
 import com.daou.erdstudio.domain.ErdHistory;
 import com.daou.erdstudio.repository.ErdHistoryRepository;
+import com.daou.erdstudio.web.dto.HistoryDiff;
 import com.daou.erdstudio.web.dto.HistoryEntry;
 import com.daou.erdstudio.web.dto.SchemaDoc;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,6 +39,19 @@ public class HistoryService {
         return historyRepository.findByRoomIdOrderByIdDesc(roomId, PageRequest.of(0, size)).stream()
                 .map(h -> new HistoryEntry(h.getId(), h.getUserName(), h.getOpKind(), h.getTarget(), h.getCreatedAt()))
                 .toList();
+    }
+
+    /** 선택한 이력의 스냅샷과 직전 이력의 스냅샷을 함께 돌려준다 — diff 뷰어용. */
+    @Transactional(readOnly = true)
+    public HistoryDiff diff(Long roomId, long historyId) {
+        ErdHistory history = historyRepository.findByIdAndRoomId(historyId, roomId).orElseThrow(
+                () -> new IllegalArgumentException("이력을 찾을 수 없습니다: " + historyId));
+        SchemaDoc before = historyRepository.findFirstByRoomIdAndIdLessThanOrderByIdDesc(roomId, historyId)
+                .map(prev -> parseSnapshot(prev.getSnapshot()))
+                .orElse(null);
+        HistoryEntry entry = new HistoryEntry(history.getId(), history.getUserName(), history.getOpKind(),
+                history.getTarget(), history.getCreatedAt());
+        return new HistoryDiff(entry, before, parseSnapshot(history.getSnapshot()));
     }
 
     /** 해당 이력의 스냅샷으로 그 방의 전체 스키마를 되돌리고, 복원 자체를 이력으로 남긴다. */

@@ -1,4 +1,4 @@
-import type { HistoryEntry, SchemaDoc } from "../types";
+import type { HistoryDiff, HistoryEntry, SchemaDoc } from "../types";
 
 async function parse<T>(res: Response): Promise<T> {
   const body = (await res.json().catch(() => ({}))) as { error?: string };
@@ -95,6 +95,10 @@ export function importDdl(
 
 export function fetchHistory(roomId: number, limit = 50): Promise<HistoryEntry[]> {
   return fetch(`/api/rooms/${roomId}/history?limit=${limit}`).then((res) => parse<HistoryEntry[]>(res));
+}
+
+export function fetchHistoryDiff(roomId: number, id: number): Promise<HistoryDiff> {
+  return fetch(`/api/rooms/${roomId}/history/${id}/diff`).then((res) => parse<HistoryDiff>(res));
 }
 
 export function restoreHistory(roomId: number, id: number, user: string): Promise<{ ok: boolean }> {

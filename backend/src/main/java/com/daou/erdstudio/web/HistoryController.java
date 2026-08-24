@@ -2,6 +2,7 @@ package com.daou.erdstudio.web;
 
 import com.daou.erdstudio.service.HistoryService;
 import com.daou.erdstudio.service.RoomService;
+import com.daou.erdstudio.web.dto.HistoryDiff;
 import com.daou.erdstudio.web.dto.HistoryEntry;
 import com.daou.erdstudio.web.dto.Op;
 import com.daou.erdstudio.web.dto.SchemaDoc;
@@ -41,6 +42,13 @@ public class HistoryController {
                                    @RequestParam(defaultValue = "50") int limit) {
         roomService.requireExists(roomId);
         return historyService.list(roomId, limit);
+    }
+
+    /** 선택 이력과 직전 이력의 스냅샷 쌍 — 프론트가 받아서 변경점을 계산해 보여준다. */
+    @GetMapping("/{id}/diff")
+    public HistoryDiff diff(@PathVariable Long roomId, @PathVariable long id) {
+        roomService.requireExists(roomId);
+        return historyService.diff(roomId, id);
     }
 
     /** 스냅샷 복원 후 schema.replace op로 그 방의 전원에게 새 상태를 브로드캐스트한다. */

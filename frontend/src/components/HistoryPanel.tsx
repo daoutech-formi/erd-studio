@@ -4,33 +4,18 @@ import { erdSocket } from "../api/socket";
 import { useDispatch } from "../state/schemaStore";
 import { undoManager } from "../state/undo";
 import type { HistoryEntry } from "../types";
+import { opLabel } from "../utils/opLabel";
+import { HistoryDiffModal } from "./HistoryDiffModal";
 
 interface Props {
   roomId: number;
 }
 
-/** opKind 코드 → 한글 표기. 목록에 없는 값(구버전 등)은 코드 그대로 보여준다. */
-const OP_LABELS: Record<string, string> = {
-  "table.add": "테이블 추가",
-  "table.apply": "테이블 수정",
-  "table.delete": "테이블 삭제",
-  "table.move": "테이블 이동",
-  "domain.apply": "도메인 변경",
-  "memo.add": "메모 추가",
-  "memo.apply": "메모 수정",
-  "memo.delete": "메모 삭제",
-  "memo.move": "메모 이동",
-  "memo.resize": "메모 크기 조절",
-  "schema.replace": "전체 교체",
-  "history.restore": "이력 복원",
-};
-
-const opLabel = (kind: string): string => OP_LABELS[kind] ?? kind;
-
-/** 현재 방의 변경 이력 목록 + 특정 시점 복원. */
+/** 현재 방의 변경 이력 목록 + 시점별 변경 내용 비교 + 특정 시점 복원. */
 export function HistoryPanel({ roomId }: Props) {
   const dispatch = useDispatch();
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
+  const [diffEntry, setDiffEntry] = useState<HistoryEntry | null>(null);
   const [error, setError] = useState("");
 
   const reload = useCallback(() => {
@@ -75,12 +60,16 @@ export function HistoryPanel({ roomId }: Props) {
               <td>{h.userName}</td>
               <td>{opLabel(h.opKind)}</td>
               <td>{h.target}</td>
-              <td><button className="mini" onClick={() => restore(h)}>복원</button></td>
+              <td>
+                <button className="mini" onClick={() => setDiffEntry(h)}>비교</button>{" "}
+                <button className="mini" onClick={() => restore(h)}>복원</button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="hint">복원하면 그 시점의 전체 스키마로 되돌아가며, 복원 자체도 이력에 남습니다.</div>
+      <div className="hint">비교는 직전 이력과의 차이를 보여주고, 복원하면 그 시점의 전체 스키마로 되돌아가며 복원 자체도 이력에 남습니다.</div>
+      {diffEntry && <HistoryDiffModal roomId={roomId} entry={diffEntry} onClose={() => setDiffEntry(null)} />}
     </div>
   );
 }

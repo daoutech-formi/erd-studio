@@ -16,6 +16,8 @@ public interface ErdHistoryRepository extends JpaRepository<ErdHistory, Long> {
 
     Optional<ErdHistory> findByIdAndRoomId(Long id, Long roomId);
 
+    Optional<ErdHistory> findFirstByRoomIdAndIdLessThanOrderByIdDesc(Long roomId, Long id);
+
     @Query("select h.id from ErdHistory h where h.roomId = :roomId order by h.id desc")
     List<Long> findIdsByRoomIdOrderByIdDesc(@Param("roomId") Long roomId);
 

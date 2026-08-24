@@ -81,6 +81,13 @@ export interface HistoryEntry {
   createdAt: string;
 }
 
+/** 이력 diff 응답 — before는 방의 첫 이력이면 null(빈 문서로 간주). */
+export interface HistoryDiff {
+  entry: HistoryEntry;
+  before: SchemaDoc | null;
+  after: SchemaDoc;
+}
+
 /** 서버 → 클라이언트 WebSocket 메시지. */
 export type WsIncoming =
   | { kind: "presence"; users: ClientInfo[] }

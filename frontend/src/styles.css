@@ -330,6 +330,23 @@ select.ci { appearance: auto; }
 .history-panel td:nth-child(-n + 3), .history-panel td:last-child { white-space: nowrap; }
 .history-panel th { color: var(--muted); font-weight: 400; }
 
+/* ---------- 이력 diff 모달 ---------- */
+.diff-modal { width: 560px; max-width: 94vw; max-height: 86vh; overflow-y: auto; }
+.diff-body { font-size: 12px; line-height: 1.7; }
+.diff-section { margin-top: 12px; }
+.diff-section-title {
+  font-size: 11px; color: var(--muted); font-weight: 700;
+  padding-bottom: 4px; margin-bottom: 6px; border-bottom: 1px solid var(--row-border);
+}
+.diff-list { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.diff-item { display: flex; gap: 6px; align-items: baseline; }
+.diff-item.add, .diff-sub.add { color: var(--ok-text); }
+.diff-item.upd, .diff-sub.upd { color: var(--warn-text); }
+.diff-item.del, .diff-sub.del { color: var(--err-text); }
+.diff-sign { flex: none; width: 14px; }
+.diff-detail { margin-left: 8px; color: var(--muted); font-size: 11px; }
+.diff-sub { font-size: 11px; margin-top: 2px; word-break: break-all; }
+
 /* ---------- DDL 임포트 미리보기 ---------- */
 .ddl-preview {
   margin-top: 10px; padding: 10px 12px; font-size: 12px; line-height: 1.7;

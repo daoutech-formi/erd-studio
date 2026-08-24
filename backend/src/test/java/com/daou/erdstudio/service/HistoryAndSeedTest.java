@@ -106,6 +106,43 @@ class HistoryAndSeedTest {
     }
 
     @Test
+    void diff는_선택_이력과_직전_이력의_스냅샷_쌍을_돌려준다() {
+        opService.apply(roomId, op("table.add", Map.of("name", "t_hist_d1", "domain", "user", "desc", "")));
+        opService.apply(roomId, op("table.add", Map.of("name", "t_hist_d2", "domain", "user", "desc", "")));
+        long latestId = historyService.list(roomId, 1).get(0).id();
+
+        var diff = historyService.diff(roomId, latestId);
+
+        assertThat(diff.entry().id()).isEqualTo(latestId);
+        assertThat(diff.after().tables()).hasSize(2);
+        assertThat(diff.before()).isNotNull();
+        assertThat(diff.before().tables()).hasSize(1);
+    }
+
+    @Test
+    void 첫_이력의_diff는_before가_null이다() {
+        opService.apply(roomId, op("table.add", Map.of("name", "t_hist_first", "domain", "user", "desc", "")));
+        List<HistoryEntry> entries = historyService.list(roomId, 200);
+        long firstId = entries.get(entries.size() - 1).id();
+
+        var diff = historyService.diff(roomId, firstId);
+
+        assertThat(diff.before()).isNull();
+        assertThat(diff.after()).isNotNull();
+    }
+
+    @Test
+    void 다른_방의_이력은_diff할_수_없다() {
+        opService.apply(roomId, op("table.add", Map.of("name", "t_hist_dx", "domain", "user", "desc", "")));
+        long historyId = historyService.list(roomId, 1).get(0).id();
+        ErdRoom other = roomRepository.save(new ErdRoom("t_hist_room_diff", "tester"));
+
+        assertThatThrownBy(() -> historyService.diff(other.getId(), historyId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("이력");
+    }
+
+    @Test
     void 없는_이력_복원은_거부한다() {
         assertThatThrownBy(() -> historyService.restore(roomId, 9_999_999L, "tester"))
                 .isInstanceOf(IllegalArgumentException.class)
