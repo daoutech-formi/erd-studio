@@ -139,7 +139,7 @@ footer a{font-size:12px}
     <div class="stat"><b>6</b><span>조사 대상 서비스</span></div>
     <div class="stat"><b>24</b><span>비교 매트릭스 항목</span></div>
     <div class="stat"><b>13</b><span>추천 기능 (3단계)</span></div>
-    <div class="stat"><b>5 / 13</b><span>완료 — Tier 1 전체 (v1.3)</span></div>
+    <div class="stat"><b>6 / 13</b><span>완료 — Tier 1 전체 + 이력 diff (v1.5)</span></div>
     <div class="stat"><b>2026.08</b><span>조사 기준</span></div>
   </div>
   <div class="docnav">
@@ -262,7 +262,7 @@ footer a{font-size:12px}
 <!-- ================= 비교 매트릭스 ================= -->
 <section>
   <h2><span class="sec-num">3</span>기능 비교 매트릭스</h2>
-  <p class="sec-desc">ERD Studio 열이 강조되어 있습니다. 협업·AI 구간에 이어 "공유·표기·방언" 구간은 v1.3에서, 캔버스 메모는 v1.4에서 채워졌습니다. 남은 공백은 리뷰 스레드·이력 diff·권한·임베드 등 Tier 2~3 항목입니다.</p>
+  <p class="sec-desc">ERD Studio 열이 강조되어 있습니다. 협업·AI 구간에 이어 "공유·표기·방언" 구간은 v1.3에서, 캔버스 메모는 v1.4에서, 이력 diff 뷰는 v1.5에서 채워졌습니다. 남은 공백은 리뷰 스레드·권한·임베드 등 Tier 2~3 항목입니다.</p>
   <div class="matrix-scroll">
     <table class="matrix">
       <colgroup><col><col class="me"><col><col><col><col><col></colgroup>
@@ -275,9 +275,9 @@ footer a{font-size:12px}
         <tr class="grp"><th colspan="7">협업</th></tr>
         <tr><th>실시간 동시편집</th><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="p">◐ $59~</td><td class="p">◐ 유료</td><td class="n">—</td></tr>
         <tr><th>편집 잠금 / 라이브 커서</th><td class="y">● 소프트 락</td><td class="n">—</td><td class="n">—</td><td class="y">● 커서</td><td class="n">—</td><td class="n">—</td></tr>
-        <tr><th>코멘트 / 리뷰 스레드</th><td class="p">◐ 캔버스 메모</td><td class="y">●</td><td class="p">◐ 노트</td><td class="y">● 스레드</td><td class="p">◐ 노트</td><td class="n">—</td></tr>
+        <tr><th>코멘트 / 리뷰 스레드</th><td class="p">◐ 캔버스 메모(테이블 연결)</td><td class="y">●</td><td class="p">◐ 노트</td><td class="y">● 스레드</td><td class="p">◐ 노트</td><td class="n">—</td></tr>
         <tr><th>변경 이력 / 복원</th><td class="y">●</td><td class="n">—</td><td class="y">●</td><td class="p">◐ 유료</td><td class="y">●</td><td class="n">—</td></tr>
-        <tr><th>이력 diff 뷰</th><td class="n">—</td><td class="n">—</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="n">—</td></tr>
+        <tr><th>이력 diff 뷰</th><td class="y">● 직전 시점 비교</td><td class="n">—</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="n">—</td></tr>
         <tr><th>권한 (admin/editor/viewer)</th><td class="n">—</td><td class="p">◐ 공개범위</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="n">—</td></tr>
         <tr class="grp"><th colspan="7">공유 · 접근</th></tr>
         <tr><th>공유 링크 / 딥링크</th><td class="y">● 읽기전용 링크</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">●</td></tr>
@@ -356,13 +356,13 @@ footer a{font-size:12px}
       <p class="why"><em>근거</em> — drawSQL이 유료(월 $19+) 간판 기능으로 파는 것을 사내 무료로 제공. ERDCloud엔 없는 기능.</p>
     </div>
     <div class="reco">
-      <div class="reco-head"><b>7. 이력 diff 뷰어</b><span class="badge e1">난이도 하~중</span></div>
-      <p>서버가 이미 op마다 전체 스키마 스냅샷을 저장하므로(방당 1,000개) 백엔드 작업이 거의 없습니다. 두 시점을 골라 추가/변경/삭제 테이블·컬럼을 나란히 보여주는 프론트 UI만 만들면 됩니다. DDL 임포트 미리보기의 diff 요약 로직도 재활용 가능.</p>
+      <div class="reco-head"><b>7. 이력 diff 뷰어</b><span class="badge done">✓ 완료 — v1.5 (2026-08-24)</span><span class="badge e1">난이도 하~중</span></div>
+      <p>v1.5에서 구현 — 예상대로 백엔드는 스냅샷 쌍을 돌려주는 <span class="mono">GET /history/{id}/diff</span> 하나로 충분했고, 이력 패널 각 행의 '비교' 버튼이 직전 시점과의 변경점을 도메인/테이블(컬럼 포함)/관계/메모 단위로 ＋추가/△변경/－삭제 색상 모달에 보여줍니다. diff 계산은 프론트가 담당.</p>
       <p class="why"><em>근거</em> — dbdiagram·drawSQL·ChartDB 모두 제공. "누가 뭘 바꿨지?"는 협업 도구의 핵심 질문.</p>
     </div>
     <div class="reco">
       <div class="reco-head"><b>8. 캔버스 코멘트 / 스티키 노트</b><span class="badge done">✓ 스티키 노트 완료 — v1.4 (2026-08-14)</span><span class="badge e2">난이도 중</span></div>
-      <p>캔버스 자유 배치 메모는 v1.4에서 <span class="mono">memo.add/apply/delete/move</span> 연산으로 구현 — 예상대로 기존 op 프로토콜에 얹어 실시간 동기화·이력·undo가 그대로 따라왔습니다. 남은 절반은 테이블에 다는 리뷰 스레드(댓글)입니다.</p>
+      <p>캔버스 자유 배치 메모는 v1.4에서 <span class="mono">memo.add/apply/delete/move</span> 연산으로 구현 — 예상대로 기존 op 프로토콜에 얹어 실시간 동기화·이력·undo가 그대로 따라왔습니다. v1.5에서는 메모–테이블 연결(최대 10개, 클릭 시 연결 테이블 하이라이트)과 크기 자유 조절(<span class="mono">memo.resize</span>)로 확장됐습니다. 남은 절반은 테이블에 다는 리뷰 스레드(댓글)입니다.</p>
       <p class="why"><em>근거</em> — ERDCloud(실시간 댓글)·drawSQL(디스커션 스레드)의 협업 승부처. 설계 리뷰 문화와 직결.</p>
     </div>
     <div class="reco">
@@ -401,10 +401,10 @@ footer a{font-size:12px}
   <div class="conclusion">
     <p><b>ERD Studio의 경쟁 상대는 기능 목록이 아니라 "그냥 ERDCloud 쓰자"는 관성입니다.</b> ERDCloud는 무료 실시간 협업 하나로 한국 시장을 잡았지만, 데이터가 외부 클라우드에 올라가고 AI·버전 관리·임베드가 전부 공백입니다. ERD Studio는 이미 사내망 셀프호스팅 + 동급 이상의 협업 엔진을 갖췄으므로, <b>Tier 1(공유 링크·카디널리티·방언)만 메워도 "사내 데이터는 사내 도구로"라는 전환 논리가 완성됩니다.</b> <span class="badge done">✓ Tier 1은 v1.3(2026-08-10)에서 전체 완료</span> — 이제 이 전환 논리가 실제로 성립합니다.</p>
     <p>그 다음 승부처는 AI입니다. 시장이 자연어 스키마 생성과 AI 리뷰로 수렴하는 가운데, ERD Studio는 유일하게 MCP 서버를 내장해 에이전트 워크플로에 먼저 도착해 있습니다. Anthropic API 연동도 이미 코드에 있으므로, <b>AI 스키마 리뷰(항목 6)와 내장 어시스턴트(항목 9)는 경쟁사가 유료로 파는 기능을 낮은 비용으로 확보하는 지름길</b>입니다.</p>
-    <p>요약하면 — 단기 기본기 5개(완료)로 이탈 명분을 없앴고, 다음은 중기: 이미 가진 AI·이력 자산을 UI로 노출해 차별화를 굳히는 단계(항목 6~10)입니다. 권한·확장은 수요가 증명된 뒤에 갑니다.</p>
+    <p>요약하면 — 단기 기본기 5개(완료)로 이탈 명분을 없앴고, 중기 구간도 진행 중입니다: 이력 diff 뷰어(항목 7)는 v1.5에서 완료됐고, 캔버스 메모(항목 8)는 테이블 연결·크기 조절까지 확장됐습니다. 남은 중기 항목은 AI 스키마 리뷰·리뷰 스레드·웹 AI 어시스턴트·라이브 임포트(6, 8 후반, 9, 10)이며, 권한·확장은 수요가 증명된 뒤에 갑니다.</p>
   </div>
   <footer>
-    조사 방법: 웹 리서치 + 프로젝트 코드베이스 전수 탐색(2026-08-10) · v1.4 캔버스 메모 반영 갱신(2026-08-14). 경쟁 서비스 정보 출처 —
+    조사 방법: 웹 리서치 + 프로젝트 코드베이스 전수 탐색(2026-08-10) · v1.4 캔버스 메모 반영 갱신(2026-08-14) · v1.5 이력 diff·메모 확장 반영 갱신(2026-08-24). 경쟁 서비스 정보 출처 —
     <a href="https://www.erdcloud.com/">erdcloud.com</a> ·
     <a href="https://docs.dbdiagram.io/">docs.dbdiagram.io</a> ·
     <a href="https://drawsql.app/features">drawsql.app</a> ·
