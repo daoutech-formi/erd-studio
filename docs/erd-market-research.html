@@ -350,12 +350,12 @@ footer a{font-size:12px}
   <div class="tier t2">
     <div class="tier-head"><h3>Tier 2 — 차별화 굳히기</h3><span class="when">중기 · 각 2~4주</span></div>
     <p>이미 보유한 자산(스냅샷 이력, op 프로토콜, MCP)을 지렛대로 쓰는 항목들. LLM 없이 동작하므로 운영 전제가 없고, 비용 대비 차별화 효과가 가장 큰 구간입니다.</p>
-    <div class="reco">
+    <div class="reco done">
       <div class="reco-head"><b>6. 이력 diff 뷰어</b><span class="badge done">✓ 완료 — v1.5 (2026-08-24)</span><span class="badge e1">난이도 하~중</span></div>
       <p>v1.5에서 구현 — 예상대로 백엔드는 스냅샷 쌍을 돌려주는 <span class="mono">GET /history/{id}/diff</span> 하나로 충분했고, 이력 패널 각 행의 '비교' 버튼이 직전 시점과의 변경점을 도메인/테이블(컬럼 포함)/관계/메모 단위로 ＋추가/△변경/－삭제 색상 모달에 보여줍니다. diff 계산은 프론트가 담당.</p>
       <p class="why"><em>근거</em> — dbdiagram·drawSQL·ChartDB 모두 제공. "누가 뭘 바꿨지?"는 협업 도구의 핵심 질문.</p>
     </div>
-    <div class="reco">
+    <div class="reco done">
       <div class="reco-head"><b>7. 캔버스 코멘트 / 스티키 노트</b><span class="badge done">✓ 스티키 노트 완료 — v1.4 (2026-08-14)</span><span class="badge e2">난이도 중</span></div>
       <p>캔버스 자유 배치 메모는 v1.4에서 <span class="mono">memo.add/apply/delete/move</span> 연산으로 구현 — 예상대로 기존 op 프로토콜에 얹어 실시간 동기화·이력·undo가 그대로 따라왔습니다. v1.5에서는 메모–테이블 연결(최대 10개, 클릭 시 연결 테이블 하이라이트)과 크기 자유 조절(<span class="mono">memo.resize</span>)로 확장됐습니다. 남은 절반은 테이블에 다는 리뷰 스레드(댓글)입니다.</p>
       <p class="why"><em>근거</em> — ERDCloud(실시간 댓글)·drawSQL(디스커션 스레드)의 협업 승부처. 설계 리뷰 문화와 직결.</p>
