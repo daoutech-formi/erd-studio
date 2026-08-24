@@ -137,9 +137,9 @@ footer a{font-size:12px}
   <p class="lede">ERDCloud · dbdiagram.io · drawSQL · ChartDB · Liam ERD · IDE 내장 도구를 조사하고, ERD Studio가 어디에 서 있는지와 다음에 만들 기능의 우선순위를 제안합니다. ERD Studio의 현재 기능은 <a href="erd-studio-features.html">기능 명세서</a>에, 자체 구축 경위는 <a href="erd-studio-report.html">구축 배경 리포트</a>에 분리 정리했습니다.</p>
   <div class="stats">
     <div class="stat"><b>6</b><span>조사 대상 서비스</span></div>
-    <div class="stat"><b>24</b><span>비교 매트릭스 항목</span></div>
+    <div class="stat"><b>25</b><span>비교 매트릭스 항목</span></div>
     <div class="stat"><b>13</b><span>추천 기능 (3단계)</span></div>
-    <div class="stat"><b>6 / 13</b><span>완료 — Tier 1 전체 + 이력 diff (v1.5)</span></div>
+    <div class="stat"><b>7 / 13</b><span>완료 — Tier 1 전체 + Tier 2 대부분 (v1.5)</span></div>
     <div class="stat"><b>2026.08</b><span>조사 기준</span></div>
   </div>
   <div class="docnav">
@@ -286,6 +286,7 @@ footer a{font-size:12px}
         <tr><th>셀프호스팅</th><td class="y">●</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="y">●</td><td class="y">●</td></tr>
         <tr class="grp"><th colspan="7">임포트 · 내보내기</th></tr>
         <tr><th>SQL DDL 임포트</th><td class="y">● MySQL·PG</td><td class="y">●</td><td class="y">●</td><td class="y">●</td><td class="y">● 10방언+</td><td class="y">●</td></tr>
+        <tr><th>Smart Query 라이브 임포트 (크리덴셜 불필요)</th><td class="y">● MySQL·PG</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="y">● 원조</td><td class="n">—</td></tr>
         <tr><th>FK 없는 관계 자동 추론</th><td class="y">●</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td><td class="n">—</td></tr>
         <tr><th>ORM 스키마 (Rails·Prisma 등)</th><td class="n">—</td><td class="n">—</td><td class="y">●</td><td class="p">◐ 출력만</td><td class="n">—</td><td class="y">●</td></tr>
         <tr><th>SQL 내보내기</th><td class="y">● 2방언</td><td class="y">●</td><td class="y">● 3방언</td><td class="y">●</td><td class="y">● AI 변환</td><td class="n">—</td></tr>
@@ -360,9 +361,9 @@ footer a{font-size:12px}
       <p>캔버스 자유 배치 메모는 v1.4에서 <span class="mono">memo.add/apply/delete/move</span> 연산으로 구현 — 예상대로 기존 op 프로토콜에 얹어 실시간 동기화·이력·undo가 그대로 따라왔습니다. v1.5에서는 메모–테이블 연결(최대 10개, 클릭 시 연결 테이블 하이라이트)과 크기 자유 조절(<span class="mono">memo.resize</span>)로 확장됐습니다. 남은 절반은 테이블에 다는 리뷰 스레드(댓글)입니다.</p>
       <p class="why"><em>근거</em> — ERDCloud(실시간 댓글)·drawSQL(디스커션 스레드)의 협업 승부처. 설계 리뷰 문화와 직결.</p>
     </div>
-    <div class="reco">
-      <div class="reco-head"><b>8. Smart Query식 라이브 스키마 임포트</b><span class="badge e1">난이도 하~중</span></div>
-      <p>ChartDB 방식: DB에 직접 연결하는 대신, 제공된 조회 쿼리 1개를 실행해 나온 JSON을 붙여넣으면 스키마가 임포트됩니다. 크리덴셜을 서버에 저장하지 않아 보안 부담 없이 "살아있는 DB → ERD" 경험을 제공합니다.</p>
+    <div class="reco done">
+      <div class="reco-head"><b>8. Smart Query식 라이브 스키마 임포트</b><span class="badge done">✓ 완료 — v1.5 (2026-08-24)</span><span class="badge e1">난이도 하~중</span></div>
+      <p>v1.5에서 구현 — 스키마 불러오기 모달의 Smart Query 탭에서 방언(MySQL·MariaDB/PostgreSQL)별 추출 쿼리를 복사해 내 DB 클라이언트에서 실행하고, 결과 JSON을 붙여넣으면 임포트됩니다. 크리덴셜이 서버에 전달되지 않고, 미리보기·병합/교체·도메인 분류·관계 추론은 DDL 임포트 파이프라인을 그대로 재사용했습니다.</p>
       <p class="why"><em>근거</em> — ChartDB ★20k의 핵심 훅. DDL 덤프보다 훨씬 낮은 사용자 마찰.</p>
     </div>
   </div>
@@ -401,7 +402,7 @@ footer a{font-size:12px}
   <div class="conclusion">
     <p><b>ERD Studio의 경쟁 상대는 기능 목록이 아니라 "그냥 ERDCloud 쓰자"는 관성입니다.</b> ERDCloud는 무료 실시간 협업 하나로 한국 시장을 잡았지만, 데이터가 외부 클라우드에 올라가고 AI·버전 관리·임베드가 전부 공백입니다. ERD Studio는 이미 사내망 셀프호스팅 + 동급 이상의 협업 엔진을 갖췄으므로, <b>Tier 1(공유 링크·카디널리티·방언)만 메워도 "사내 데이터는 사내 도구로"라는 전환 논리가 완성됩니다.</b> <span class="badge done">✓ Tier 1은 v1.3(2026-08-10)에서 전체 완료</span> — 이제 이 전환 논리가 실제로 성립합니다.</p>
     <p>그 다음 승부처는 AI입니다. 시장이 자연어 스키마 생성과 AI 리뷰로 수렴하는 가운데, ERD Studio는 유일하게 MCP 서버를 내장해 에이전트 워크플로에 먼저 도착해 있습니다. Anthropic API 연동도 이미 코드에 있으므로 <b>AI 스키마 리뷰(항목 9)와 내장 어시스턴트(항목 10)는 경쟁사가 유료로 파는 기능을 낮은 비용으로 확보하는 지름길</b>이지만, 서버 측 LLM(API 키·아웃바운드 호출)이 필수라는 운영 전제 때문에 장기 과제로 분류합니다 — 그전까지 AI 수요는 서버 키가 필요 없는 MCP 경로가 담당합니다.</p>
-    <p>요약하면 — 단기 기본기 5개(완료)로 이탈 명분을 없앴고, 중기 구간도 진행 중입니다: 이력 diff 뷰어(항목 6)는 v1.5에서 완료됐고, 캔버스 메모(항목 7)는 테이블 연결·크기 조절까지 확장됐습니다. 남은 중기 항목은 리뷰 스레드(7 후반)와 라이브 임포트(8)이며, AI 기능·권한·확장은 운영 전제와 수요가 갖춰진 뒤에 갑니다.</p>
+    <p>요약하면 — 단기 기본기 5개(완료)로 이탈 명분을 없앴고, 중기 구간도 사실상 마무리 단계입니다: 이력 diff 뷰어(항목 6)와 Smart Query 라이브 임포트(항목 8)는 v1.5에서 완료됐고, 캔버스 메모(항목 7)는 테이블 연결·크기 조절까지 확장됐습니다. 남은 중기 항목은 리뷰 스레드(7 후반)뿐이며, AI 기능·권한·확장은 운영 전제와 수요가 갖춰진 뒤에 갑니다.</p>
   </div>
   <footer>
     조사 방법: 웹 리서치 + 프로젝트 코드베이스 전수 탐색(2026-08-10) · v1.4 캔버스 메모 반영 갱신(2026-08-14) · v1.5 이력 diff·메모 확장 반영 갱신(2026-08-24). 경쟁 서비스 정보 출처 —

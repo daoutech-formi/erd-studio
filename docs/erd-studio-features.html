@@ -92,7 +92,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
   <div class="stats">
     <div class="stat"><b>v1.5</b><span>현재 버전 (메모 고도화·이력 diff)</span></div>
     <div class="stat"><b>6</b><span>기능 카테고리</span></div>
-    <div class="stat"><b>14</b><span>REST 엔드포인트</span></div>
+    <div class="stat"><b>16</b><span>REST 엔드포인트</span></div>
     <div class="stat"><b>6</b><span>MCP 도구</span></div>
     <div class="stat"><b>107</b><span>시드 테이블 (관계 122)</span></div>
   </div>
@@ -151,7 +151,8 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
       <div class="entity-head"><span class="dot"></span>임포트 · AI</div>
       <ul>
         <li>MySQL/MariaDB/PostgreSQL DDL 임포트 <small>텍스트 붙여넣기 또는 .sql 파일 — 주석·백틱·UNSIGNED·COMMENT, PG 스키마 접두어·ALTER ONLY PK·COMMENT ON·serial/다단어 타입·인라인 REFERENCES 파싱</small></li>
-        <li>변경 미리보기 → merge/replace 선택 <small>추가/변경/삭제/신규 도메인·관계 요약 후 적용</small></li>
+        <li>Smart Query식 라이브 스키마 임포트 <small>DB 연결 없이 방언별 추출 쿼리(information_schema/pg_catalog)를 내 클라이언트에서 실행 → 결과 JSON 붙여넣기, 크리덴셜이 서버에 전달되지 않음</small></li>
+        <li>변경 미리보기 → merge/replace 선택 <small>추가/변경/삭제/신규 도메인·관계 요약 후 적용 (DDL·Smart Query 공통)</small></li>
         <li>FK 없는 스키마 관계 자동 추론 <small>컬럼명 일치·접미사 매칭·공통 토큰 점수로 부모 테이블 선정</small></li>
         <li>도메인 자동 분류 — 키워드 사전 <small>약 30개 도메인 규칙, 3단계 가중치, FK 이웃 다수결 보정</small></li>
         <li>도메인 자동 분류 — LLM <small>Claude(Haiku) 일괄 분류, 실패 시 사전 방식 자동 폴백</small></li>
@@ -216,6 +217,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
         <tr><td class="mono">PUT</td><td class="mono">/api/rooms/creator-name</td><td>이름 변경 시 내가 만든 방들의 생성자 표시명 갱신</td></tr>
         <tr><td class="mono">GET / PUT</td><td class="mono">/api/rooms/{roomId}/schema</td><td>전체 스키마 조회 / 전체 교체 (JSON 불러오기)</td></tr>
         <tr><td class="mono">POST</td><td class="mono">/api/rooms/{roomId}/ddl/preview · /ddl/import</td><td>DDL 변경 미리보기 · 적용 (merge/replace)</td></tr>
+        <tr><td class="mono">POST</td><td class="mono">/api/rooms/{roomId}/smart/preview · /smart/import</td><td>Smart Query JSON 미리보기 · 적용 (merge/replace)</td></tr>
         <tr><td class="mono">GET / POST</td><td class="mono">/api/rooms/{roomId}/history · /history/{id}/diff · /history/{id}/restore</td><td>변경 이력 조회 · 직전 이력과의 스냅샷 비교 · 시점 복원</td></tr>
         <tr><td class="mono">GET / POST</td><td class="mono">/sse · /message</td><td>MCP SSE 스트림 · JSON-RPC 요청</td></tr>
       </tbody>

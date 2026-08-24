@@ -113,8 +113,9 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
       <li><span class="sha">03e161d</span><span><b>메모 크기 자유 조절</b><small>편집 모드에서 메모 우하단 모서리 드래그로 폭·높이 조절(90~800px, 내용 높이가 하한) — 새 op <span class="mono">memo.resize</span>, 텍스트는 폭에 맞춰 자동 줄바꿈, Undo 시 이전 크기(최초엔 기본 크기)로 복귀, 크기 미지정 기존 메모 행 하위 호환</small></span></li>
       <li><span class="sha">91703f9</span><span><b>캔버스 팬 시 관계 강조 유지 버그 수정</b><small>테이블 클릭으로 관계를 강조한 상태에서 배경을 드래그(팬)만 해도 강조가 풀리던 문제 — 해제를 mousedown이 아닌 mouseup 시점에 4px 이하 제자리 클릭일 때만 수행하도록 변경, 빈 배경 클릭으로 해제하는 기존 동작은 유지</small></span></li>
       <li><span class="sha">3b44f49</span><span><b>이력 diff 뷰어</b><small>이력 패널 각 행의 '비교' 버튼 — 그 시점 스냅샷을 직전 이력과 비교해 도메인/테이블(컬럼 포함)/관계/메모 단위 변경점을 ＋추가/△변경/－삭제 색상으로 모달 표시. 새 API <span class="mono">GET /history/{id}/diff</span>(스냅샷 쌍 반환, diff 계산은 프론트), 방의 첫 이력은 전체가 추가로 표시</small></span></li>
+      <li><span class="sha">1cb6396</span><span><b>Smart Query식 라이브 스키마 임포트</b><small>DB에 직접 연결하지 않고 살아있는 스키마 가져오기 — 스키마 불러오기 모달의 Smart Query 탭에서 방언(MySQL·MariaDB/PostgreSQL)별 추출 쿼리를 복사해 내 DB 클라이언트에서 실행하고, 결과 JSON을 붙여넣으면 임포트. 크리덴셜이 서버에 전달되지 않으며, 미리보기·병합/교체·도메인 분류·관계 추론은 DDL 임포트 파이프라인 재사용 (<span class="mono">POST /smart/preview·import</span>)</small></span></li>
     </ul></div>
-    <div class="feat-tags"><span class="feat-tag new">+ 메모–테이블 연결</span><span class="feat-tag new">+ 메모 크기 조절</span><span class="feat-tag new">+ 이력 diff 뷰어</span><span class="feat-tag">팬 강조 유지 버그 수정</span></div>
+    <div class="feat-tags"><span class="feat-tag new">+ 메모–테이블 연결</span><span class="feat-tag new">+ 메모 크기 조절</span><span class="feat-tag new">+ 이력 diff 뷰어</span><span class="feat-tag new">+ Smart Query 임포트</span><span class="feat-tag">팬 강조 유지 버그 수정</span></div>
   </div>
 
   <div class="release milestone">
