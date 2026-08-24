@@ -4,6 +4,7 @@ import com.daou.erdstudio.service.DdlImportService;
 import com.daou.erdstudio.service.DdlImportService.ImportPlan;
 import com.daou.erdstudio.service.OpService;
 import com.daou.erdstudio.service.RoomService;
+import com.daou.erdstudio.service.SmartQueryParser;
 import com.daou.erdstudio.web.dto.Op;
 import com.daou.erdstudio.ws.OpBroadcaster;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,22 +18,28 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-/** 방 단위 DDL 임포트 API — preview 로 변경 요약을 확인하고 import 로 적용한다. */
+/**
+ * Smart Query 임포트 API — 추출 쿼리 결과 JSON 을 받아 DDL 임포트와 같은
+ * preview → import 흐름으로 처리한다. 추출 쿼리 자체는 프론트엔드가 제공한다.
+ */
 @RestController
-@RequestMapping("/api/rooms/{roomId}/ddl")
-public class DdlController {
+@RequestMapping("/api/rooms/{roomId}/smart")
+public class SmartImportController {
 
-    public record DdlRequest(String ddl, String mode) {
+    public record SmartRequest(String json, String mode) {
     }
 
+    private final SmartQueryParser smartQueryParser;
     private final DdlImportService ddlImportService;
     private final OpService opService;
     private final RoomService roomService;
     private final OpBroadcaster opBroadcaster;
     private final ObjectMapper objectMapper;
 
-    public DdlController(DdlImportService ddlImportService, OpService opService, RoomService roomService,
-                         OpBroadcaster opBroadcaster, ObjectMapper objectMapper) {
+    public SmartImportController(SmartQueryParser smartQueryParser, DdlImportService ddlImportService,
+                                 OpService opService, RoomService roomService,
+                                 OpBroadcaster opBroadcaster, ObjectMapper objectMapper) {
+        this.smartQueryParser = smartQueryParser;
         this.ddlImportService = ddlImportService;
         this.opService = opService;
         this.roomService = roomService;
@@ -41,37 +48,24 @@ public class DdlController {
     }
 
     @PostMapping("/preview")
-    public Map<String, Object> preview(@PathVariable Long roomId, @RequestBody DdlRequest req) {
+    public Map<String, Object> preview(@PathVariable Long roomId, @RequestBody SmartRequest req) {
         roomService.requireExists(roomId);
-        ImportPlan plan = ddlImportService.plan(roomId, req.ddl(), req.mode());
-        return summaryJson(plan);
+        ImportPlan plan = ddlImportService.plan(roomId, smartQueryParser.parse(req.json()), req.mode());
+        return DdlController.summaryJson(plan);
     }
 
     /** 적용 — schema.replace op 단일 경로로 기록·브로드캐스트된다. */
     @PostMapping("/import")
-    public Map<String, Object> importDdl(@PathVariable Long roomId, @RequestBody DdlRequest req,
-                                         @RequestHeader(value = "X-User", defaultValue = "unknown") String user) {
+    public Map<String, Object> importSmart(@PathVariable Long roomId, @RequestBody SmartRequest req,
+                                           @RequestHeader(value = "X-User", defaultValue = "unknown") String user) {
         roomService.requireExists(roomId);
-        ImportPlan plan = ddlImportService.plan(roomId, req.ddl(), req.mode());
+        ImportPlan plan = ddlImportService.plan(roomId, smartQueryParser.parse(req.json()), req.mode());
         opService.validateDoc(plan.doc());
         ObjectNode payload = objectMapper.createObjectNode();
         payload.set("doc", objectMapper.valueToTree(plan.doc()));
         Op op = new Op("schema.replace", UserHeader.decode(user), payload);
         opService.apply(roomId, op);
         opBroadcaster.broadcastOp(roomId, op);
-        return summaryJson(plan);
-    }
-
-    /** 임포트 결과 요약을 응답 JSON 으로 변환한다 — Smart Query 임포트도 같은 형식을 쓴다. */
-    static Map<String, Object> summaryJson(ImportPlan plan) {
-        return Map.of("ok", true,
-                "tables", plan.doc().tables().size(),
-                "relations", plan.doc().relations().size(),
-                "added", plan.summary().added(),
-                "updated", plan.summary().updated(),
-                "removed", plan.summary().removed(),
-                "unchanged", plan.summary().unchanged(),
-                "newRelations", plan.summary().newRelations(),
-                "newDomains", plan.summary().newDomains());
+        return DdlController.summaryJson(plan);
     }
 }

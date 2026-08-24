@@ -77,8 +77,13 @@ public class DdlImportService {
     /** DDL 을 파싱해 그 방에 적용할 새 문서와 변경 요약을 만든다. 적용은 호출자가 op 로 수행한다. */
     @Transactional(readOnly = true)
     public ImportPlan plan(Long roomId, String ddl, String mode) {
+        return plan(roomId, ddlParser.parse(ddl), mode);
+    }
+
+    /** 파싱 결과(DDL/Smart Query 공용)로 새 문서와 변경 요약을 만든다. */
+    @Transactional(readOnly = true)
+    public ImportPlan plan(Long roomId, ParsedSchema parsed, String mode) {
         boolean replace = "replace".equalsIgnoreCase(mode);
-        ParsedSchema parsed = ddlParser.parse(ddl);
         SchemaDoc current = schemaService.loadDoc(roomId);
 
         Map<String, List<Object>> currentTables = new LinkedHashMap<>();

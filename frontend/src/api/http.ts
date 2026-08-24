@@ -93,6 +93,28 @@ export function importDdl(
   }).then((res) => parse(res));
 }
 
+/** Smart Query 임포트 — 추출 쿼리 결과 JSON을 미리보기/적용한다. 응답은 DDL 임포트와 동일. */
+export function previewSmart(roomId: number, json: string, mode: "merge" | "replace"): Promise<DdlImportSummary> {
+  return fetch(`/api/rooms/${roomId}/smart/preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ json, mode }),
+  }).then((res) => parse(res));
+}
+
+export function importSmart(
+  roomId: number,
+  json: string,
+  mode: "merge" | "replace",
+  user: string,
+): Promise<DdlImportSummary> {
+  return fetch(`/api/rooms/${roomId}/smart/import`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...userHeader(user) },
+    body: JSON.stringify({ json, mode }),
+  }).then((res) => parse(res));
+}
+
 export function fetchHistory(roomId: number, limit = 50): Promise<HistoryEntry[]> {
   return fetch(`/api/rooms/${roomId}/history?limit=${limit}`).then((res) => parse<HistoryEntry[]>(res));
 }

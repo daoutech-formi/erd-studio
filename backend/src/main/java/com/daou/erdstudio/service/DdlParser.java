@@ -333,8 +333,9 @@ public class DdlParser {
      * 타입 정규화 — int(11)→int, unsigned→"uns" 축약.
      * PostgreSQL: character varying→varchar, double precision→double,
      * serial 계열→정수 타입, with/without time zone→tz 접미사/제거.
+     * Smart Query 임포트(카탈로그 타입 문자열)도 같은 규칙을 쓴다.
      */
-    private String normalizeType(String rawType, boolean unsigned) {
+    public static String normalizeType(String rawType, boolean unsigned) {
         String type = rawType.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
         type = type.replace("character varying", "varchar")
                 .replace("double precision", "double")

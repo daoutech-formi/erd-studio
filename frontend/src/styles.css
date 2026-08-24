@@ -347,6 +347,17 @@ select.ci { appearance: auto; }
 .diff-detail { margin-left: 8px; color: var(--muted); font-size: 11px; }
 .diff-sub { font-size: 11px; margin-top: 2px; word-break: break-all; }
 
+/* ---------- 스키마 불러오기 (DDL/Smart Query) 탭 ---------- */
+.import-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+.import-tabs button {
+  padding: 5px 12px; font-size: 12px; border-radius: 6px; cursor: pointer;
+  background: var(--bg); border: 1px solid var(--border-strong); color: var(--muted);
+}
+.import-tabs button.on {
+  background: var(--surface); color: var(--text); font-weight: 600;
+  border-color: var(--text);
+}
+
 /* ---------- DDL 임포트 미리보기 ---------- */
 .ddl-preview {
   margin-top: 10px; padding: 10px 12px; font-size: 12px; line-height: 1.7;
