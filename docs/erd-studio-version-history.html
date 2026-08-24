@@ -117,8 +117,9 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
       <li><span class="sha">a5433c4</span><span><b>메모–테이블 연결 및 클릭 하이라이트</b><small>메모 편집 모달에서 테이블을 최대 10개 연결(🔗n 배지 상시 표시) — 조회 모드에서 메모 클릭 시 연결 테이블과 그 사이 관계선만 강조, 테이블 선택 시 연결된 메모는 흐려지지 않음. 테이블 이름 변경/삭제에 links 자동 추종, Undo·이력·기존 5요소 메모 행 하위 호환</small></span></li>
       <li><span class="sha">03e161d</span><span><b>메모 크기 자유 조절</b><small>편집 모드에서 메모 우하단 모서리 드래그로 폭·높이 조절(90~800px, 내용 높이가 하한) — 새 op <span class="mono">memo.resize</span>, 텍스트는 폭에 맞춰 자동 줄바꿈, Undo 시 이전 크기(최초엔 기본 크기)로 복귀, 크기 미지정 기존 메모 행 하위 호환</small></span></li>
       <li><span class="sha">91703f9</span><span><b>캔버스 팬 시 관계 강조 유지 버그 수정</b><small>테이블 클릭으로 관계를 강조한 상태에서 배경을 드래그(팬)만 해도 강조가 풀리던 문제 — 해제를 mousedown이 아닌 mouseup 시점에 4px 이하 제자리 클릭일 때만 수행하도록 변경, 빈 배경 클릭으로 해제하는 기존 동작은 유지</small></span></li>
+      <li><span class="sha">3b44f49</span><span><b>이력 diff 뷰어</b><small>이력 패널 각 행의 '비교' 버튼 — 그 시점 스냅샷을 직전 이력과 비교해 도메인/테이블(컬럼 포함)/관계/메모 단위 변경점을 ＋추가/△변경/－삭제 색상으로 모달 표시. 새 API <span class="mono">GET /history/{id}/diff</span>(스냅샷 쌍 반환, diff 계산은 프론트), 방의 첫 이력은 전체가 추가로 표시</small></span></li>
     </ul></div>
-    <div class="feat-tags"><span class="feat-tag new">+ 캔버스 메모</span><span class="feat-tag new">+ 메모 op 4종</span><span class="feat-tag new">+ 메모–테이블 연결</span><span class="feat-tag new">+ 메모 크기 조절</span><span class="feat-tag">이력 패널 한글화·확대</span><span class="feat-tag">드래그 팬 버그 수정</span></div>
+    <div class="feat-tags"><span class="feat-tag new">+ 캔버스 메모</span><span class="feat-tag new">+ 메모 op 4종</span><span class="feat-tag new">+ 메모–테이블 연결</span><span class="feat-tag new">+ 메모 크기 조절</span><span class="feat-tag new">+ 이력 diff 뷰어</span><span class="feat-tag">이력 패널 한글화·확대</span><span class="feat-tag">드래그 팬 버그 수정</span></div>
   </div>
 
   <div class="release milestone">

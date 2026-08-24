@@ -92,7 +92,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
   <div class="stats">
     <div class="stat"><b>v1.4</b><span>현재 버전 (캔버스 메모)</span></div>
     <div class="stat"><b>6</b><span>기능 카테고리</span></div>
-    <div class="stat"><b>13</b><span>REST 엔드포인트</span></div>
+    <div class="stat"><b>14</b><span>REST 엔드포인트</span></div>
     <div class="stat"><b>6</b><span>MCP 도구</span></div>
     <div class="stat"><b>107</b><span>시드 테이블 (관계 122)</span></div>
   </div>
@@ -144,6 +144,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
         <li>캔버스 스티키 메모 <small>다이어그램 위에 붙이는 공유 메모 — 색상 4종, 드래그 이동, 우하단 모서리 드래그로 크기 조절(90~800px, 내용 높이가 하한), 테이블 연결(메모당 최대 10개), 최대 500자·방당 200개, 실시간 동기화·이력·Undo·이미지 내보내기 포함</small></li>
         <li>노드 배치 저장 <small>드래그 위치가 방 전원에게 동일하게 유지</small></li>
         <li>변경 이력 + 시점 복원 <small>누가 언제 무엇을 바꿨는지 최근 50건(작업명 한글 표기), op마다 전체 스냅샷(방당 1,000개)</small></li>
+        <li>이력 diff 뷰어 <small>이력별 '비교' 버튼 — 직전 이력과의 차이를 도메인/테이블(컬럼 포함)/관계/메모 단위로 ＋추가/△변경/－삭제 색상 표시, 첫 이력은 전체가 추가로 표시</small></li>
       </ul>
     </div>
     <div class="entity">
@@ -215,7 +216,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
         <tr><td class="mono">PUT</td><td class="mono">/api/rooms/creator-name</td><td>이름 변경 시 내가 만든 방들의 생성자 표시명 갱신</td></tr>
         <tr><td class="mono">GET / PUT</td><td class="mono">/api/rooms/{roomId}/schema</td><td>전체 스키마 조회 / 전체 교체 (JSON 불러오기)</td></tr>
         <tr><td class="mono">POST</td><td class="mono">/api/rooms/{roomId}/ddl/preview · /ddl/import</td><td>DDL 변경 미리보기 · 적용 (merge/replace)</td></tr>
-        <tr><td class="mono">GET / POST</td><td class="mono">/api/rooms/{roomId}/history · /history/{id}/restore</td><td>변경 이력 조회 · 시점 복원</td></tr>
+        <tr><td class="mono">GET / POST</td><td class="mono">/api/rooms/{roomId}/history · /history/{id}/diff · /history/{id}/restore</td><td>변경 이력 조회 · 직전 이력과의 스냅샷 비교 · 시점 복원</td></tr>
         <tr><td class="mono">GET / POST</td><td class="mono">/sse · /message</td><td>MCP SSE 스트림 · JSON-RPC 요청</td></tr>
       </tbody>
     </table>
@@ -245,7 +246,7 @@ footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font
 </section>
 
 <footer>
-  기준일 2026-08-21 · 코드베이스 전수 조사 기반 · 관련 문서:
+  기준일 2026-08-24 · 코드베이스 전수 조사 기반 · 관련 문서:
   <a href="erd-studio-version-history.html">버전 진화 히스토리</a> ·
   <a href="erd-market-research.html">시장조사 리포트</a>
 </footer>
