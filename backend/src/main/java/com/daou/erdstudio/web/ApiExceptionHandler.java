@@ -1,5 +1,7 @@
 package com.daou.erdstudio.web;
 
+import com.daou.erdstudio.common.ForbiddenException;
+import com.daou.erdstudio.common.UnauthorizedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -19,6 +21,18 @@ public class ApiExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> badRequest(IllegalArgumentException e) {
+        return Map.of("error", e.getMessage());
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public Map<String, String> unauthorized(UnauthorizedException e) {
+        return Map.of("error", e.getMessage());
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public Map<String, String> forbidden(ForbiddenException e) {
         return Map.of("error", e.getMessage());
     }
 

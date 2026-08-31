@@ -68,10 +68,13 @@ export function App() {
   }, [dispatch]);
 
   const enterRoom = useCallback(
-    (next: RoomInfo) => {
+    (next: RoomInfo, forceReadonly = false) => {
       setNotice("");
       undoManager.clear();
       dispatch({ type: "reset" });
+      if (forceReadonly) {
+        setReadonly(true);   // 뷰어 권한 — 편집 UI 를 숨긴다(서버도 쓰기를 403 으로 막는다).
+      }
       setRoom(next);
     },
     [dispatch],

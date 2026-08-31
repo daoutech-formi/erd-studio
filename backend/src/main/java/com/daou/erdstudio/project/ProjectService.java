@@ -20,12 +20,15 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final ErdRoomRepository roomRepository;
+    private final ProjectMemberRepository memberRepository;
 
     private final SecureRandom random = new SecureRandom();
 
-    public ProjectService(ProjectRepository projectRepository, ErdRoomRepository roomRepository) {
+    public ProjectService(ProjectRepository projectRepository, ErdRoomRepository roomRepository,
+                          ProjectMemberRepository memberRepository) {
         this.projectRepository = projectRepository;
         this.roomRepository = roomRepository;
+        this.memberRepository = memberRepository;
     }
 
     @Transactional(readOnly = true)
@@ -58,6 +61,12 @@ public class ProjectService {
 
     @Transactional
     public Project create(String name) {
+        return create(name, null);
+    }
+
+    /** 프로젝트를 만들고, 로그인 사용자가 만들면 그 계정을 ADMIN 멤버로 등록한다. */
+    @Transactional
+    public Project create(String name, Long creatorUserId) {
         String trimmed = name == null ? "" : name.trim();
         if (trimmed.isEmpty()) {
             throw new IllegalArgumentException("프로젝트 이름을 입력하세요.");
@@ -68,7 +77,11 @@ public class ProjectService {
         if (projectRepository.existsByName(trimmed)) {
             throw new IllegalArgumentException("이미 존재하는 프로젝트 이름입니다.");
         }
-        return projectRepository.save(new Project(newSlug(), trimmed));
+        Project project = projectRepository.save(new Project(newSlug(), trimmed));
+        if (creatorUserId != null) {
+            memberRepository.save(new ProjectMember(project.getId(), creatorUserId, ProjectRole.ADMIN));
+        }
+        return project;
     }
 
     /** 빈 프로젝트만 지울 수 있다. legacy 는 폴백 대상이므로 지울 수 없다. */
@@ -82,6 +95,7 @@ public class ProjectService {
         if (roomRepository.countByProjectId(project.getId()) > 0) {
             throw new IllegalArgumentException("방이 있는 프로젝트는 삭제할 수 없습니다. 방을 먼저 정리하세요.");
         }
+        memberRepository.deleteByProjectId(project.getId());
         projectRepository.delete(project);
     }
 

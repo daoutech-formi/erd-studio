@@ -5,6 +5,7 @@ import {
 } from "../api/http";
 import { clientKey, type UserInfo } from "../state/user";
 import { McpGuideModal } from "./McpGuideModal";
+import { MembersModal } from "./MembersModal";
 import { NameModal } from "./NameModal";
 import { ThemeToggle } from "./ThemeToggle";
 
@@ -18,7 +19,8 @@ interface Props {
   me: Me | null;
   /** 입장이 거절되었을 때 서버가 보낸 안내 문구. */
   notice: string;
-  onEnter: (room: RoomInfo) => void;
+  /** 뷰어 프로젝트의 방은 forceReadonly=true 로 들어가 편집 UI 를 숨긴다. */
+  onEnter: (room: RoomInfo, forceReadonly?: boolean) => void;
   /** 이름 변경 저장 시 새 사용자 정보를 상위(App)에 반영한다. */
   onUserChange: (user: UserInfo) => void;
   onLogout: () => void;
@@ -30,11 +32,19 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
   const [projects, setProjects] = useState<Project[]>([]);
   /** 현재 선택된 프로젝트 slug — API 요청 헤더(X-Project-Id)와 항상 함께 바꾼다. */
   const [projectSlug, setProjectSlug] = useState<string>(getProject());
+  /** 프로젝트 목록 최초 로드 완료 여부 — 완료 전에는 방 목록을 조회하지 않는다(권한 오류 깜빡임 방지). */
+  const [projectsReady, setProjectsReady] = useState(false);
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [mcpOpen, setMcpOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const [membersOpen, setMembersOpen] = useState(false);
+
+  const currentProject = projects.find((p) => p.slug === projectSlug) ?? null;
+  /** SSO 켠 환경에서 현재 프로젝트의 내 역할이 뷰어면 쓰기 UI 를 잠근다(서버도 403 으로 막는다). */
+  const viewer = Boolean(me?.oidcEnabled && currentProject?.myRole === "VIEWER");
+  const projectAdmin = Boolean(me?.oidcEnabled && currentProject?.myRole === "ADMIN");
 
   const load = useCallback(() => {
     fetchRooms()
@@ -45,7 +55,7 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
       .catch((e: Error) => setError(`방 목록을 불러오지 못했습니다: ${e.message}`));
   }, []);
 
-  /** 프로젝트 목록 조회 — 저장된 slug 가 지워진 프로젝트면 legacy 로 되돌린다. */
+  /** 프로젝트 목록 조회 — 저장된 slug 가 안 보이는(지워진/권한 없는) 프로젝트면 보이는 것으로 되돌린다. */
   const loadProjects = useCallback(() => {
     fetchProjects()
       .then((list) => {
@@ -57,7 +67,12 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
         if (valid) {
           setProject(valid.slug);
           setProjectSlug(valid.slug);
+        } else {
+          setProject("");
+          setProjectSlug("");
+          setRooms([]);
         }
+        setProjectsReady(true);
       })
       .catch(() => {});
   }, []);
@@ -65,10 +80,14 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
   useEffect(loadProjects, [loadProjects]);
 
   useEffect(() => {
+    // 속한 프로젝트가 없으면(비멤버 로그인) 방 목록을 조회하지 않는다 — 서버가 어차피 거절한다.
+    if (!projectsReady || (me?.oidcEnabled && projectSlug === "")) {
+      return;
+    }
     load();
     const timer = window.setInterval(load, REFRESH_MS);
     return () => window.clearInterval(timer);
-  }, [load, projectSlug]);
+  }, [load, projectSlug, projectsReady, me]);
 
   const changeProject = (slug: string) => {
     setProject(slug);
@@ -106,6 +125,33 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
   };
 
   const full = rooms.length >= MAX_ROOMS;
+
+  // SSO 가 켜져 있고 미로그인 — 목록 대신 로그인 안내만 보여준다(서버도 어차피 거절한다).
+  if (me && me.oidcEnabled && !me.authenticated) {
+    return (
+      <div className="room-screen">
+        <header className="room-header">
+          <div>
+            <h1>ERD Studio</h1>
+            <div className="sub">사내 SSO 로 로그인하면 내가 속한 프로젝트의 ERD 를 볼 수 있습니다.</div>
+          </div>
+          <div className="room-header-right">
+            <ThemeToggle />
+          </div>
+        </header>
+        {notice && <div className="room-notice">{notice}</div>}
+        <div className="room-empty">
+          <p style={{ marginBottom: 12 }}>로그인이 필요합니다.</p>
+          <button
+            className="primary"
+            onClick={() => { window.location.href = "/api/auth/oidc/login"; }}
+          >
+            사내 SSO 로 로그인
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const create = () => {
     const trimmed = name.trim();
@@ -196,28 +242,40 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
           ))}
         </select>
         <button onClick={addProject} disabled={busy}>＋ 프로젝트</button>
-        {projectSlug !== "legacy" && rooms.length === 0 && (
+        {projectAdmin && (
+          <button onClick={() => setMembersOpen(true)} disabled={busy}>👥 멤버 관리</button>
+        )}
+        {projectSlug !== "legacy" && projectSlug !== "" && rooms.length === 0 && !viewer && (
           <button className="mini danger" onClick={removeProject} disabled={busy}>
             프로젝트 삭제
           </button>
         )}
+        {viewer && <span className="room-hint">뷰어 권한 — 열람만 가능합니다.</span>}
       </div>
 
-      <div className="room-create">
-        <input
-          className="fi"
-          value={name}
-          maxLength={30}
-          placeholder="새 방 이름 (30자 이내)"
-          disabled={full || busy}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && !full && !busy && create()}
-        />
-        <button className="primary" onClick={create} disabled={full || busy}>
-          ＋ 방 만들기
-        </button>
-        {full && <span className="room-hint">방이 {MAX_ROOMS}개로 가득 찼습니다. 사용하지 않는 방을 삭제하세요.</span>}
-      </div>
+      {projectsReady && me?.oidcEnabled && projects.length === 0 && (
+        <div className="room-empty">
+          아직 속한 프로젝트가 없습니다. 위의 ＋ 프로젝트로 직접 만들거나, 프로젝트 관리자에게 초대를 요청하세요.
+        </div>
+      )}
+
+      {!viewer && projectSlug !== "" && (
+        <div className="room-create">
+          <input
+            className="fi"
+            value={name}
+            maxLength={30}
+            placeholder="새 방 이름 (30자 이내)"
+            disabled={full || busy}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && !full && !busy && create()}
+          />
+          <button className="primary" onClick={create} disabled={full || busy}>
+            ＋ 방 만들기
+          </button>
+          {full && <span className="room-hint">방이 {MAX_ROOMS}개로 가득 찼습니다. 사용하지 않는 방을 삭제하세요.</span>}
+        </div>
+      )}
 
       {rooms.length === 0 ? (
         <div className="room-empty">아직 만들어진 방이 없습니다. 첫 방을 만들어 보세요.</div>
@@ -229,21 +287,23 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
               className="room-card"
               role="button"
               tabIndex={0}
-              onClick={() => onEnter(room)}
-              onKeyDown={(e) => e.key === "Enter" && onEnter(room)}
+              onClick={() => onEnter(room, viewer)}
+              onKeyDown={(e) => e.key === "Enter" && onEnter(room, viewer)}
             >
               <div className="rc-top">
                 <span className="rc-name">{room.name}</span>
-                <button
-                  className="mini danger"
-                  title="방 삭제"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    remove(room);
-                  }}
-                >
-                  삭제
-                </button>
+                {!viewer && (
+                  <button
+                    className="mini danger"
+                    title="방 삭제"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      remove(room);
+                    }}
+                  >
+                    삭제
+                  </button>
+                )}
               </div>
               <div className="rc-badges">
                 <span className="rc-badge">테이블 {room.tableCount}개</span>
@@ -259,6 +319,14 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
         </div>
       )}
       {mcpOpen && <McpGuideModal onClose={() => setMcpOpen(false)} />}
+      {membersOpen && currentProject && (
+        <MembersModal
+          slug={currentProject.slug}
+          projectName={currentProject.name}
+          onClose={() => setMembersOpen(false)}
+          onSaved={loadProjects}
+        />
+      )}
       {renaming && (
         <NameModal
           initialName={user.name}

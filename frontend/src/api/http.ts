@@ -36,12 +36,17 @@ function afetch(input: string, init: RequestInit = {}): Promise<Response> {
   return fetch(input, { ...init, headers });
 }
 
+/** 프로젝트 멤버십 역할. SSO 미사용·비멤버는 null. */
+export type ProjectRole = "ADMIN" | "EDITOR" | "VIEWER";
+
 /** 프로젝트 — ERD 방의 묶음. */
 export interface Project {
   id: number;
   slug: string;
   name: string;
   roomCount: number;
+  /** 내 역할 — superAdmin 은 ADMIN 으로 내려온다. */
+  myRole: ProjectRole | null;
 }
 
 export function fetchProjects(): Promise<Project[]> {
@@ -58,6 +63,42 @@ export function createProject(name: string): Promise<Project> {
 
 export function deleteProject(slug: string): Promise<{ ok: boolean }> {
   return afetch(`/api/projects/${encodeURIComponent(slug)}`, { method: "DELETE" }).then((res) => parse(res));
+}
+
+// --- 프로젝트 멤버 관리 (프로젝트 ADMIN 전용) ---
+
+export interface ProjectMemberInfo {
+  userId: number;
+  username: string | null;
+  displayName: string | null;
+  role: ProjectRole;
+}
+
+export interface AssignableUser {
+  id: number;
+  username: string;
+  displayName: string;
+}
+
+export function fetchMembers(slug: string): Promise<ProjectMemberInfo[]> {
+  return afetch(`/api/projects/${encodeURIComponent(slug)}/members`).then((res) => parse<ProjectMemberInfo[]>(res));
+}
+
+/** 멤버 목록을 통째로 교체한다. 새 목록에 관리자가 1명 이상 있어야 한다. */
+export function replaceMembers(
+  slug: string,
+  members: { userId: number; role: ProjectRole }[],
+): Promise<{ ok: boolean }> {
+  return afetch(`/api/projects/${encodeURIComponent(slug)}/members`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ members }),
+  }).then((res) => parse(res));
+}
+
+export function fetchAssignableUsers(slug: string): Promise<AssignableUser[]> {
+  return afetch(`/api/projects/${encodeURIComponent(slug)}/assignable-users`)
+    .then((res) => parse<AssignableUser[]>(res));
 }
 
 /** 현재 로그인 상태. oidcEnabled 가 false 면 로그인 버튼 자체를 숨긴다. */
