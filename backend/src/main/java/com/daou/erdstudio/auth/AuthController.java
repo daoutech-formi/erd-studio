@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 /** 로그아웃/현재 로그인 상태 조회. 로그인 진입은 OidcController 가 담당한다. */
 @RestController
 @RequestMapping("/api/auth")
@@ -31,6 +33,12 @@ public class AuthController {
     @GetMapping("/me")
     public MeView me() {
         return authService.me(AuthContext.get());
+    }
+
+    /** 개인 MCP 토큰 발급/재발급 — 원문은 이 응답에서만 노출되고 서버엔 해시만 남는다. */
+    @PostMapping("/mcp-token")
+    public Map<String, String> issueMcpToken() {
+        return Map.of("token", authService.issueMcpToken(AuthContext.get()));
     }
 
     /** 배포가 HTTP 인 환경을 고려해 Secure 는 붙이지 않는다. */

@@ -1,5 +1,10 @@
 package com.daou.erdstudio.ws;
 
+import com.daou.erdstudio.auth.Principal;
+import com.daou.erdstudio.domain.ErdRoom;
+import com.daou.erdstudio.project.Level;
+import com.daou.erdstudio.project.PermissionService;
+import com.daou.erdstudio.project.ProjectService;
 import com.daou.erdstudio.service.OpService;
 import com.daou.erdstudio.service.RoomService;
 import com.daou.erdstudio.web.dto.Op;
@@ -28,21 +33,29 @@ public class ErdSocketHandler extends TextWebSocketHandler {
     private static final Logger log = LoggerFactory.getLogger(ErdSocketHandler.class);
     private static final int MAX_CLIENT_KEY_LENGTH = 64;
 
+    /** hello 통과 시 계산한 유효 권한(Level)을 세션 attributes 에 보관하는 키. */
+    static final String ATTR_LEVEL = "erd.level";
+
     private final SessionRegistry sessions;
     private final LockRegistry locks;
     private final OpService opService;
     private final RoomService roomService;
     private final OpBroadcaster opBroadcaster;
     private final ObjectMapper objectMapper;
+    private final PermissionService permissionService;
+    private final ProjectService projectService;
 
     public ErdSocketHandler(SessionRegistry sessions, LockRegistry locks, OpService opService,
-                            RoomService roomService, OpBroadcaster opBroadcaster, ObjectMapper objectMapper) {
+                            RoomService roomService, OpBroadcaster opBroadcaster, ObjectMapper objectMapper,
+                            PermissionService permissionService, ProjectService projectService) {
         this.sessions = sessions;
         this.locks = locks;
         this.opService = opService;
         this.roomService = roomService;
         this.opBroadcaster = opBroadcaster;
         this.objectMapper = objectMapper;
+        this.permissionService = permissionService;
+        this.projectService = projectService;
     }
 
     @Override
@@ -98,12 +111,24 @@ public class ErdSocketHandler extends TextWebSocketHandler {
             sendError(session, "브라우저 식별자가 올바르지 않습니다.");
             return;
         }
+        ErdRoom room;
         try {
-            roomService.requireExists(roomId);
+            room = roomService.get(roomId);
         } catch (IllegalArgumentException e) {
             sendFatal(session, e.getMessage());
             return;
         }
+        // 방 프로젝트에 대한 유효 권한 — SSO 미사용이면 ADMIN 이라 기존처럼 전원 통과한다.
+        Principal principal = WsAuthHandshakeInterceptor.principalOf(session.getAttributes());
+        Long projectId = room.getProjectId() != null ? room.getProjectId() : projectService.ensureLegacy().getId();
+        Level level = permissionService.levelFor(principal, projectId);
+        if (!level.satisfies(Level.READ)) {
+            sendFatal(session, principal.authenticated()
+                    ? "이 프로젝트에 대한 권한이 없습니다. 프로젝트 관리자에게 문의하세요."
+                    : "로그인이 필요합니다.");
+            return;
+        }
+        session.getAttributes().put(ATTR_LEVEL, level);
         if (!sessions.joinRoom(session.getId(), roomId, clientKey, user, msg.path("color").asText("#4f8cff"))) {
             sendFatal(session, "방 정원(" + SessionRegistry.MAX_USERS_PER_ROOM + "명)이 가득 찼습니다.");
             return;
@@ -116,6 +141,10 @@ public class ErdSocketHandler extends TextWebSocketHandler {
         Long roomId = sessions.roomOf(session.getId());
         if (roomId == null) {
             sendError(session, "방에 입장한 뒤에 편집할 수 있습니다.");
+            return;
+        }
+        if (!canWrite(session)) {
+            sendError(session, "뷰어 권한으로는 편집할 수 없습니다.");
             return;
         }
         Op op = objectMapper.treeToValue(msg.path("op"), Op.class);
@@ -136,6 +165,10 @@ public class ErdSocketHandler extends TextWebSocketHandler {
             sendError(session, "방에 입장한 뒤에 편집할 수 있습니다.");
             return;
         }
+        if (!canWrite(session)) {
+            sendError(session, "뷰어 권한으로는 편집할 수 없습니다.");
+            return;
+        }
         String table = msg.path("table").asText("");
         if ("acquire".equals(msg.path("action").asText(""))) {
             locks.acquire(roomId, table, session.getId());
@@ -151,12 +184,21 @@ public class ErdSocketHandler extends TextWebSocketHandler {
             sendError(session, "방에 입장한 뒤에 편집할 수 있습니다.");
             return;
         }
+        if (!canWrite(session)) {
+            sendError(session, "뷰어 권한으로는 편집할 수 없습니다.");
+            return;
+        }
         Map<String, Object> relay = Map.of("kind", "move",
                 "table", msg.path("table").asText(""),
                 "x", msg.path("x").asDouble(),
                 "y", msg.path("y").asDouble(),
                 "id", session.getId());
         sessions.broadcastExcept(roomId, session.getId(), objectMapper.writeValueAsString(relay));
+    }
+
+    /** hello 에서 저장한 유효 권한이 WRITE 이상인지 — 역할 변경은 재입장 시 반영된다. */
+    private static boolean canWrite(WebSocketSession session) {
+        return session.getAttributes().get(ATTR_LEVEL) instanceof Level level && level.satisfies(Level.WRITE);
     }
 
     private void broadcastPresence(Long roomId) throws Exception {

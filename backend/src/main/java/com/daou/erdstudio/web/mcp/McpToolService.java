@@ -1,6 +1,11 @@
 package com.daou.erdstudio.web.mcp;
 
+import com.daou.erdstudio.auth.Principal;
 import com.daou.erdstudio.domain.ErdRoom;
+import com.daou.erdstudio.project.Level;
+import com.daou.erdstudio.project.PermissionService;
+import com.daou.erdstudio.project.Project;
+import com.daou.erdstudio.project.ProjectService;
 import com.daou.erdstudio.repository.ErdTableRepository;
 import com.daou.erdstudio.service.DdlImportService;
 import com.daou.erdstudio.service.DdlImportService.ImportPlan;
@@ -19,6 +24,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * MCP 로 노출하는 도구 모음 — 기존 서비스(방/스키마/DDL 임포트)를 그대로 감싼다.
@@ -37,10 +44,13 @@ public class McpToolService {
     private final OpBroadcaster opBroadcaster;
     private final DdlImportService ddlImportService;
     private final ObjectMapper objectMapper;
+    private final PermissionService permissionService;
+    private final ProjectService projectService;
 
     public McpToolService(RoomService roomService, ErdTableRepository tableRepository,
                           SchemaService schemaService, OpService opService, OpBroadcaster opBroadcaster,
-                          DdlImportService ddlImportService, ObjectMapper objectMapper) {
+                          DdlImportService ddlImportService, ObjectMapper objectMapper,
+                          PermissionService permissionService, ProjectService projectService) {
         this.roomService = roomService;
         this.tableRepository = tableRepository;
         this.schemaService = schemaService;
@@ -48,6 +58,8 @@ public class McpToolService {
         this.opBroadcaster = opBroadcaster;
         this.ddlImportService = ddlImportService;
         this.objectMapper = objectMapper;
+        this.permissionService = permissionService;
+        this.projectService = projectService;
     }
 
     /** tools/list 응답용 도구 정의. */
@@ -108,23 +120,33 @@ public class McpToolService {
         return def;
     }
 
-    /** tools/call 실행. 입력 오류는 IllegalArgumentException(한국어 메시지)으로 던진다. */
-    public JsonNode call(String name, JsonNode args) {
+    /**
+     * tools/call 실행. 입력 오류는 IllegalArgumentException(한국어 메시지)으로 던진다.
+     * 권한은 주체(principal)의 방 프로젝트 수준으로 검사한다 — SSO 미사용이면 전원 ADMIN 이라 기존 동작이다.
+     */
+    public JsonNode call(String name, JsonNode args, Principal principal) {
         return switch (name) {
-            case "list_rooms" -> listRooms();
-            case "create_room" -> createRoom(args);
-            case "get_schema" -> getSchema(requireRoomId(args));
-            case "replace_schema" -> replaceSchema(requireRoomId(args), args);
-            case "preview_ddl" -> previewDdl(requireRoomId(args), args);
-            case "import_ddl" -> importDdl(requireRoomId(args), args);
+            case "list_rooms" -> listRooms(principal);
+            case "create_room" -> createRoom(args, principal);
+            case "get_schema" -> getSchema(requireRoom(args, principal, Level.READ));
+            case "replace_schema" -> replaceSchema(requireRoom(args, principal, Level.WRITE), args);
+            case "preview_ddl" -> previewDdl(requireRoom(args, principal, Level.READ), args);
+            case "import_ddl" -> importDdl(requireRoom(args, principal, Level.WRITE), args);
             default -> throw new IllegalArgumentException("알 수 없는 도구입니다: " + name);
         };
     }
 
-    private JsonNode listRooms() {
+    private JsonNode listRooms(Principal principal) {
+        // 보이는 프로젝트의 방만 — SSO 미사용·superAdmin 은 전 프로젝트라 기존처럼 전체가 나온다.
+        Set<Long> visible = permissionService.visibleProjects(principal).stream()
+                .map(Project::getId)
+                .collect(Collectors.toSet());
+        Long legacyId = projectService.ensureLegacy().getId();
         List<Map<String, Object>> rooms = new ArrayList<>();
-        // MCP 는 프로젝트 컨텍스트가 없으므로 전체 방을 보여준다(프로젝트별 제한은 Phase 5).
         for (ErdRoom room : roomService.listAll()) {
+            if (!visible.contains(room.getProjectId() != null ? room.getProjectId() : legacyId)) {
+                continue;
+            }
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("id", room.getId());
             row.put("name", room.getName());
@@ -135,18 +157,18 @@ public class McpToolService {
         return objectMapper.valueToTree(Map.of("rooms", rooms));
     }
 
-    private JsonNode createRoom(JsonNode args) {
+    private JsonNode createRoom(JsonNode args, Principal principal) {
+        // MCP 는 프로젝트 컨텍스트가 없어 legacy 에 만든다 — legacy WRITE 권한을 요구한다.
+        permissionService.require(principal, projectService.ensureLegacy().getId(), Level.WRITE);
         ErdRoom room = roomService.create(args.path("name").asText(""), userOf(args));
         return objectMapper.valueToTree(Map.of("ok", true, "id", room.getId(), "name", room.getName()));
     }
 
     private JsonNode getSchema(Long roomId) {
-        roomService.requireExists(roomId);
         return objectMapper.valueToTree(schemaService.loadDoc(roomId));
     }
 
     private JsonNode replaceSchema(Long roomId, JsonNode args) {
-        roomService.requireExists(roomId);
         JsonNode docNode = args.path("doc");
         if (!docNode.isObject()) {
             throw new IllegalArgumentException("doc(스키마 문서)을 지정하세요.");
@@ -163,13 +185,11 @@ public class McpToolService {
     }
 
     private JsonNode previewDdl(Long roomId, JsonNode args) {
-        roomService.requireExists(roomId);
         ImportPlan plan = ddlImportService.plan(roomId, args.path("ddl").asText(""), modeOf(args));
         return summaryJson(plan);
     }
 
     private JsonNode importDdl(Long roomId, JsonNode args) {
-        roomService.requireExists(roomId);
         ImportPlan plan = ddlImportService.plan(roomId, args.path("ddl").asText(""), modeOf(args));
         opService.validateDoc(plan.doc());
         ObjectNode payload = objectMapper.createObjectNode();
@@ -194,11 +214,16 @@ public class McpToolService {
         return objectMapper.valueToTree(out);
     }
 
-    private Long requireRoomId(JsonNode args) {
+    /** roomId 인자 검증 + 방 존재 확인 + 방 프로젝트에 대한 요구 수준 검사. */
+    private Long requireRoom(JsonNode args, Principal principal, Level required) {
         if (!args.path("roomId").canConvertToLong()) {
             throw new IllegalArgumentException("roomId(방 ID)를 지정하세요. list_rooms 로 확인할 수 있습니다.");
         }
-        return args.path("roomId").asLong();
+        Long roomId = args.path("roomId").asLong();
+        ErdRoom room = roomService.get(roomId);
+        Long projectId = room.getProjectId() != null ? room.getProjectId() : projectService.ensureLegacy().getId();
+        permissionService.require(principal, projectId, required);
+        return roomId;
     }
 
     private String modeOf(JsonNode args) {

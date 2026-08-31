@@ -1,6 +1,7 @@
 package com.daou.erdstudio.auth;
 
 import com.daou.erdstudio.common.Hashing;
+import com.daou.erdstudio.common.UnauthorizedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -98,6 +99,30 @@ public class AuthService {
                 .map(u -> new MeView(true, u.getId(), u.getUsername(), u.getDisplayName(),
                         u.isSuperAdmin(), oidcEnabled))
                 .orElseGet(() -> new MeView(false, null, null, null, false, oidcEnabled));
+    }
+
+    /** 개인 MCP 토큰 발급/재발급 — 기존 토큰은 무효가 된다. 원문은 이 응답에서 한 번만 노출된다. */
+    @Transactional
+    public String issueMcpToken(Principal principal) {
+        if (principal == null || !principal.authenticated()) {
+            throw new UnauthorizedException("로그인이 필요합니다.");
+        }
+        AppUser user = appUserRepository.findById(principal.userId())
+                .orElseThrow(() -> new UnauthorizedException("로그인이 필요합니다."));
+        String token = newToken();
+        user.rotateMcpToken(Hashing.sha256(token));
+        return token;
+    }
+
+    /** MCP Bearer 토큰 → 계정 주체. 일치하는 계정이 없으면 null 을 반환한다(호출부가 401 처리). */
+    @Transactional(readOnly = true)
+    public Principal resolveMcpToken(String rawToken) {
+        if (rawToken == null || rawToken.isBlank()) {
+            return null;
+        }
+        return appUserRepository.findByMcpTokenHash(Hashing.sha256(rawToken))
+                .map(u -> new Principal(u.getId(), u.getUsername(), u.isSuperAdmin()))
+                .orElse(null);
     }
 
     private String newToken() {

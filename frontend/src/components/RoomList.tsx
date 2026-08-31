@@ -318,7 +318,7 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
           ))}
         </div>
       )}
-      {mcpOpen && <McpGuideModal onClose={() => setMcpOpen(false)} />}
+      {mcpOpen && <McpGuideModal me={me} onClose={() => setMcpOpen(false)} />}
       {membersOpen && currentProject && (
         <MembersModal
           slug={currentProject.slug}

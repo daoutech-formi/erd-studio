@@ -1,5 +1,10 @@
 package com.daou.erdstudio.web.mcp;
 
+import com.daou.erdstudio.auth.AuthService;
+import com.daou.erdstudio.auth.OidcProperties;
+import com.daou.erdstudio.auth.Principal;
+import com.daou.erdstudio.common.ForbiddenException;
+import com.daou.erdstudio.common.UnauthorizedException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -40,15 +45,23 @@ public class McpSseController {
     private static final String SERVER_VERSION = "1.0.0";
     private static final long KEEPALIVE_MS = 15_000;
 
+    /** 서버 토큰(ERD_MCP_TOKEN)으로 들어온 요청의 주체 — 운영·배치용이라 superAdmin 급이다. */
+    private static final Principal SERVER_PRINCIPAL = new Principal(null, "mcp-server", true);
+
     private final McpToolService tools;
     private final ObjectMapper objectMapper;
+    private final AuthService authService;
+    private final OidcProperties oidcProperties;
     private final String token;
     private final Map<String, SseSession> sessions = new ConcurrentHashMap<>();
 
     public McpSseController(McpToolService tools, ObjectMapper objectMapper,
+                            AuthService authService, OidcProperties oidcProperties,
                             @Value("${erd.mcp-token:${ERD_MCP_TOKEN:}}") String token) {
         this.tools = tools;
         this.objectMapper = objectMapper;
+        this.authService = authService;
+        this.oidcProperties = oidcProperties;
         this.token = token == null ? "" : token.trim();
     }
 
@@ -75,7 +88,7 @@ public class McpSseController {
 
     @GetMapping(value = "/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<SseEmitter> connect(@RequestHeader(value = "Authorization", required = false) String auth) {
-        if (!authorized(auth)) {
+        if (resolvePrincipal(auth) == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         String sessionId = UUID.randomUUID().toString().replace("-", "");
@@ -99,14 +112,15 @@ public class McpSseController {
     public ResponseEntity<Void> message(@RequestParam("sessionId") String sessionId,
                                         @RequestHeader(value = "Authorization", required = false) String auth,
                                         @RequestBody JsonNode body) {
-        if (!authorized(auth)) {
+        Principal principal = resolvePrincipal(auth);
+        if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         SseSession session = sessions.get(sessionId);
         if (session == null) {
             return ResponseEntity.notFound().build();
         }
-        ObjectNode response = handle(body);
+        ObjectNode response = handle(body, principal);
         if (response != null) {
             try {
                 session.sendMessage(objectMapper.writeValueAsString(response));
@@ -118,7 +132,7 @@ public class McpSseController {
     }
 
     /** JSON-RPC 요청 처리. 알림(notification)은 null 을 반환해 응답을 보내지 않는다. */
-    private ObjectNode handle(JsonNode req) {
+    private ObjectNode handle(JsonNode req, Principal principal) {
         String method = req.path("method").asText("");
         JsonNode id = req.get("id");
         boolean isNotification = id == null || id.isNull();
@@ -127,7 +141,7 @@ public class McpSseController {
                 case "initialize" -> initializeResult();
                 case "ping" -> objectMapper.createObjectNode();
                 case "tools/list" -> objectMapper.valueToTree(Map.of("tools", tools.definitions()));
-                case "tools/call" -> callTool(req.path("params"));
+                case "tools/call" -> callTool(req.path("params"), principal);
                 default -> null;
             };
             if (isNotification) {
@@ -162,14 +176,15 @@ public class McpSseController {
      * 도구 실행 — 실패는 JSON-RPC 오류가 아니라 MCP 규약대로 isError=true 결과로 돌려준다
      * (모델이 오류 메시지를 읽고 스스로 수정할 수 있게).
      */
-    private JsonNode callTool(JsonNode params) {
+    private JsonNode callTool(JsonNode params, Principal principal) {
         String name = params.path("name").asText("");
         JsonNode args = params.path("arguments");
         String text;
         boolean isError = false;
         try {
-            text = objectMapper.writeValueAsString(tools.call(name, args));
-        } catch (IllegalArgumentException e) {
+            text = objectMapper.writeValueAsString(tools.call(name, args, principal));
+        } catch (IllegalArgumentException | UnauthorizedException | ForbiddenException e) {
+            // 권한·입력 오류는 모델이 읽고 사용자에게 설명하도록 isError 결과로 돌려준다.
             text = e.getMessage();
             isError = true;
         } catch (Exception e) {
@@ -196,9 +211,25 @@ public class McpSseController {
         return response;
     }
 
-    /** ERD_MCP_TOKEN 이 설정된 경우에만 Bearer 토큰을 검사한다. 미설정이면 사내망 개방. */
-    private boolean authorized(String authHeader) {
-        return token.isEmpty() || ("Bearer " + token).equals(authHeader);
+    /**
+     * Bearer → 주체. ① 서버 토큰(ERD_MCP_TOKEN) = superAdmin 급 ② 개인 MCP 토큰 = 그 계정
+     * ③ SSO 미사용 + 서버 토큰 미설정 = 기존처럼 개방(게스트도 전권) ④ 그 외 null(401).
+     */
+    private Principal resolvePrincipal(String authHeader) {
+        String bearer = authHeader != null && authHeader.startsWith("Bearer ")
+                ? authHeader.substring("Bearer ".length()).trim()
+                : null;
+        if (!token.isEmpty() && token.equals(bearer)) {
+            return SERVER_PRINCIPAL;
+        }
+        Principal personal = authService.resolveMcpToken(bearer);
+        if (personal != null) {
+            return personal;
+        }
+        if (!oidcProperties.isEnabled() && token.isEmpty()) {
+            return Principal.guest();
+        }
+        return null;
     }
 
     /** 프록시(Traefik 등)의 유휴 연결 종료를 막는 keepalive. */

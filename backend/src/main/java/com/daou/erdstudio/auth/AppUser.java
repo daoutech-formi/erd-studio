@@ -35,6 +35,10 @@ public class AppUser extends BaseTimeEntity {
     @Column(name = "super_admin_granted", nullable = false)
     private boolean superAdminGranted;
 
+    /** 개인 MCP 토큰의 SHA-256 해시. 원문은 발급 응답에만 실리고 저장하지 않는다. */
+    @Column(name = "mcp_token_hash", length = 64, unique = true)
+    private String mcpTokenHash;
+
     protected AppUser() {
     }
 
@@ -78,5 +82,14 @@ public class AppUser extends BaseTimeEntity {
 
     public boolean isSuperAdminGranted() {
         return superAdminGranted;
+    }
+
+    /** 개인 MCP 토큰 교체 — 기존 토큰은 즉시 무효가 된다. */
+    public void rotateMcpToken(String mcpTokenHash) {
+        this.mcpTokenHash = mcpTokenHash;
+    }
+
+    public String getMcpTokenHash() {
+        return mcpTokenHash;
     }
 }

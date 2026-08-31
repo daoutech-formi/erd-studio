@@ -177,6 +177,11 @@ export function fetchMe(): Promise<Me> {
   return afetch("/api/auth/me").then((res) => parse<Me>(res));
 }
 
+/** 개인 MCP 토큰 발급/재발급 — 원문은 이 응답에서만 볼 수 있고, 재발급하면 기존 토큰은 무효가 된다. */
+export function issueMcpToken(): Promise<{ token: string }> {
+  return afetch("/api/auth/mcp-token", { method: "POST" }).then((res) => parse<{ token: string }>(res));
+}
+
 export function logout(): Promise<void> {
   return afetch("/api/auth/logout", { method: "POST" }).then((res) => {
     if (!res.ok) {

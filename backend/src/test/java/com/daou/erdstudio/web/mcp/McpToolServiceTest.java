@@ -1,5 +1,6 @@
 package com.daou.erdstudio.web.mcp;
 
+import com.daou.erdstudio.auth.Principal;
 import com.daou.erdstudio.domain.ErdRoom;
 import com.daou.erdstudio.repository.ErdRoomRepository;
 import com.daou.erdstudio.service.SchemaService;
@@ -52,7 +53,7 @@ class McpToolServiceTest {
 
     @Test
     void list_rooms_는_방과_테이블수를_반환한다() {
-        JsonNode out = toolService.call("list_rooms", objectMapper.createObjectNode());
+        JsonNode out = toolService.call("list_rooms", objectMapper.createObjectNode(), Principal.guest());
         assertThat(out.path("rooms").isArray()).isTrue();
         assertThat(out.path("rooms").toString()).contains("t_mcp_room");
     }
@@ -64,11 +65,11 @@ class McpToolServiceTest {
                 CREATE TABLE `member_base` (`m_no` int NOT NULL, PRIMARY KEY (`m_no`)) COMMENT='회원 정보';
                 """);
         importArgs.put("mode", "replace");
-        JsonNode summary = toolService.call("import_ddl", importArgs);
+        JsonNode summary = toolService.call("import_ddl", importArgs, Principal.guest());
         assertThat(summary.path("ok").asBoolean()).isTrue();
         assertThat(summary.path("added").toString()).contains("member_base");
 
-        JsonNode schema = toolService.call("get_schema", args());
+        JsonNode schema = toolService.call("get_schema", args(), Principal.guest());
         assertThat(schema.path("tables").toString()).contains("member_base");
     }
 
@@ -78,10 +79,10 @@ class McpToolServiceTest {
         importArgs.put("ddl", """
                 CREATE TABLE `member_base` (`m_no` int NOT NULL, PRIMARY KEY (`m_no`)) COMMENT='회원 정보';
                 """);
-        toolService.call("import_ddl", importArgs);
+        toolService.call("import_ddl", importArgs, Principal.guest());
 
         // get_schema → 도메인을 LLM 이 재분류했다고 가정하고 문서를 수정해 replace_schema
-        JsonNode schema = toolService.call("get_schema", args());
+        JsonNode schema = toolService.call("get_schema", args(), Principal.guest());
         ObjectNode doc = schema.deepCopy();
         ObjectNode domains = objectMapper.createObjectNode();
         ObjectNode member = objectMapper.createObjectNode();
@@ -97,21 +98,21 @@ class McpToolServiceTest {
                     objectMapper.getNodeFactory().textNode("member"));
         }
         replaceArgs.set("doc", doc);
-        JsonNode out = toolService.call("replace_schema", replaceArgs);
+        JsonNode out = toolService.call("replace_schema", replaceArgs, Principal.guest());
         assertThat(out.path("ok").asBoolean()).isTrue();
         assertThat(schemaService.loadDoc(roomId).domains().get("member").name()).isEqualTo("회원(재분류)");
     }
 
     @Test
     void roomId_없이_호출하면_안내_메시지로_거부한다() {
-        assertThatThrownBy(() -> toolService.call("get_schema", objectMapper.createObjectNode()))
+        assertThatThrownBy(() -> toolService.call("get_schema", objectMapper.createObjectNode(), Principal.guest()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("roomId");
     }
 
     @Test
     void 알수없는_도구는_거부한다() {
-        assertThatThrownBy(() -> toolService.call("nope", objectMapper.createObjectNode()))
+        assertThatThrownBy(() -> toolService.call("nope", objectMapper.createObjectNode(), Principal.guest()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("알 수 없는 도구");
     }

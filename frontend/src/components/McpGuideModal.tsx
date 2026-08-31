@@ -1,7 +1,10 @@
 import { useState } from "react";
+import { issueMcpToken, type Me } from "../api/http";
 import { copyText } from "../utils/clipboard";
 
 interface Props {
+  /** 로그인 상태 — SSO 환경이면 개인 토큰 발급 섹션을 보여준다. */
+  me: Me | null;
   onClose: () => void;
 }
 
@@ -48,9 +51,23 @@ const PROMPTS: Array<[string, string]> = [
  * 운영은 프론트·백엔드가 같은 오리진이므로 배포 도메인이 그대로 표시되고,
  * 개발(localhost:5173)에서는 Vite 프록시가 /sse 를 백엔드로 넘기므로 역시 그대로 동작한다.
  */
-export function McpGuideModal({ onClose }: Props) {
+export function McpGuideModal({ me, onClose }: Props) {
   const endpoint = `${window.location.origin}/sse`;
-  const addCommand = `claude mcp add --transport sse --scope user erd-studio ${endpoint}`;
+  const [mcpToken, setMcpToken] = useState("");
+  const [tokenError, setTokenError] = useState("");
+  const sso = Boolean(me?.oidcEnabled);
+  const addCommand = sso
+    ? `claude mcp add --transport sse --scope user erd-studio ${endpoint} --header "Authorization: Bearer ${mcpToken || "<개인 토큰>"}"`
+    : `claude mcp add --transport sse --scope user erd-studio ${endpoint}`;
+
+  const issueToken = () => {
+    issueMcpToken()
+      .then(({ token }) => {
+        setMcpToken(token);
+        setTokenError("");
+      })
+      .catch((e: Error) => setTokenError(`토큰 발급 실패: ${e.message}`));
+  };
 
   return (
     <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -72,6 +89,32 @@ export function McpGuideModal({ onClose }: Props) {
           ③ Claude 앱(Desktop)이 아니라 <b>터미널의 Claude Code</b>로 사용합니다
           — Desktop 커넥터는 사내망 서버에 접속할 수 없습니다.
         </p>
+
+        {sso && (
+          <>
+            <div className="mcp-sect">STEP 0 — 개인 토큰 발급 (SSO 환경 필수)</div>
+            <p className="mcp-note">
+              이 서버는 SSO 로 보호되어 MCP 연결에 <b>개인 토큰</b>이 필요합니다.
+              토큰으로 연결하면 Claude 도 <b>내 계정 권한으로</b> 내가 속한 프로젝트의 방만 보고 고칩니다.
+              토큰은 발급 직후 한 번만 표시되며, <b>재발급하면 기존 연결이 끊깁니다.</b>
+            </p>
+            {me?.authenticated ? (
+              <div style={{ marginBottom: 8 }}>
+                <button className="mini" onClick={issueToken}>
+                  {mcpToken ? "🔑 토큰 재발급" : "🔑 개인 토큰 발급"}
+                </button>
+                {mcpToken && (
+                  <p className="mcp-note" style={{ marginTop: 6 }}>
+                    발급되었습니다 — 아래 STEP 1 등록 명령에 자동으로 들어갔으니 그대로 복사해 실행하세요.
+                  </p>
+                )}
+                {tokenError && <p className="mcp-note" style={{ color: "#ff9f9f" }}>{tokenError}</p>}
+              </div>
+            ) : (
+              <p className="mcp-note">먼저 로그인해야 토큰을 발급받을 수 있습니다.</p>
+            )}
+          </>
+        )}
 
         <div className="mcp-sect">STEP 1 — 연결 등록 (최초 1회)</div>
         <p className="mcp-note">
