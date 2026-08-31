@@ -10,6 +10,28 @@ async function parse<T>(res: Response): Promise<T> {
 
 const userHeader = (user: string): Record<string, string> => ({ "X-User": encodeURIComponent(user) });
 
+/** 현재 로그인 상태. oidcEnabled 가 false 면 로그인 버튼 자체를 숨긴다. */
+export interface Me {
+  authenticated: boolean;
+  userId: number | null;
+  username: string | null;
+  displayName: string | null;
+  superAdmin: boolean;
+  oidcEnabled: boolean;
+}
+
+export function fetchMe(): Promise<Me> {
+  return fetch("/api/auth/me").then((res) => parse<Me>(res));
+}
+
+export function logout(): Promise<void> {
+  return fetch("/api/auth/logout", { method: "POST" }).then((res) => {
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+  });
+}
+
 export interface RoomInfo {
   id: number;
   name: string;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { createRoom, deleteRoom, fetchRooms, renameRoomCreator, type RoomInfo } from "../api/http";
+import { createRoom, deleteRoom, fetchRooms, renameRoomCreator, type Me, type RoomInfo } from "../api/http";
 import { clientKey, type UserInfo } from "../state/user";
 import { McpGuideModal } from "./McpGuideModal";
 import { NameModal } from "./NameModal";
@@ -11,15 +11,18 @@ const REFRESH_MS = 5000;
 
 interface Props {
   user: UserInfo;
+  /** 로그인 상태 — null 이면 아직 조회 전이라 로그인 UI 를 그리지 않는다. */
+  me: Me | null;
   /** 입장이 거절되었을 때 서버가 보낸 안내 문구. */
   notice: string;
   onEnter: (room: RoomInfo) => void;
   /** 이름 변경 저장 시 새 사용자 정보를 상위(App)에 반영한다. */
   onUserChange: (user: UserInfo) => void;
+  onLogout: () => void;
 }
 
 /** 메인 화면 — ERD 방 목록. 방을 고르면 그 방의 ERD로 들어간다. */
-export function RoomList({ user, notice, onEnter, onUserChange }: Props) {
+export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: Props) {
   const [rooms, setRooms] = useState<RoomInfo[]>([]);
   const [name, setName] = useState("");
   const [error, setError] = useState("");
@@ -80,7 +83,11 @@ export function RoomList({ user, notice, onEnter, onUserChange }: Props) {
           <h1>ERD Studio</h1>
           <div className="sub">
             {user.name}님, 참여할 방을 선택하세요. 방은 최대 {MAX_ROOMS}개, 한 방에 최대 {MAX_USERS_PER_ROOM}명까지
-            동시 접속할 수 있습니다. <button className="mini" onClick={() => setRenaming(true)}>✏ 이름 변경</button>
+            동시 접속할 수 있습니다.{" "}
+            {/* SSO 로그인 상태면 이름은 계정을 따르므로 수동 변경 버튼을 숨긴다. */}
+            {!me?.authenticated && (
+              <button className="mini" onClick={() => setRenaming(true)}>✏ 이름 변경</button>
+            )}
           </div>
         </div>
         <div className="room-header-right">
@@ -94,6 +101,19 @@ export function RoomList({ user, notice, onEnter, onUserChange }: Props) {
           </span>
           <ThemeToggle />
           <span className="room-count">{rooms.length} / {MAX_ROOMS} 방</span>
+          {me?.authenticated ? (
+            <button className="mini" onClick={onLogout} title={`${me.displayName} 계정에서 로그아웃`}>
+              로그아웃
+            </button>
+          ) : me?.oidcEnabled ? (
+            <button
+              className="primary"
+              onClick={() => { window.location.href = "/api/auth/oidc/login"; }}
+              title="사내 SSO(authentik)로 로그인"
+            >
+              로그인
+            </button>
+          ) : null}
         </div>
       </header>
 

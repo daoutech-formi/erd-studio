@@ -23,3 +23,11 @@ anthropic:
 
 erd:
   max-domains: ${ERD_MAX_DOMAINS:12}
+  # authentik OIDC SSO. enabled=false 면 로그인 진입점이 503 이고 전원 게스트로 동작한다(기존 동작 유지).
+  oidc:
+    enabled: ${ERD_OIDC_ENABLED:false}
+    issuer: ${ERD_OIDC_ISSUER:}
+    client-id: ${ERD_OIDC_CLIENT_ID:}
+    client-secret: ${ERD_OIDC_CLIENT_SECRET:}
+    redirect-uri: ${ERD_OIDC_REDIRECT_URI:}
+    admin-group: ${ERD_OIDC_ADMIN_GROUP:erd-admins}

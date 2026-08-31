@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchRooms, fetchSchema, type RoomInfo } from "./api/http";
+import { fetchMe, fetchRooms, fetchSchema, logout, type Me, type RoomInfo } from "./api/http";
 import { erdSocket } from "./api/socket";
 import { ErdCanvas } from "./canvas/ErdCanvas";
 import type { PanZoomApi } from "./canvas/usePanZoom";
@@ -15,8 +15,17 @@ import { Toolbar } from "./components/Toolbar";
 import { parseRoute, readonlyShareUrl, setRoomHash } from "./state/route";
 import { useDispatch, useStore } from "./state/schemaStore";
 import { undoManager } from "./state/undo";
-import { clientKey, colorFor, loadUser, type UserInfo } from "./state/user";
+import { clientKey, colorFor, loadUser, saveUser, type UserInfo } from "./state/user";
 import { copyText } from "./utils/clipboard";
+
+/** SSO 콜백이 ?login_error= 로 알려주는 실패 코드. */
+const LOGIN_ERRORS: Record<string, string> = {
+  state: "로그인 요청이 만료되었거나 유효하지 않습니다. 다시 시도해 주세요.",
+  exchange: "SSO 서버와 통신에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+  profile: "SSO 신원 조회에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+  username: "SSO 계정의 아이디를 사용할 수 없습니다. 관리자에게 문의하세요.",
+  conflict: "이미 다른 SSO 계정에 연결된 아이디입니다. 관리자에게 문의하세요.",
+};
 
 /** 읽기전용 링크로 처음 온 사람은 이름 입력 없이 게스트로 들어온다 (localStorage 에는 남기지 않음). */
 function initialUser(): UserInfo | null {
@@ -35,6 +44,8 @@ export function App() {
   const { editMode, selected, editing, locks, historyOpen } = useStore();
   const dispatch = useDispatch();
   const [user, setUser] = useState<UserInfo | null>(initialUser);
+  /** 로그인 상태 — null 이면 아직 조회 전. 로그인돼 있으면 표시이름이 user.name 을 대체한다. */
+  const [me, setMe] = useState<Me | null>(null);
   const [room, setRoom] = useState<RoomInfo | null>(null);
   /** 입장 거절 등으로 방 목록에 돌아왔을 때 보여줄 안내 문구. */
   const [notice, setNotice] = useState("");
@@ -65,6 +76,29 @@ export function App() {
     },
     [dispatch],
   );
+
+  // 로그인 상태 조회 + SSO 콜백 실패 코드(?login_error=) 안내. 로그인돼 있으면 SSO 표시이름을 쓴다.
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("login_error");
+    if (code) {
+      setNotice(LOGIN_ERRORS[code] ?? "로그인에 실패했습니다.");
+      window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+    }
+    fetchMe()
+      .then((m) => {
+        setMe(m);
+        if (m.authenticated && m.displayName) {
+          setUser(saveUser(m.displayName));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const onLogout = useCallback(() => {
+    logout()
+      .then(() => window.location.reload())
+      .catch((e: Error) => setNotice(`로그아웃 실패: ${e.message}`));
+  }, []);
 
   // 딥링크 진입 — 방 목록에서 id 로 찾아 들어간다. 없으면 안내 후 방 목록으로.
   useEffect(() => {
@@ -192,7 +226,16 @@ export function App() {
     return <NameModal onSubmit={setUser} />;
   }
   if (!room) {
-    return <RoomList user={user} notice={notice} onEnter={enterRoom} onUserChange={setUser} />;
+    return (
+      <RoomList
+        user={user}
+        me={me}
+        notice={notice}
+        onEnter={enterRoom}
+        onUserChange={setUser}
+        onLogout={onLogout}
+      />
+    );
   }
   return (
     <div id="app">
