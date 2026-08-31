@@ -21,14 +21,16 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final ErdRoomRepository roomRepository;
     private final ProjectMemberRepository memberRepository;
+    private final ProjectInviteRepository inviteRepository;
 
     private final SecureRandom random = new SecureRandom();
 
     public ProjectService(ProjectRepository projectRepository, ErdRoomRepository roomRepository,
-                          ProjectMemberRepository memberRepository) {
+                          ProjectMemberRepository memberRepository, ProjectInviteRepository inviteRepository) {
         this.projectRepository = projectRepository;
         this.roomRepository = roomRepository;
         this.memberRepository = memberRepository;
+        this.inviteRepository = inviteRepository;
     }
 
     @Transactional(readOnly = true)
@@ -96,6 +98,7 @@ public class ProjectService {
             throw new IllegalArgumentException("방이 있는 프로젝트는 삭제할 수 없습니다. 방을 먼저 정리하세요.");
         }
         memberRepository.deleteByProjectId(project.getId());
+        inviteRepository.deleteByProjectId(project.getId());
         projectRepository.delete(project);
     }
 

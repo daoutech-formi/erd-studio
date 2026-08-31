@@ -21,6 +21,7 @@ public class PermissionInterceptor implements HandlerInterceptor {
 
     private static final String PROJECTS = "/api/projects";
     private static final String ROOMS = "/api/rooms";
+    private static final String INVITES = "/api/invites";
 
     private final OidcProperties oidcProperties;
     private final PermissionService permissionService;
@@ -62,6 +63,13 @@ public class PermissionInterceptor implements HandlerInterceptor {
                 return true;   // 컨트롤러가 기존대로 400 — 존재 여부 외 정보 노출 없음
             }
             permissionService.require(principal, projectId, Level.ADMIN);
+            return true;
+        }
+        if (path.startsWith(INVITES + "/")) {
+            // 미리보기(GET)는 게스트도 허용(로그인 유도 화면), 수락 등 그 외는 로그인 필요.
+            if (!"GET".equals(method) && !principal.authenticated()) {
+                throw new UnauthorizedException("로그인이 필요합니다.");
+            }
             return true;
         }
         if (path.equals(ROOMS + "/creator-name")) {

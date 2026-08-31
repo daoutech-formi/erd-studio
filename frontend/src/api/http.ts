@@ -101,6 +101,68 @@ export function fetchAssignableUsers(slug: string): Promise<AssignableUser[]> {
     .then((res) => parse<AssignableUser[]>(res));
 }
 
+// --- 초대 링크 (프로젝트 ADMIN 이 생성, 로그인 사용자가 수락) ---
+
+export interface InviteInfo {
+  id: number;
+  token: string;
+  role: ProjectRole;
+  /** null = 무기한. */
+  expiresAt: string | null;
+  /** 0 = 무제한. */
+  maxUses: number;
+  usedCount: number;
+  /** 만료됐거나 사용횟수를 소진해 더 못 쓰는 링크. */
+  exhausted: boolean;
+}
+
+export interface InvitePreview {
+  projectName: string | null;
+  role: ProjectRole | null;
+  valid: boolean;
+  reason: string | null;
+  alreadyMember: boolean;
+}
+
+export interface InviteAcceptResult {
+  ok: boolean;
+  projectSlug: string;
+  projectName: string;
+  role: ProjectRole;
+  alreadyMember: boolean;
+}
+
+export function fetchInvites(slug: string): Promise<InviteInfo[]> {
+  return afetch(`/api/projects/${encodeURIComponent(slug)}/invites`).then((res) => parse<InviteInfo[]>(res));
+}
+
+export function createInvite(
+  slug: string,
+  role: ProjectRole,
+  expiresInDays: number | null,
+  maxUses: number,
+): Promise<InviteInfo> {
+  return afetch(`/api/projects/${encodeURIComponent(slug)}/invites`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ role, expiresInDays, maxUses }),
+  }).then((res) => parse<InviteInfo>(res));
+}
+
+export function revokeInvite(slug: string, inviteId: number): Promise<{ ok: boolean }> {
+  return afetch(`/api/projects/${encodeURIComponent(slug)}/invites/${inviteId}`, { method: "DELETE" })
+    .then((res) => parse(res));
+}
+
+export function fetchInvitePreview(token: string): Promise<InvitePreview> {
+  return afetch(`/api/invites/${encodeURIComponent(token)}`).then((res) => parse<InvitePreview>(res));
+}
+
+export function acceptInvite(token: string): Promise<InviteAcceptResult> {
+  return afetch(`/api/invites/${encodeURIComponent(token)}/accept`, { method: "POST" })
+    .then((res) => parse<InviteAcceptResult>(res));
+}
+
 /** 현재 로그인 상태. oidcEnabled 가 false 면 로그인 버튼 자체를 숨긴다. */
 export interface Me {
   authenticated: boolean;

@@ -7,6 +7,7 @@ import { DetailPanel } from "./components/DetailPanel";
 import { EditForm } from "./components/EditForm";
 import { Header } from "./components/Header";
 import { HistoryPanel } from "./components/HistoryPanel";
+import { InviteAccept, PENDING_INVITE_KEY } from "./components/InviteAccept";
 import { Legend } from "./components/Legend";
 import { NameModal } from "./components/NameModal";
 import { RoomList } from "./components/RoomList";
@@ -53,6 +54,8 @@ export function App() {
   const [readonly, setReadonly] = useState(() => parseRoute().readonly);
   /** 주소의 #/room/:id — 방 목록을 조회해 해당 방으로 바로 들어간다. */
   const [deepLinkId, setDeepLinkId] = useState<number | null>(() => parseRoute().roomId);
+  /** 주소의 #/invite/:token — 초대 수락 화면을 띄운다. */
+  const [inviteToken, setInviteToken] = useState<string | null>(() => parseRoute().inviteToken);
   const panZoomRef = useRef<PanZoomApi | null>(null);
   const roomId = room?.id ?? null;
 
@@ -92,6 +95,14 @@ export function App() {
         setMe(m);
         if (m.authenticated && m.displayName) {
           setUser(saveUser(m.displayName));
+        }
+        // 초대 링크에서 로그인하러 갔다 온 경우 — 보관해 둔 토큰으로 수락 화면을 다시 띄운다.
+        if (m.authenticated) {
+          const pending = localStorage.getItem(PENDING_INVITE_KEY);
+          if (pending) {
+            localStorage.removeItem(PENDING_INVITE_KEY);
+            setInviteToken(pending);
+          }
         }
       })
       .catch(() => {});
@@ -223,6 +234,19 @@ export function App() {
     [dispatch],
   );
 
+  // 초대 수락은 이름(user)보다 먼저 — 로그인 사용자는 이름이 계정에서 오므로 NameModal 이 필요 없다.
+  if (inviteToken) {
+    return (
+      <InviteAccept
+        token={inviteToken}
+        me={me}
+        onDone={() => {
+          setInviteToken(null);
+          setRoomHash(null, false);
+        }}
+      />
+    );
+  }
   if (!user) {
     return <NameModal onSubmit={setUser} />;
   }

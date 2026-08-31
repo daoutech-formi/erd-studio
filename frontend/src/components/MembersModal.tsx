@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import {
-  fetchAssignableUsers, fetchMembers, replaceMembers,
-  type AssignableUser, type ProjectMemberInfo, type ProjectRole,
+  createInvite, fetchAssignableUsers, fetchInvites, fetchMembers, replaceMembers, revokeInvite,
+  type AssignableUser, type InviteInfo, type ProjectMemberInfo, type ProjectRole,
 } from "../api/http";
+import { inviteUrl } from "../state/route";
+import { copyText } from "../utils/clipboard";
 
 interface Props {
   slug: string;
@@ -12,7 +14,7 @@ interface Props {
   onSaved: () => void;
 }
 
-const ROLE_LABELS: Record<ProjectRole, string> = {
+export const ROLE_LABELS: Record<ProjectRole, string> = {
   ADMIN: "관리자",
   EDITOR: "편집자",
   VIEWER: "뷰어",
@@ -25,12 +27,19 @@ export function MembersModal({ slug, projectName, onClose, onSaved }: Props) {
   const [addUserId, setAddUserId] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  // 초대 링크 — 멤버 목록과 달리 생성·폐기가 즉시 서버에 적용된다.
+  const [invites, setInvites] = useState<InviteInfo[]>([]);
+  const [inviteRole, setInviteRole] = useState<ProjectRole>("VIEWER");
+  const [inviteDays, setInviteDays] = useState("7");
+  const [inviteMax, setInviteMax] = useState("0");
+  const [copiedId, setCopiedId] = useState<number | null>(null);
 
   useEffect(() => {
-    Promise.all([fetchMembers(slug), fetchAssignableUsers(slug)])
-      .then(([m, a]) => {
+    Promise.all([fetchMembers(slug), fetchAssignableUsers(slug), fetchInvites(slug)])
+      .then(([m, a, i]) => {
         setMembers(m);
         setAssignable(a);
+        setInvites(i);
       })
       .catch((e: Error) => setError(`멤버 정보를 불러오지 못했습니다: ${e.message}`));
   }, [slug]);
@@ -52,6 +61,33 @@ export function MembersModal({ slug, projectName, onClose, onSaved }: Props) {
 
   const remove = (userId: number) => {
     setMembers(members.filter((m) => m.userId !== userId));
+  };
+
+  const addInvite = () => {
+    setBusy(true);
+    createInvite(slug, inviteRole, inviteDays === "" ? null : Number(inviteDays), Number(inviteMax))
+      .then((created) => setInvites([...invites, created]))
+      .catch((e: Error) => setError(`초대 링크 생성 실패: ${e.message}`))
+      .finally(() => setBusy(false));
+  };
+
+  const copyInvite = (invite: InviteInfo) => {
+    copyText(inviteUrl(invite.token)).then((ok) => {
+      if (ok) {
+        setCopiedId(invite.id);
+        window.setTimeout(() => setCopiedId((cur) => (cur === invite.id ? null : cur)), 1500);
+      } else {
+        setError("링크 복사에 실패했습니다.");
+      }
+    });
+  };
+
+  const removeInvite = (inviteId: number) => {
+    setBusy(true);
+    revokeInvite(slug, inviteId)
+      .then(() => setInvites(invites.filter((i) => i.id !== inviteId)))
+      .catch((e: Error) => setError(`초대 폐기 실패: ${e.message}`))
+      .finally(() => setBusy(false));
   };
 
   const save = () => {
@@ -114,6 +150,69 @@ export function MembersModal({ slug, projectName, onClose, onSaved }: Props) {
             ))}
           </select>
           <button onClick={add} disabled={!addUserId}>추가</button>
+        </div>
+
+        <h3 style={{ margin: "16px 0 6px" }}>🔗 초대 링크</h3>
+        <p>링크를 받은 사람이 로그인하면 지정한 역할로 합류합니다. 생성·폐기는 즉시 적용됩니다.</p>
+
+        {invites.length > 0 && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
+            {invites.map((i) => (
+              <div key={i.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ flex: 1, opacity: i.exhausted ? 0.5 : 1 }}>
+                  {ROLE_LABELS[i.role]}
+                  <span style={{ opacity: 0.6 }}>
+                    {" · "}
+                    {i.expiresAt ? `${new Date(i.expiresAt).toLocaleDateString("ko-KR")}까지` : "무기한"}
+                    {" · "}사용 {i.usedCount}/{i.maxUses > 0 ? i.maxUses : "∞"}
+                    {i.exhausted && " · 만료됨"}
+                  </span>
+                </span>
+                {!i.exhausted && (
+                  <button className="mini" onClick={() => copyInvite(i)}>
+                    {copiedId === i.id ? "복사됨!" : "링크 복사"}
+                  </button>
+                )}
+                <button className="mini danger" onClick={() => removeInvite(i.id)} disabled={busy}>폐기</button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <select
+            className="fi"
+            style={{ flex: 1, marginBottom: 0 }}
+            value={inviteRole}
+            onChange={(e) => setInviteRole(e.target.value as ProjectRole)}
+          >
+            {(Object.keys(ROLE_LABELS) as ProjectRole[]).map((r) => (
+              <option key={r} value={r}>{ROLE_LABELS[r]}(으)로 초대</option>
+            ))}
+          </select>
+          <select
+            className="fi"
+            style={{ width: 92, marginBottom: 0 }}
+            value={inviteDays}
+            onChange={(e) => setInviteDays(e.target.value)}
+          >
+            <option value="1">1일</option>
+            <option value="7">7일</option>
+            <option value="30">30일</option>
+            <option value="">무기한</option>
+          </select>
+          <select
+            className="fi"
+            style={{ width: 92, marginBottom: 0 }}
+            value={inviteMax}
+            onChange={(e) => setInviteMax(e.target.value)}
+          >
+            <option value="0">무제한</option>
+            <option value="1">1회</option>
+            <option value="5">5회</option>
+            <option value="10">10회</option>
+          </select>
+          <button onClick={addInvite} disabled={busy}>생성</button>
         </div>
 
         {error && <p style={{ color: "#ff9f9f" }}>{error}</p>}
