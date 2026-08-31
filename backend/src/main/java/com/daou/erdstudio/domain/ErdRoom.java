@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import java.time.Instant;
 
@@ -19,15 +20,22 @@ import java.time.Instant;
  * 또한 erd_domain 의 PK 가 key(문자열) → id(시퀀스) 로 바뀌었다.
  */
 @Entity
-@Table(name = "erd_room")
+@Table(name = "erd_room",
+        uniqueConstraints = @UniqueConstraint(name = "uk_erd_room_project_name",
+                columnNames = {"project_id", "name"}))
 public class ErdRoom {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    /** 이름 유니크는 프로젝트 내로만 강제한다(구버전 전역 유니크는 ProjectBootstrap 이 드랍). */
+    @Column(nullable = false)
     private String name;
+
+    /** 소속 프로젝트. 컬럼은 nullable(기존 배포 백필용)이지만 서비스는 항상 채운다. */
+    @Column(name = "project_id")
+    private Long projectId;
 
     @Column(name = "created_by", nullable = false)
     private String createdBy;
@@ -43,13 +51,18 @@ public class ErdRoom {
     }
 
     public ErdRoom(String name, String createdBy) {
-        this(name, createdBy, null);
+        this(name, createdBy, null, null);
     }
 
     public ErdRoom(String name, String createdBy, String creatorClientKey) {
+        this(name, createdBy, creatorClientKey, null);
+    }
+
+    public ErdRoom(String name, String createdBy, String creatorClientKey, Long projectId) {
         this.name = name;
         this.createdBy = createdBy;
         this.creatorClientKey = creatorClientKey;
+        this.projectId = projectId;
         this.createdAt = Instant.now();
     }
 
@@ -75,5 +88,9 @@ public class ErdRoom {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Long getProjectId() {
+        return projectId;
     }
 }

@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { createRoom, deleteRoom, fetchRooms, renameRoomCreator, type Me, type RoomInfo } from "../api/http";
+import {
+  createProject, createRoom, deleteProject, deleteRoom, fetchProjects, fetchRooms,
+  getProject, renameRoomCreator, setProject, type Me, type Project, type RoomInfo,
+} from "../api/http";
 import { clientKey, type UserInfo } from "../state/user";
 import { McpGuideModal } from "./McpGuideModal";
 import { NameModal } from "./NameModal";
@@ -24,6 +27,9 @@ interface Props {
 /** 메인 화면 — ERD 방 목록. 방을 고르면 그 방의 ERD로 들어간다. */
 export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: Props) {
   const [rooms, setRooms] = useState<RoomInfo[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  /** 현재 선택된 프로젝트 slug — API 요청 헤더(X-Project-Id)와 항상 함께 바꾼다. */
+  const [projectSlug, setProjectSlug] = useState<string>(getProject());
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -39,11 +45,65 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
       .catch((e: Error) => setError(`방 목록을 불러오지 못했습니다: ${e.message}`));
   }, []);
 
+  /** 프로젝트 목록 조회 — 저장된 slug 가 지워진 프로젝트면 legacy 로 되돌린다. */
+  const loadProjects = useCallback(() => {
+    fetchProjects()
+      .then((list) => {
+        setProjects(list);
+        const stored = getProject();
+        const valid = list.find((p) => p.slug === stored)
+          ?? list.find((p) => p.slug === "legacy")
+          ?? list[0];
+        if (valid) {
+          setProject(valid.slug);
+          setProjectSlug(valid.slug);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(loadProjects, [loadProjects]);
+
   useEffect(() => {
     load();
     const timer = window.setInterval(load, REFRESH_MS);
     return () => window.clearInterval(timer);
-  }, [load]);
+  }, [load, projectSlug]);
+
+  const changeProject = (slug: string) => {
+    setProject(slug);
+    setProjectSlug(slug);
+  };
+
+  const addProject = () => {
+    const projectName = window.prompt("새 프로젝트 이름 (50자 이내)");
+    if (!projectName || projectName.trim().length === 0) {
+      return;
+    }
+    setBusy(true);
+    createProject(projectName.trim())
+      .then((p) => {
+        changeProject(p.slug);
+        loadProjects();
+      })
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setBusy(false));
+  };
+
+  const removeProject = () => {
+    const current = projects.find((p) => p.slug === projectSlug);
+    if (!current || !window.confirm(`'${current.name}' 프로젝트를 삭제할까요? (빈 프로젝트만 삭제됩니다)`)) {
+      return;
+    }
+    setBusy(true);
+    deleteProject(projectSlug)
+      .then(() => {
+        changeProject("legacy");
+        loadProjects();
+      })
+      .catch((e: Error) => setError(`프로젝트 삭제 실패: ${e.message}`))
+      .finally(() => setBusy(false));
+  };
 
   const full = rooms.length >= MAX_ROOMS;
 
@@ -119,6 +179,29 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
 
       {notice && <div className="room-notice">{notice}</div>}
       {error && <div className="room-error">{error}</div>}
+
+      <div className="room-create">
+        <select
+          className="fi"
+          style={{ maxWidth: 280 }}
+          value={projectSlug}
+          disabled={busy}
+          onChange={(e) => changeProject(e.target.value)}
+          title="프로젝트를 고르면 그 프로젝트의 방만 보입니다"
+        >
+          {projects.map((p) => (
+            <option key={p.slug} value={p.slug}>
+              📁 {p.name}
+            </option>
+          ))}
+        </select>
+        <button onClick={addProject} disabled={busy}>＋ 프로젝트</button>
+        {projectSlug !== "legacy" && rooms.length === 0 && (
+          <button className="mini danger" onClick={removeProject} disabled={busy}>
+            프로젝트 삭제
+          </button>
+        )}
+      </div>
 
       <div className="room-create">
         <input

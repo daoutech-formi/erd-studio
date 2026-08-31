@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchMe, fetchRooms, fetchSchema, logout, type Me, type RoomInfo } from "./api/http";
+import { fetchMe, fetchRoom, fetchSchema, logout, setProject, type Me, type RoomInfo } from "./api/http";
 import { erdSocket } from "./api/socket";
 import { ErdCanvas } from "./canvas/ErdCanvas";
 import type { PanZoomApi } from "./canvas/usePanZoom";
@@ -100,23 +100,21 @@ export function App() {
       .catch((e: Error) => setNotice(`로그아웃 실패: ${e.message}`));
   }, []);
 
-  // 딥링크 진입 — 방 목록에서 id 로 찾아 들어간다. 없으면 안내 후 방 목록으로.
+  // 딥링크 진입 — id 로 방을 찾아 그 방의 프로젝트로 전환한 뒤 들어간다. 없으면 안내 후 방 목록으로.
   useEffect(() => {
     if (deepLinkId === null || !user || room) {
       return;
     }
-    fetchRooms()
-      .then((rooms) => {
-        const found = rooms.find((r) => r.id === deepLinkId);
-        if (found) {
-          enterRoom(found);
-        } else {
-          setNotice("링크의 방을 찾을 수 없습니다. 삭제되었거나 주소가 잘못되었습니다.");
-          setReadonly(false);
-          setRoomHash(null, false);
-        }
+    fetchRoom(deepLinkId)
+      .then((found) => {
+        setProject(found.projectSlug);
+        enterRoom(found);
       })
-      .catch((e: Error) => setNotice(`방 정보를 불러오지 못했습니다: ${e.message}`))
+      .catch(() => {
+        setNotice("링크의 방을 찾을 수 없습니다. 삭제되었거나 주소가 잘못되었습니다.");
+        setReadonly(false);
+        setRoomHash(null, false);
+      })
       .finally(() => setDeepLinkId(null));
   }, [deepLinkId, user, room, enterRoom]);
 

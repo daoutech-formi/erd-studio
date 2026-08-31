@@ -123,7 +123,8 @@ public class McpToolService {
 
     private JsonNode listRooms() {
         List<Map<String, Object>> rooms = new ArrayList<>();
-        for (ErdRoom room : roomService.list()) {
+        // MCP 는 프로젝트 컨텍스트가 없으므로 전체 방을 보여준다(프로젝트별 제한은 Phase 5).
+        for (ErdRoom room : roomService.listAll()) {
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("id", room.getId());
             row.put("name", room.getName());

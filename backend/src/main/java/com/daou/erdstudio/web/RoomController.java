@@ -1,6 +1,7 @@
 package com.daou.erdstudio.web;
 
 import com.daou.erdstudio.domain.ErdRoom;
+import com.daou.erdstudio.project.ProjectService;
 import com.daou.erdstudio.repository.ErdTableRepository;
 import com.daou.erdstudio.service.RoomService;
 import com.daou.erdstudio.ws.SessionRegistry;
@@ -24,9 +25,9 @@ import java.util.Map;
 @RequestMapping("/api/rooms")
 public class RoomController {
 
-    /** 방 목록 응답 행. */
+    /** 방 목록 응답 행. projectSlug 는 딥링크가 프로젝트를 넘나들 때 선택 전환용으로 쓴다. */
     public record RoomInfo(Long id, String name, String createdBy, Instant createdAt,
-                           long tableCount, int userCount) {
+                           long tableCount, int userCount, String projectSlug) {
     }
 
     public record CreateRoomRequest(String name, String clientKey) {
@@ -38,11 +39,14 @@ public class RoomController {
     private final RoomService roomService;
     private final ErdTableRepository tableRepository;
     private final SessionRegistry sessions;
+    private final ProjectService projectService;
 
-    public RoomController(RoomService roomService, ErdTableRepository tableRepository, SessionRegistry sessions) {
+    public RoomController(RoomService roomService, ErdTableRepository tableRepository,
+                          SessionRegistry sessions, ProjectService projectService) {
         this.roomService = roomService;
         this.tableRepository = tableRepository;
         this.sessions = sessions;
+        this.projectService = projectService;
     }
 
     @GetMapping
@@ -52,6 +56,12 @@ public class RoomController {
             rooms.add(toInfo(room));
         }
         return rooms;
+    }
+
+    /** 딥링크(#/room/:id) 진입용 단건 조회 — 프로젝트와 무관하게 찾는다. */
+    @GetMapping("/{roomId}")
+    public RoomInfo get(@PathVariable Long roomId) {
+        return toInfo(roomService.get(roomId));
     }
 
     @PostMapping
@@ -75,6 +85,7 @@ public class RoomController {
 
     private RoomInfo toInfo(ErdRoom room) {
         return new RoomInfo(room.getId(), room.getName(), room.getCreatedBy(), room.getCreatedAt(),
-                tableRepository.countByRoomId(room.getId()), sessions.userCount(room.getId()));
+                tableRepository.countByRoomId(room.getId()), sessions.userCount(room.getId()),
+                projectService.slugOf(room.getProjectId()));
     }
 }

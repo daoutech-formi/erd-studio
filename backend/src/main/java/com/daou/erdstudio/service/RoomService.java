@@ -1,6 +1,7 @@
 package com.daou.erdstudio.service;
 
 import com.daou.erdstudio.domain.ErdRoom;
+import com.daou.erdstudio.project.ProjectService;
 import com.daou.erdstudio.repository.ErdHistoryRepository;
 import com.daou.erdstudio.repository.ErdRoomRepository;
 import com.daou.erdstudio.web.dto.SchemaDoc;
@@ -11,11 +12,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** ERD 방 생성·조회·삭제. 방 개수 상한과 이름 규칙을 여기서 강제한다. */
+/** ERD 방 생성·조회·삭제. 방 개수 상한과 이름 규칙을 프로젝트 단위로 강제한다. */
 @Service
 public class RoomService {
 
-    /** 서버 전체에서 만들 수 있는 방의 최대 개수. */
+    /** 프로젝트마다 만들 수 있는 방의 최대 개수. */
     private static final int MAX_ROOMS = 20;
     private static final int MAX_NAME_LENGTH = 30;
     private static final String DEFAULT_DOMAIN_KEY = "etc";
@@ -23,21 +24,38 @@ public class RoomService {
     private final ErdRoomRepository roomRepository;
     private final ErdHistoryRepository historyRepository;
     private final SchemaService schemaService;
+    private final ProjectService projectService;
 
     public RoomService(ErdRoomRepository roomRepository, ErdHistoryRepository historyRepository,
-                       SchemaService schemaService) {
+                       SchemaService schemaService, ProjectService projectService) {
         this.roomRepository = roomRepository;
         this.historyRepository = historyRepository;
         this.schemaService = schemaService;
+        this.projectService = projectService;
     }
 
-    @Transactional(readOnly = true)
+    /** 현재 프로젝트(X-Project-Id, 없으면 legacy)의 방 목록. */
+    @Transactional
     public List<ErdRoom> list() {
+        return roomRepository.findByProjectIdOrderByIdAsc(projectService.currentProjectId());
+    }
+
+    /** 전체 방 목록 — MCP(list_rooms)처럼 프로젝트 컨텍스트가 없는 진입점용(Phase 5 에서 재검토). */
+    @Transactional(readOnly = true)
+    public List<ErdRoom> listAll() {
         return roomRepository.findAllByOrderByIdAsc();
     }
 
+    /** 딥링크용 단건 조회 — 프로젝트와 무관하게 id 로 찾는다(응답에 소속 프로젝트 slug 를 싣는다). */
+    @Transactional(readOnly = true)
+    public ErdRoom get(Long roomId) {
+        return roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 방입니다."));
+    }
+
     /**
-     * 방을 만든다. 이름은 공백 불가·중복 불가이고 전체 방은 {@value #MAX_ROOMS}개를 넘을 수 없다.
+     * 현재 프로젝트에 방을 만든다. 이름은 공백 불가·프로젝트 내 중복 불가이고
+     * 프로젝트당 방은 {@value #MAX_ROOMS}개를 넘을 수 없다.
      * 빈 방에서도 바로 테이블을 추가할 수 있도록 기본 도메인('기타') 하나를 함께 만든다.
      */
     @Transactional
@@ -54,13 +72,15 @@ public class RoomService {
         if (trimmed.length() > MAX_NAME_LENGTH) {
             throw new IllegalArgumentException("방 이름은 " + MAX_NAME_LENGTH + "자 이내로 입력하세요.");
         }
-        if (roomRepository.existsByName(trimmed)) {
-            throw new IllegalArgumentException("이미 존재하는 방 이름입니다.");
+        Long projectId = projectService.currentProjectId();
+        if (roomRepository.existsByProjectIdAndName(projectId, trimmed)) {
+            throw new IllegalArgumentException("이 프로젝트에 이미 존재하는 방 이름입니다.");
         }
-        if (roomRepository.count() >= MAX_ROOMS) {
-            throw new IllegalArgumentException("방은 최대 " + MAX_ROOMS + "개까지 만들 수 있습니다.");
+        if (roomRepository.countByProjectId(projectId) >= MAX_ROOMS) {
+            throw new IllegalArgumentException("프로젝트마다 방은 최대 " + MAX_ROOMS + "개까지 만들 수 있습니다.");
         }
-        ErdRoom room = roomRepository.save(new ErdRoom(trimmed, safeUser(user), safeClientKey(clientKey)));
+        ErdRoom room = roomRepository.save(
+                new ErdRoom(trimmed, safeUser(user), safeClientKey(clientKey), projectId));
         schemaService.replaceAll(room.getId(), defaultDoc());
         return room;
     }

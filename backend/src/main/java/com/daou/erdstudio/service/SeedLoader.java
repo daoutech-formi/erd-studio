@@ -1,6 +1,8 @@
 package com.daou.erdstudio.service;
 
 import com.daou.erdstudio.domain.ErdRoom;
+import com.daou.erdstudio.project.ProjectBootstrap;
+import com.daou.erdstudio.project.ProjectService;
 import com.daou.erdstudio.repository.ErdRoomRepository;
 import com.daou.erdstudio.web.dto.SchemaDoc;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +26,7 @@ import java.io.InputStream;
  * 컬럼을 추가할 수 없다. erd_* 테이블을 drop 후 재생성하거나 room_id 를 수동 백필해야 한다.
  */
 @Component
+@Order(ProjectBootstrap.ORDER + 1)   // legacy 프로젝트가 먼저 만들어진 뒤 실행된다.
 public class SeedLoader implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(SeedLoader.class);
@@ -32,11 +36,14 @@ public class SeedLoader implements ApplicationRunner {
     private final ErdRoomRepository roomRepository;
     private final SchemaService schemaService;
     private final ObjectMapper objectMapper;
+    private final ProjectService projectService;
 
-    public SeedLoader(ErdRoomRepository roomRepository, SchemaService schemaService, ObjectMapper objectMapper) {
+    public SeedLoader(ErdRoomRepository roomRepository, SchemaService schemaService,
+                      ObjectMapper objectMapper, ProjectService projectService) {
         this.roomRepository = roomRepository;
         this.schemaService = schemaService;
         this.objectMapper = objectMapper;
+        this.projectService = projectService;
     }
 
     @Override
@@ -44,7 +51,8 @@ public class SeedLoader implements ApplicationRunner {
         if (roomRepository.count() > 0) {
             return;
         }
-        ErdRoom room = roomRepository.save(new ErdRoom(DEFAULT_ROOM_NAME, "system"));
+        ErdRoom room = roomRepository.save(
+                new ErdRoom(DEFAULT_ROOM_NAME, "system", null, projectService.ensureLegacy().getId()));
         ClassPathResource seed = new ClassPathResource(SEED_PATH);
         if (!seed.exists()) {
             log.info("시드 파일이 없어 빈 방('{}')으로 시작합니다.", DEFAULT_ROOM_NAME);
