@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchMe, fetchRoom, fetchSchema, logout, setProject, type Me, type RoomInfo } from "./api/http";
 import { erdSocket } from "./api/socket";
 import { ErdCanvas } from "./canvas/ErdCanvas";
+import { wasJustDragged } from "./canvas/useNodeDrag";
 import type { PanZoomApi } from "./canvas/usePanZoom";
 import { DetailPanel } from "./components/DetailPanel";
 import { EditForm } from "./components/EditForm";
@@ -229,9 +230,16 @@ export function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // 같은 테이블을 다시 클릭하면 선택(강조) 해제 — 메모 클릭 토글과 동일한 규칙.
+  // 드래그 직후 발생하는 click 은 무시해야 편집 중인 노드를 옮길 때 폼이 닫히지 않는다.
   const onNodeClick = useCallback(
-    (name: string) => dispatch({ type: "select", name }),
-    [dispatch],
+    (name: string) => {
+      if (wasJustDragged()) {
+        return;
+      }
+      dispatch({ type: "select", name: name === selected ? null : name });
+    },
+    [dispatch, selected],
   );
 
   // 초대 수락은 이름(user)보다 먼저 — 로그인 사용자는 이름이 계정에서 오므로 NameModal 이 필요 없다.
