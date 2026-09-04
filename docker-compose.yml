@@ -31,6 +31,13 @@ services:
       PGPASSWORD: ${POSTGRES_PASSWORD:-change-me}
       PGDATABASE: ${POSTGRES_DB:-erd_studio}
       PORT: 3000
+      # authentik OIDC SSO. false 면 로그인 진입점이 503 이고 전원 게스트로 동작한다. (cortex와 동일 패턴)
+      ERD_OIDC_ENABLED: ${ERD_OIDC_ENABLED:-false}
+      ERD_OIDC_ISSUER: ${ERD_OIDC_ISSUER:-}
+      ERD_OIDC_CLIENT_ID: ${ERD_OIDC_CLIENT_ID:-}
+      ERD_OIDC_CLIENT_SECRET: ${ERD_OIDC_CLIENT_SECRET:-}
+      ERD_OIDC_REDIRECT_URI: ${ERD_OIDC_REDIRECT_URI:-}
+      ERD_OIDC_ADMIN_GROUP: ${ERD_OIDC_ADMIN_GROUP:-erd-admins}
       # Coolify 매직 변수: app 서비스 3000 포트에 도메인 자동 할당 (배포 후 링크 생성)
       SERVICE_FQDN_APP_3000: ""
     # 호스트 포트 publish 금지 — Coolify 프록시(FQDN)로만 노출해 포트 충돌 방지.
