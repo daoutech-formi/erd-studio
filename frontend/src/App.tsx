@@ -106,7 +106,10 @@ export function App() {
           }
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        // 로그인 상태 조회 실패(네트워크 등) — 게스트 모드로 간주해 기존 이름 입력 흐름을 유지한다.
+        setMe({ authenticated: false, userId: null, username: null, displayName: null, superAdmin: false, oidcEnabled: false });
+      });
   }, []);
 
   const onLogout = useCallback(() => {
@@ -256,6 +259,23 @@ export function App() {
     );
   }
   if (!user) {
+    if (me === null) {
+      return null;   // 로그인 상태 조회 중 — SSO 환경에서 이름 모달이 먼저 번쩍이지 않도록 비워 둔다.
+    }
+    if (me.oidcEnabled) {
+      // SSO 환경 — 이름은 계정에서 오므로 입력받지 않는다. 미로그인이면 RoomList 가 로그인 화면을 띄우고,
+      // 로그인되면 위 효과가 표시이름으로 user 를 채운다.
+      return (
+        <RoomList
+          user={{ name: "게스트", color: colorFor("게스트") }}
+          me={me}
+          notice={notice}
+          onEnter={enterRoom}
+          onUserChange={setUser}
+          onLogout={onLogout}
+        />
+      );
+    }
     return <NameModal onSubmit={setUser} />;
   }
   if (!room) {
