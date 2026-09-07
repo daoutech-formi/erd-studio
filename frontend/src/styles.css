@@ -177,7 +177,11 @@ button.mini { padding: 2px 7px; font-size: 11px; }
 .node.hub rect { stroke-width: 2.5; }
 .node.dim { opacity: 0.15; }
 .node.sel rect { filter: drop-shadow(0 0 6px rgba(79, 140, 255, 0.8)); }
-.node .lock-badge { font-size: 10px; font-weight: 700; }
+/* 도메인 라벨 등과 겹쳐도 읽히도록 배경색 헤일로를 두른다. */
+.node .lock-badge {
+  font-size: 10px; font-weight: 700;
+  paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round;
+}
 .domain-label { font-size: 14px; font-weight: 700; }
 
 .edge { fill: none; stroke: var(--edge); stroke-width: 1; opacity: 0.55; }

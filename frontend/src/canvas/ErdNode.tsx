@@ -24,6 +24,14 @@ interface Props {
 }
 
 const MAX_NAME_CHARS = 22;
+const MAX_LOCK_NAME_CHARS = 8;
+
+/** 락 배지용 짧은 이름 — SSO 표시명('팀/이름')은 이름만 쓰고, 그래도 길면 말줄임.
+ *  노드 폭(150px)을 넘어 도메인 라벨을 덮지 않게 한다. */
+function shortLockName(user: string): string {
+  const name = user.includes("/") ? user.slice(user.lastIndexOf("/") + 1) : user;
+  return name.length > MAX_LOCK_NAME_CHARS ? `${name.slice(0, MAX_LOCK_NAME_CHARS)}…` : name;
+}
 
 /** 테이블 노드 1개. props가 모두 원시값이라 변경된 노드만 리렌더된다. */
 export const ErdNode = memo(function ErdNode(props: Props) {
@@ -57,7 +65,7 @@ export const ErdNode = memo(function ErdNode(props: Props) {
       <text x={8} y={27} className="key">{desc}</text>
       {lockUser && (
         <text x={0} y={-6} className="lock-badge" fill={lockColor ?? "#ffb454"}>
-          {lockUser}님이 편집 중
+          {shortLockName(lockUser)}님이 편집 중
         </text>
       )}
     </g>
