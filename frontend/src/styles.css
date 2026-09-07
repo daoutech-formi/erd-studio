@@ -438,6 +438,62 @@ select.ci { appearance: auto; }
   padding: 32px; text-align: center; color: var(--muted); font-size: 13px;
 }
 
+/* ---------- 온보딩(소속 프로젝트 없음) ---------- */
+.onboarding {
+  max-width: 440px; margin: 56px auto 0; text-align: center;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+  padding: 40px 32px 32px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.onboarding-icon {
+  width: 64px; height: 64px; border-radius: 18px; font-size: 30px; line-height: 1;
+  display: flex; align-items: center; justify-content: center; margin-bottom: 8px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  box-shadow: 0 10px 28px var(--shadow);
+}
+.onboarding h2 { font-size: 18px; }
+.onboarding p { font-size: 13px; color: var(--muted); line-height: 1.8; margin-bottom: 12px; }
+.onboarding p strong { color: var(--text); }
+.onboarding .primary { padding: 9px 24px; font-size: 13px; }
+.onboarding-hint { font-size: 11px; color: var(--muted-dim); margin-top: 12px; }
+
+/* ---------- 방 없음 빈 상태 ---------- */
+.empty-card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+  padding: 36px 24px; text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.empty-card .empty-icon { font-size: 28px; line-height: 1; margin-bottom: 6px; }
+.empty-card h3 { font-size: 15px; }
+.empty-card p { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+
+/* ---------- 전체 멤버 현황(최고관리자) ---------- */
+.admin-modal { width: 560px; max-width: 94vw; max-height: 84vh; overflow-y: auto; }
+.admin-projects { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.admin-project {
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px 12px; background: var(--bg);
+}
+.admin-project-head {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  margin-bottom: 6px;
+}
+.admin-project-name { font-size: 13px; font-weight: 700; word-break: break-all; }
+.admin-project-meta { font-size: 11px; color: var(--muted-dim); white-space: nowrap; }
+.admin-member {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 3px 0; font-size: 12px;
+}
+.admin-member-id { color: var(--muted); }
+.admin-member-empty { font-size: 11px; color: var(--muted-dim); padding: 2px 0; }
+.role-badge {
+  border-radius: 999px; padding: 1px 9px; font-size: 10px; font-weight: 700;
+  border: 1px solid var(--border-strong); color: var(--muted-bright); background: var(--surface);
+  white-space: nowrap;
+}
+.role-badge.admin { border-color: var(--accent); color: var(--accent); background: transparent; }
+.role-badge.editor { border-color: var(--ok-border); color: var(--ok-text); background: transparent; }
+
 .room-grid {
   display: grid; gap: 12px;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

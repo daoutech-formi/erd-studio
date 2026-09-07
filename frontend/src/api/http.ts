@@ -101,6 +101,19 @@ export function fetchAssignableUsers(slug: string): Promise<AssignableUser[]> {
     .then((res) => parse<AssignableUser[]>(res));
 }
 
+// --- 전사 멤버십 현황 (최고관리자 전용) ---
+
+export interface AdminMembership {
+  slug: string;
+  name: string;
+  roomCount: number;
+  members: ProjectMemberInfo[];
+}
+
+export function fetchAdminMemberships(): Promise<AdminMembership[]> {
+  return afetch("/api/admin/memberships").then((res) => parse<AdminMembership[]>(res));
+}
+
 // --- 초대 링크 (프로젝트 ADMIN 이 생성, 로그인 사용자가 수락) ---
 
 export interface InviteInfo {

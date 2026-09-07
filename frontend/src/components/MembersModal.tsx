@@ -25,6 +25,8 @@ export function MembersModal({ slug, projectName, onClose, onSaved }: Props) {
   const [members, setMembers] = useState<ProjectMemberInfo[]>([]);
   const [assignable, setAssignable] = useState<AssignableUser[]>([]);
   const [addUserId, setAddUserId] = useState("");
+  /** 추가할 계정 검색어 — 계정이 많아지면 이름/아이디로 걸러서 고른다. */
+  const [userFilter, setUserFilter] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   // 초대 링크 — 멤버 목록과 달리 생성·폐기가 즉시 서버에 적용된다.
@@ -44,7 +46,12 @@ export function MembersModal({ slug, projectName, onClose, onSaved }: Props) {
       .catch((e: Error) => setError(`멤버 정보를 불러오지 못했습니다: ${e.message}`));
   }, [slug]);
 
-  const candidates = assignable.filter((u) => !members.some((m) => m.userId === u.id));
+  const q = userFilter.trim().toLowerCase();
+  const candidates = assignable
+    .filter((u) => !members.some((m) => m.userId === u.id))
+    .filter((u) => q === ""
+      || u.displayName.toLowerCase().includes(q)
+      || u.username.toLowerCase().includes(q));
 
   const add = () => {
     const user = candidates.find((u) => String(u.id) === addUserId);
@@ -138,13 +145,22 @@ export function MembersModal({ slug, projectName, onClose, onSaved }: Props) {
         )}
 
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <input
+            className="fi"
+            style={{ width: 130, marginBottom: 0 }}
+            placeholder="이름/아이디 검색"
+            value={userFilter}
+            onChange={(e) => setUserFilter(e.target.value)}
+          />
           <select
             className="fi"
             style={{ flex: 1, marginBottom: 0 }}
             value={addUserId}
             onChange={(e) => setAddUserId(e.target.value)}
           >
-            <option value="">＋ 추가할 계정 선택…</option>
+            <option value="">
+              {q === "" ? "＋ 추가할 계정 선택…" : `검색 결과 ${candidates.length}명 중 선택…`}
+            </option>
             {candidates.map((u) => (
               <option key={u.id} value={u.id}>{u.displayName} @{u.username}</option>
             ))}

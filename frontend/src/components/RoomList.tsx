@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   createProject, createRoom, deleteProject, deleteRoom, fetchProjects, fetchRooms,
   getProject, renameRoomCreator, setProject, type Me, type Project, type RoomInfo,
 } from "../api/http";
 import { clientKey, type UserInfo } from "../state/user";
+import { AdminMembershipsModal } from "./AdminMembershipsModal";
 import { McpGuideModal } from "./McpGuideModal";
 import { MembersModal } from "./MembersModal";
 import { NameModal } from "./NameModal";
+import { ProjectModal } from "./ProjectModal";
 import { ThemeToggle } from "./ThemeToggle";
 
 const MAX_ROOMS = 20;
@@ -40,6 +42,10 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
   const [mcpOpen, setMcpOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
+  const [projectModalOpen, setProjectModalOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
+  /** 빈 상태의 "첫 방 만들기" CTA 가 방 이름 입력으로 포커스를 옮길 때 쓴다. */
+  const roomNameRef = useRef<HTMLInputElement>(null);
 
   const currentProject = projects.find((p) => p.slug === projectSlug) ?? null;
   /** SSO 켠 환경에서 현재 프로젝트의 내 역할이 뷰어면 쓰기 UI 를 잠근다(서버도 403 으로 막는다). */
@@ -94,14 +100,11 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
     setProjectSlug(slug);
   };
 
-  const addProject = () => {
-    const projectName = window.prompt("새 프로젝트 이름 (50자 이내)");
-    if (!projectName || projectName.trim().length === 0) {
-      return;
-    }
+  const addProject = (projectName: string) => {
     setBusy(true);
-    createProject(projectName.trim())
+    createProject(projectName)
       .then((p) => {
+        setProjectModalOpen(false);
         changeProject(p.slug);
         loadProjects();
       })
@@ -125,6 +128,8 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
   };
 
   const full = rooms.length >= MAX_ROOMS;
+  /** SSO 로그인 사용자가 아직 어느 프로젝트에도 속하지 않은 상태 — 온보딩 화면을 보여준다. */
+  const noProject = Boolean(projectsReady && me?.oidcEnabled && projects.length === 0);
 
   // SSO 가 켜져 있고 미로그인 — 목록 대신 로그인 안내만 보여준다(서버도 어차피 거절한다).
   if (me && me.oidcEnabled && !me.authenticated) {
@@ -205,6 +210,11 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
           >
             <button onClick={() => setMcpOpen(true)}>🔗 MCP 연결</button>
           </span>
+          {me?.superAdmin && (
+            <button className="mini" onClick={() => setAdminOpen(true)} title="모든 프로젝트의 멤버·역할 현황 (최고관리자 전용)">
+              🛡️ 전체 멤버 현황
+            </button>
+          )}
           <ThemeToggle />
           <span className="room-count">{rooms.length} / {MAX_ROOMS} 방</span>
           {me?.authenticated ? (
@@ -226,6 +236,25 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
       {notice && <div className="room-notice">{notice}</div>}
       {error && <div className="room-error">{error}</div>}
 
+      {noProject ? (
+        /* 소속 프로젝트가 없는 첫 진입 — 관리 UI 대신 온보딩 안내만 보여준다. */
+        <div className="onboarding">
+          <div className="onboarding-icon">🗂️</div>
+          <h2>환영합니다, {user.name}님!</h2>
+          <p>
+            프로젝트는 팀의 ERD 방을 담는 공간입니다.
+            <br />
+            첫 프로젝트를 만들어 시작하거나, 이미 진행 중인 팀이 있다면
+            <br />
+            프로젝트 관리자에게 <strong>초대 링크</strong>를 요청하세요.
+          </p>
+          <button className="primary" onClick={() => setProjectModalOpen(true)} disabled={busy}>
+            ＋ 첫 프로젝트 만들기
+          </button>
+          <span className="onboarding-hint">초대 링크로 합류하면 지정된 역할로 팀 프로젝트가 바로 열립니다.</span>
+        </div>
+      ) : (
+        <>
       <div className="room-create">
         <select
           className="fi"
@@ -241,7 +270,7 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
             </option>
           ))}
         </select>
-        <button onClick={addProject} disabled={busy}>＋ 프로젝트</button>
+        <button onClick={() => setProjectModalOpen(true)} disabled={busy}>＋ 프로젝트</button>
         {projectAdmin && (
           <button onClick={() => setMembersOpen(true)} disabled={busy}>👥 멤버 관리</button>
         )}
@@ -253,15 +282,10 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
         {viewer && <span className="room-hint">뷰어 권한 — 열람만 가능합니다.</span>}
       </div>
 
-      {projectsReady && me?.oidcEnabled && projects.length === 0 && (
-        <div className="room-empty">
-          아직 속한 프로젝트가 없습니다. 위의 ＋ 프로젝트로 직접 만들거나, 프로젝트 관리자에게 초대를 요청하세요.
-        </div>
-      )}
-
       {!viewer && projectSlug !== "" && (
         <div className="room-create">
           <input
+            ref={roomNameRef}
             className="fi"
             value={name}
             maxLength={30}
@@ -278,7 +302,20 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
       )}
 
       {rooms.length === 0 ? (
-        <div className="room-empty">아직 만들어진 방이 없습니다. 첫 방을 만들어 보세요.</div>
+        <div className="empty-card">
+          <div className="empty-icon">🗺️</div>
+          <h3>아직 방이 없습니다</h3>
+          <p>
+            {viewer
+              ? "관리자나 편집자가 방을 만들면 여기에 표시됩니다."
+              : "방 하나가 ERD 캔버스 하나입니다. 첫 방을 만들어 보세요."}
+          </p>
+          {!viewer && (
+            <button className="primary" onClick={() => roomNameRef.current?.focus()}>
+              ＋ 첫 방 만들기
+            </button>
+          )}
+        </div>
       ) : (
         <div className="room-grid">
           {rooms.map((room) => (
@@ -318,7 +355,13 @@ export function RoomList({ user, me, notice, onEnter, onUserChange, onLogout }: 
           ))}
         </div>
       )}
+        </>
+      )}
       {mcpOpen && <McpGuideModal me={me} onClose={() => setMcpOpen(false)} />}
+      {projectModalOpen && (
+        <ProjectModal busy={busy} onCancel={() => setProjectModalOpen(false)} onSubmit={addProject} />
+      )}
+      {adminOpen && <AdminMembershipsModal onClose={() => setAdminOpen(false)} />}
       {membersOpen && currentProject && (
         <MembersModal
           slug={currentProject.slug}

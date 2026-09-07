@@ -3,6 +3,7 @@ package com.daou.erdstudio.project;
 import com.daou.erdstudio.auth.AuthContext;
 import com.daou.erdstudio.auth.OidcProperties;
 import com.daou.erdstudio.auth.Principal;
+import com.daou.erdstudio.common.ForbiddenException;
 import com.daou.erdstudio.common.UnauthorizedException;
 import com.daou.erdstudio.domain.ErdRoom;
 import com.daou.erdstudio.repository.ErdRoomRepository;
@@ -22,6 +23,7 @@ public class PermissionInterceptor implements HandlerInterceptor {
     private static final String PROJECTS = "/api/projects";
     private static final String ROOMS = "/api/rooms";
     private static final String INVITES = "/api/invites";
+    private static final String ADMIN = "/api/admin";
 
     private final OidcProperties oidcProperties;
     private final PermissionService permissionService;
@@ -48,6 +50,16 @@ public class PermissionInterceptor implements HandlerInterceptor {
         String method = request.getMethod();
         Principal principal = AuthContext.get();
 
+        if (path.equals(ADMIN) || path.startsWith(ADMIN + "/")) {
+            // 전사 현황 등 관리 API — 최고관리자 전용.
+            if (!principal.authenticated()) {
+                throw new UnauthorizedException("로그인이 필요합니다.");
+            }
+            if (!principal.superAdmin()) {
+                throw new ForbiddenException("최고관리자만 사용할 수 있습니다.");
+            }
+            return true;
+        }
         if (path.equals(PROJECTS)) {
             // 목록은 컨트롤러가 가시성으로 거르고, 생성은 로그인만 요구한다(생성자가 ADMIN 이 된다).
             if (!"GET".equals(method) && !principal.authenticated()) {
