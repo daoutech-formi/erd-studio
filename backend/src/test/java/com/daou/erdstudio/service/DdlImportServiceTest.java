@@ -236,9 +236,10 @@ class DdlImportServiceTest {
                 """;
         ImportPlan plan = importService.plan(roomId, ddl, "replace");
         String billingDomain = domainOf(plan, "billing");
-        // 영수증(단독 토픽)은 FK 이웃인 수납 도메인으로 흡수
+        // 영수증(단독 토픽)은 FK 이웃인 수납(결제) 도메인으로 흡수
         assertThat(domainOf(plan, "receipt_print")).isEqualTo(billingDomain);
-        assertThat(plan.doc().domains().get(billingDomain).name()).isEqualTo("수납");
+        // 사전이 billing·'수납'을 결제/정산으로 확정한다 (LLM 없이 도는 기본 경로 기준)
+        assertThat(plan.doc().domains().get(billingDomain).name()).isEqualTo("결제/정산");
     }
 
     @Test

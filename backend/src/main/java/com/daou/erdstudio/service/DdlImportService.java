@@ -245,7 +245,11 @@ public class DdlImportService {
     /** merge 모드: 도메인이 비어 있는(신규) 테이블만 배치한다. 기존 도메인·배치는 그대로. */
     private void assignNewTables(List<List<Object>> tables, List<List<Object>> relations,
                                  Map<String, SchemaDoc.DomainDef> domains, List<String> newDomains) {
-        Map<String, String> topicByTable = extractTopics(tables).byTable();
+        Topics topics = extractTopics(tables);
+        Map<String, String> topicByTable = topics.byTable();
+        // replace 모드와 같은 규칙 — 사전/LLM 이 확정한 토픽은 테이블 1개여도 새 도메인으로 승격한다.
+        Set<String> confident = new LinkedHashSet<>(domainClassifier.knownDomains());
+        confident.addAll(topics.llmDomains());
 
         Map<String, List<List<Object>>> pendingByTopic = new LinkedHashMap<>();
         for (List<Object> row : tables) {
@@ -257,7 +261,9 @@ public class DdlImportService {
         for (Map.Entry<String, List<List<Object>>> e : pendingByTopic.entrySet()) {
             String topic = e.getKey();
             String key = findDomainByName(domains, topic);
-            if (key == null && e.getValue().size() >= MIN_GROUP_SIZE && domains.size() < MAX_DOMAINS) {
+            if (key == null
+                    && (e.getValue().size() >= MIN_GROUP_SIZE || confident.contains(topic))
+                    && domains.size() < MAX_DOMAINS) {
                 key = uniqueKey(domains, topic, colorIdx);
                 domains.put(key, new SchemaDoc.DomainDef(topic, PALETTE.get(colorIdx++ % PALETTE.size())));
                 newDomains.add(topic);

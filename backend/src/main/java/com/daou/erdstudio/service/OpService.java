@@ -452,11 +452,17 @@ public class OpService {
 
     /**
      * 도메인 보정 — 클라이언트가 방의 도메인 키를 몰라도 되도록 서버가 정한다.
-     * 요청한 키가 있으면 그대로, 없으면 방의 첫 도메인, 방에 도메인이 하나도 없으면 기본 도메인을 만든다.
+     * 이 방의 키면 그대로, 빈 값·다른 방의 키(낡은 클라이언트 상태)면 방의 첫 도메인으로 보정,
+     * 어느 방에도 없는 키(오타)면 거부한다.
      */
     private String resolveDomain(Long roomId, String requested) {
-        if (!requested.isBlank() && domainRepository.existsByRoomIdAndKey(roomId, requested)) {
-            return requested;
+        if (!requested.isBlank()) {
+            if (domainRepository.existsByRoomIdAndKey(roomId, requested)) {
+                return requested;
+            }
+            if (!domainRepository.existsByKey(requested)) {
+                throw new IllegalArgumentException("존재하지 않는 도메인입니다: " + requested);
+            }
         }
         return domainRepository.findByRoomIdOrderBySortOrderAsc(roomId).stream()
                 .findFirst()

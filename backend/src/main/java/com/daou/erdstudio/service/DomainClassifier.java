@@ -38,8 +38,8 @@ public class DomainClassifier {
     // 점수표
     private static final int ENTITY_NAME = 100;
     private static final int ENTITY_COMMENT = 90;
-    private static final int STRUCT_NAME_PROMOTED = 95;   // 이름에 엔티티 신호가 없을 때
-    private static final int STRUCT_NAME_DEMOTED = 40;    // 이름에 엔티티 신호가 있을 때
+    private static final int STRUCT_NAME_PROMOTED = 100;  // 엔티티 신호보다 앞에 등장 → 그 자체가 주체
+    private static final int STRUCT_NAME_DEMOTED = 40;    // 엔티티 신호가 먼저 등장 → 수식어
     private static final int STRUCT_COMMENT = 45;
     private static final int WEAK_NAME = 15;
     private static final int WEAK_COMMENT = 12;
@@ -158,22 +158,41 @@ public class DomainClassifier {
                     Set.of("code", "config", "option", "policy", "preference", "property", "setting"),
                     Set.of("공통코드", "코드", "환경설정", "옵션", "정책", "설정")));
 
-    /** 코멘트+테이블명 기준 도메인 판정. 매칭이 없으면 null. */
+    /** 도메인 후보 — 동점 판정을 위해 코멘트 근거와 이름 내 등장 위치를 함께 든다. */
+    private record Candidate(String domain, int score, boolean commentSupport, int namePos, int order) {
+    }
+
+    /**
+     * 코멘트+테이블명 기준 도메인 판정. 매칭이 없으면 null.
+     * 동점이면 ① 코멘트 근거가 있는 쪽 ② 이름에서 먼저 등장한 쪽(앞 토큰이 주체)
+     * ③ 사전 정의 순서로 가른다. (giftcard_auth_log → 인증이 아니라 상품권,
+     * bill_saving_history → 코멘트가 '적립'을 말하므로 결제가 아니라 적립금)
+     */
     public String classify(String tableName, String comment) {
         String nameText = normalize(tableName);
         String commentText = normalize(comment);
 
-        // 이름에 엔티티 신호가 있는지 먼저 확인 — 구조적 성격어 승격 여부를 결정한다
-        boolean entityInName = RULES.stream()
-                .filter(r -> r.tier() == Tier.ENTITY)
-                .anyMatch(r -> matchesAny(nameText, r.nameWords()));
-
-        Map<String, Integer> scores = new LinkedHashMap<>();
+        // 이름에서 가장 앞서 등장하는 엔티티 토큰 위치 — 구조적 성격어의 승격/강등 기준.
+        // 엔티티가 먼저면 성격어는 수식(ip_whitelist_history → 보안),
+        // 성격어가 먼저면 그 자체가 주체(donut_static_point_status → 통계).
+        int entityPos = Integer.MAX_VALUE;
         for (Rule rule : RULES) {
-            int best = 0;
-            boolean nameHit = matchesAny(nameText, rule.nameWords());
+            if (rule.tier() == Tier.ENTITY) {
+                int p = earliestMatch(nameText, rule.nameWords());
+                if (p >= 0 && p < entityPos) {
+                    entityPos = p;
+                }
+            }
+        }
+
+        Map<String, Candidate> byDomain = new LinkedHashMap<>();
+        int order = 0;
+        for (Rule rule : RULES) {
+            int namePos = earliestMatch(nameText, rule.nameWords());
+            boolean nameHit = namePos >= 0;
             boolean commentHit = matchesAny(commentText, rule.commentWords())
                     || matchesAny(commentText, rule.nameWords());
+            int best = 0;
             switch (rule.tier()) {
                 case ENTITY -> {
                     if (nameHit) {
@@ -184,7 +203,7 @@ public class DomainClassifier {
                 }
                 case STRUCTURAL -> {
                     if (nameHit) {
-                        best = entityInName ? STRUCT_NAME_DEMOTED : STRUCT_NAME_PROMOTED;
+                        best = entityPos < namePos ? STRUCT_NAME_DEMOTED : STRUCT_NAME_PROMOTED;
                     }
                     if (commentHit) {
                         best = Math.max(best, STRUCT_COMMENT);
@@ -199,21 +218,30 @@ public class DomainClassifier {
                 }
             }
             if (best > 0) {
-                scores.merge(rule.domain(), best, Math::max);
+                Candidate next = new Candidate(rule.domain(), best, commentHit,
+                        nameHit ? namePos : Integer.MAX_VALUE, order);
+                byDomain.merge(rule.domain(), next, (a, b) -> better(a, b) == a ? a : b);
             }
+            order++;
         }
-        if (scores.isEmpty()) {
-            return null;
+        return byDomain.values().stream()
+                .reduce((a, b) -> better(a, b))
+                .map(Candidate::domain)
+                .orElse(null);
+    }
+
+    /** 점수 → 코멘트 근거 → 이름 내 위치 → 사전 정의 순서로 우열을 가린다. */
+    private static Candidate better(Candidate a, Candidate b) {
+        if (a.score() != b.score()) {
+            return a.score() > b.score() ? a : b;
         }
-        String winner = null;
-        int bestScore = Integer.MIN_VALUE;
-        for (Map.Entry<String, Integer> e : scores.entrySet()) { // 정의 순서 = 동점 우선순위
-            if (e.getValue() > bestScore) {
-                bestScore = e.getValue();
-                winner = e.getKey();
-            }
+        if (a.commentSupport() != b.commentSupport()) {
+            return a.commentSupport() ? a : b;
         }
-        return winner;
+        if (a.namePos() != b.namePos()) {
+            return a.namePos() < b.namePos() ? a : b;
+        }
+        return a.order() <= b.order() ? a : b;
     }
 
     /** 사전에 정의된 도메인 표시명 목록 (정의 순서 = 우선순위). */
@@ -238,36 +266,43 @@ public class DomainClassifier {
     }
 
     private boolean matchesAny(String text, Set<String> words) {
+        return earliestMatch(text, words) >= 0;
+    }
+
+    /** 단어 집합 중 텍스트에서 가장 앞서 매칭되는 위치. 없으면 -1. */
+    private int earliestMatch(String text, Set<String> words) {
+        int best = -1;
         for (String w : words) {
-            if (contains(text, w)) {
-                return true;
+            int idx = indexOfWord(text, w);
+            if (idx >= 0 && (best < 0 || idx < best)) {
+                best = idx;
             }
         }
-        return false;
+        return best;
     }
 
     /**
-     * 단어 포함 검사. 영문은 토큰 경계를 확인해 부분일치 오탐(예: 'log' in 'login',
-     * 'ip' in 'description')을 막고, 한글은 부분 문자열로 본다(복합명사 대응).
+     * 단어 포함 검사(위치 반환). 영문은 토큰 경계를 확인해 부분일치 오탐(예: 'log' in 'login',
+     * 'ip' in 'description')을 막고, 한글은 부분 문자열로 본다(복합명사 대응). 없으면 -1.
      */
-    private boolean contains(String text, String word) {
+    private int indexOfWord(String text, String word) {
         if (text.isEmpty() || !text.contains(word)) {
-            return false;
+            return -1;
         }
         if (word.codePoints().anyMatch(cp -> cp >= 0xAC00 && cp <= 0xD7A3)) {
-            return true;
+            return text.indexOf(word);
         }
         int from = 0;
         while (true) {
             int idx = text.indexOf(word, from);
             if (idx < 0) {
-                return false;
+                return -1;
             }
             boolean leftOk = idx == 0 || !Character.isLetterOrDigit(text.charAt(idx - 1));
             int end = idx + word.length();
             boolean rightOk = end >= text.length() || !Character.isLetterOrDigit(text.charAt(end));
             if (leftOk && rightOk) {
-                return true;
+                return idx;
             }
             from = idx + 1;
         }
